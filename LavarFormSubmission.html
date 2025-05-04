@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lavar Tupi Form</title>
+  <link rel="stylesheet" href="lavarcss.css">
+</head>
+<body>
+
+  <div class="container">
+    <form method="post" action="" name="contact-form">
+      <h4>LAVAR TUPI FORM</h4>
+
+      <a href="sales_range_output.html" >-->Mga Tinupi</a>
+      <p id="customer-name" >Customer Name:</p>
+      <p style=font-size: 12px;">JO NUMBER (example: 04065...di kasama JO)</p>
+      <input type="text" id="jo-number" name="JO NUMBER" placeholder="JO NUMBER" required>
+
+      <p style="font-size: 12px;">Number of Bags</p>
+      <input type="text" name="NUMBER OF BAGS" placeholder="NUMBER OF BAGS" required>
+
+      <p style="font-size: 12px;">Name of Folder</p>
+      
+      <select name="NAME OF FOLDER" required>
+        <option value="">--Select Folder Name--</option>
+        <option value="Folder 1">MIA</option>
+        <option value="Folder 2">NIDA</option>
+        <option value="Folder 3">JENNELYN</option>
+        <option value="Folder 4">JERCY</option>
+        <!-- Add more options as needed -->
+      </select>
+
+      <p style="font-size: 12px;">Time of Folds</p>
+      <input type="text" name="Time of Folds" placeholder="Time of Folds" required>
+
+      <p style="font-size: 12px;">Comments/Name of Customer</p>
+      <input type="text" name="Comments" placeholder="Comments" required>
+
+      <p style="font-size: 12px;">Petsa ng Pagtupi</p>
+      <input type="date" name="Date of Fold" placeholder="Date of Fold" required>
+
+      <br><br>
+      <input type="submit" value="Submit" id="submit">
+    </form>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="POSData.js"></script>
+  <script src="googlesheet.js"></script>
+  <script src="lookupCustomer.js"></script>
+</body>
+</html>
