@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delivery Form - LAVAR LAUNDRY</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@7.12.15/dist/sweetalert2.all.min.js"></script>
+    <style>
+      .form-container {
+        max-width: 500px;
+        margin: auto;
+        margin-top: 50px;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+      }
+
+        .button-container {
+        display: flex;
+        gap: 5px; /* Adds space between the buttons */
+        align-items: center; /* Aligns buttons vertically if they have different heights */
+        }
+
+        button {
+        padding: 10px 10px;
+        font-size: 10px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background-color: #4CAF50;
+        color: white;
+        }
+
+        button:hover {
+        background-color: #45a049;
+        }      
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container">
+      <div class="form-container">
+        <h4 class="text-center mb-4">Lavar Laundry Delivery Form</h4>
+        <form id="submit-to-google-sheet">
+          <div class="form-group">
+            <label for="JOR">Job Order Reference</label>
+            <input
+                class="form-control"
+                type="text"
+                name="JOR"
+                id="JOR"
+                placeholder="Enter Job Order Ref"
+                required
+            />
+            <input
+                class="form-control mt-2"
+                type="text"
+                id="JOsearch"
+                placeholder="Search for JO..."
+                oninput="searchJO()"
+                
+            />
+            
+            </div>
+            <div>
+            <button id="searchButton" type="button">Search</button>
+            <button id="clearButton" onclick="clearInput()">Clear</button>
+            </div>    
+            <div id="JOresult"></div>
+            
+        <!--
+          <div class="form-group">
+            <label for="LocationofDelivery">Location of Delivery</label>
+            <input
+              class="form-control"
+              type="text"
+              name="LocationofDelivery"
+              id="LocationofDelivery"
+              placeholder="Delivery Location"
+              required
+            />
+          </div>
+        
+          <div class="form-group">
+            <label for="DateofDelivery">Date of Delivery</label>
+            <input
+              class="form-control"
+              type="date"
+              name="DateofDelivery"
+              id="DateofDelivery"
+              required
+            />
+          </div>
+       
+          <div class="form-group">
+            <label for="TimeofDelivery">Time of Delivery</label>
+            <input
+              class="form-control"
+              type="text"
+              name="TimeofDelivery"
+              id="TimeofDelivery"
+              placeholder="Time of Delivery"
+              required
+            />
+          </div>
+        --> 
+
+          <div class="form-group">
+            <label for="DeliveryStaff">Delivery Staff</label>
+            <select class="form-control" name="DeliveryStaff" id="DeliveryStaff" required>
+              <option value="" disabled selected hidden>Choose...</option>
+              <option value="Joshua">Joshua</option>
+              <option value="Marvin">Marvin</option>
+              <option value="Lowi">Lowi</option>
+              <option value="Edward">Edward</option>
+              <option value="MIA">MIA</option>
+              <option value="NIDA">NIDA</option>
+            </select>
+          </div>
+
+          <!--
+          <div class="form-group">
+            <label for="DeliveryPayMethod">Did the Customer Pay During Delivery?</label>
+            <select class="form-control" name="DeliveryPayMethod" id="DeliveryPayMethod" required>
+              <option value="" disabled selected hidden>Choose...</option>
+              <option value="Cash">Cash</option>
+              <option value="G-Cash">G-Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </div>
+        -->
+          <div class="form-group">
+            <label for="Comments">Comments/Notes: Include Delivery Location; Payment Method</label>
+            <textarea
+              class="form-control"
+              name="Comments"
+              id="Comments"
+              placeholder="Message"
+              rows="4"
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-group mt-2">
+            <label for="media">Upload First Picture</label>
+            <input class="form-control-file" type="file" name="media" id="media" />
+          </div>
+
+          <div class="form-group mt-2">
+            <label for="media2">Upload Second Picture</label>
+            <input class="form-control-file" type="file" name="media2" id="media2" />
+          </div>
+
+          <div class="form-group mt-2">
+            <label for="media3">Upload Third Picture</label>
+            <input class="form-control-file" type="file" name="media3" id="media3" />
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Submit</button>
+        </form>
+      </div>
+    </div>
+
+<script>
+  const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
+  const form = document.forms["submit-to-google-sheet"];
+  const JOsearchField = document.getElementById("JOsearch");
+  const JOresult = document.getElementById("JOresult");
+
+  // Grab the search button and add the event listener
+  const searchButton = document.getElementById("searchButton");
+
+
+
+function getDriveThumbnail(url) {
+  const match = url.match(/[-\w]{25,}/);
+  return match ? `https://drive.google.com/thumbnail?id=${match[0]}` : "";
+}
+
+  searchButton.addEventListener("click", async function () {
+    const joNumber = JOsearchField.value.trim();
+    if (joNumber) {
+      const response = await fetch(`${scriptURL}?JO=${joNumber}`);
+      const data = await response.json();
+      
+          let picturesHTML = "";
+
+          if (data.Picture1) {
+            picturesHTML += `
+              <div>
+                <table>
+                  <tr>
+                    <td>Picture1:</td>
+                    <td>
+                      <a href="${data.Picture1}" target="_blank">
+                        <img id="pic1img" src="${getDriveThumbnail(data.Picture1)}" alt="Picture1" style="height: 60px; margin: 5px; border-radius: 5px;" />
+                      </a>
+                    </td>
+                    <td>
+                      <button id="Pic1Delete"  onclick="deletePicture(1)" type="button" style="height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 10px;">Delete</button>
+                  </tr>
+              </div>`;
+          }
+          if (data.Picture2) {
+            picturesHTML += `
+              <div>
+                <table>
+                  <tr>
+                    <td>Picture2:</td>
+                    <td>
+                      <a href="${data.Picture2}" target="_blank">
+                        <img id="pic2img" src="${getDriveThumbnail(data.Picture2)}" alt="Picture2" style="height: 60px; margin: 5px; border-radius: 5px;" />
+                      </a>
+                    </td>
+                    <td>
+                      <button id="Pic2Delete"  onclick="deletePicture(2)"  type="button" style="height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 10px;">Delete</button>
+                  </tr>
+              </div>`;
+          }
+          if (data.Picture3) {
+            picturesHTML += `
+              <div>
+                <table>
+                  <tr>
+                    <td>Picture3:</td>
+                    <td>
+                      <a href="${data.Picture3}" target="_blank">
+                        <img id="pi31img" src="${getDriveThumbnail(data.Picture3)}" alt="Picture3" style="height: 60px; margin: 5px; border-radius: 5px;" />
+                      </a>
+                    </td>
+                    <td>
+                      <button id="Pic3Delete" onclick="deletePicture(3)"  type="button" style="height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 10px;">Delete</button>
+                  </tr>
+
+              </div>`;
+          }
+
+      if (data.result === "not found") {
+        JOresult.innerHTML = "JO not found.";
+      } else {
+        const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
+        if (data.JO && (!data.DeliveryStaff || data.DeliveryStaff.trim() === "")) {
+          document.getElementById("JOR").value = data.JO;
+        }        
+        JOresult.innerHTML = `
+          <div style="font-size: 11px;">
+            <br>Customer Name: ${data.value} <br>
+            JO#: ${data.JO} <br>
+            No. of Bags: ${data.colC} <br>
+            Folder: ${data.colD} <br>
+            Details: ${data.colE} <br><br>
+            Delivered By: ${data.DeliveryStaff} <br>
+            Comments: ${data.Comments} <br>
+            Date of Delivery: ${formattedDeliveryDatetime} <br>
+            Delivery ID: ${data.UniqueID} <p id="deliveryid" style="color: white;">${data.UniqueID}</p> ${picturesHTML}
+          </div>
+        `;
+
+// After setting JOresult.innerHTML and before ending the else block
+    if (data.DeliveryStaff && data.DeliveryStaff.trim() !== "") {
+      // Disable form fields
+      document.getElementById("DeliveryStaff").disabled = true;
+      document.getElementById("Comments").disabled = true; 
+
+      document.getElementById("JOR").disabled = true;
+      document.getElementById("media").disabled = true;
+      document.getElementById("media2").disabled = true;
+      document.getElementById("media3").disabled = true;
+
+      const submitButton = document.querySelector("button[type='submit']");
+      submitButton.disabled = true;
+      submitButton.innerText = "Already Delivered";
+    }
+    
+      }
+    } else {
+      JOresult.innerHTML = "Please enter a JO number.";
+    }
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const fileInputs = ["media", "media2", "media3"];
+
+    // Process file inputs
+    for (const id of fileInputs) {
+      const input = document.getElementById(id);
+      if (input.files.length > 0) {
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+          swal("Error", `${id} must be less than 5MB.`, "error");
+          return;
+        }
+        const base64 = await readFileAsBase64(file);
+        formData.set(id, base64);
+      }
+    }
+
+    await submitForm(formData);
+  });
+
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+async function submitForm(formData) {
+  const JOR = formData.get("JOR");
+  if (!JOR || JOR.trim() === "") {
+    swal("Missing JO#", "Please enter the Job Order Reference before submitting.", "warning");
+    return; // Stop the function if JOR is empty
+  }
+
+  const submitButton = document.querySelector("button[type='submit']");
+  submitButton.disabled = true;
+  submitButton.innerText = "Loading...";
+
+  fetch(scriptURL, { method: "POST", body: formData })
+    .then((response) => {
+      swal("Done", "Submitted Successfully.", "success");
+      form.reset();
+    })
+    .catch((error) => {
+      swal("Error", "Something went wrong. Please try again!", "error");
+    })
+    .finally(() => {
+      submitButton.disabled = false;
+      submitButton.innerText = "Submit";
+    });
+}
+
+
+
+
+function clearInput() {
+  // Clear the content of the JOsearch input field
+  document.getElementById("JOresult").innerHTML = "";
+  document.getElementById("JOR").value = "";
+  document.getElementById("JOsearch").value = "";
+}
+
+
+function copyJO(joNumber) {
+    document.getElementById("JOR").value = joNumber;
+    document.getElementById("JOsearch").value = "";  
+}
+
+function formatDateTime(timestamp) {
+  const date = new Date(timestamp);
+
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const yyyy = date.getFullYear();
+
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+
+  hours = hours % 12;
+  hours = hours ? hours : 12; // 0 should be 12
+
+  return `${mm}/${dd}/${yyyy} ${hours}:${minutes} ${ampm}`;
+}
+
+
+  function deletePicture(picNumber) {
+    const fileInputId = picNumber === 1 ? 'media' : `media${picNumber}`;
+    const imgId = `pic${picNumber}img`;
+
+    const fileInput = document.getElementById(fileInputId);
+    const img = document.getElementById(imgId);
+
+    if (fileInput) fileInput.disabled = false;
+    if (img) img.src = '';
+  }
+</script>
+
+  </body>
+</html>
