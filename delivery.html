@@ -247,6 +247,9 @@ function getDriveThumbnail(url) {
         const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
         if (data.JO && (!data.DeliveryStaff || data.DeliveryStaff.trim() === "")) {
           document.getElementById("JOR").value = data.JO;
+          const submitButton = document.querySelector("button[type='submit']");
+          submitButton.disabled = false;
+          submitButton.innerText = "SUBMIT";          
         }        
         JOresult.innerHTML = `
           <div style="font-size: 11px;">
@@ -265,18 +268,28 @@ function getDriveThumbnail(url) {
 // After setting JOresult.innerHTML and before ending the else block
     if (data.DeliveryStaff && data.DeliveryStaff.trim() !== "") {
       // Disable form fields
-      document.getElementById("DeliveryStaff").disabled = true;
-      document.getElementById("Comments").disabled = true; 
+          document.getElementById("DeliveryStaff").disabled = true;
+          document.getElementById("Comments").disabled = true; 
 
-      document.getElementById("JOR").disabled = true;
-      document.getElementById("media").disabled = true;
-      document.getElementById("media2").disabled = true;
-      document.getElementById("media3").disabled = true;
+          document.getElementById("JOR").disabled = true;
+          document.getElementById("media").disabled = true;
+          document.getElementById("media2").disabled = true;
+          document.getElementById("media3").disabled = true;
 
-      const submitButton = document.querySelector("button[type='submit']");
-      submitButton.disabled = true;
-      submitButton.innerText = "Already Delivered";
-    }
+          const submitButton = document.querySelector("button[type='submit']");
+          submitButton.disabled = true;
+          submitButton.innerText = "Already Delivered";
+      } else if (!data.DeliveryStaff || data.DeliveryStaff.trim() === "") {
+        // If DeliveryStaff is missing/empty, prefill the JOR field with JO
+          document.getElementById("DeliveryStaff").disabled = false;
+          document.getElementById("Comments").disabled = false; 
+
+          document.getElementById("JOR").disabled = false;
+          document.getElementById("media").disabled = false;
+          document.getElementById("media2").disabled = false;
+          document.getElementById("media3").disabled = false;
+      }
+    
     
       }
     } else {
