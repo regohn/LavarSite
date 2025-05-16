@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>JO Data Viewer - LAVAR LAUnDRY</title>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      font-size: 10px;
+      background-color: #f9f9f9;
+      margin: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background-color: #fff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+    #dataTable td:nth-child(1) { width: 6.88%; }
+    #dataTable td:nth-child(2) { width: 2.88%; }
+    #dataTable td:nth-child(3) { width: 10.88%; }    
+    #dataTable td:nth-child(4) { width: .88%; }    
+    #dataTable td:nth-child(5) { width: 6.88%; }    
+    #dataTable td:nth-child(6) { width: 1.88%; }    
+    #dataTable td:nth-child(7) { width: .88%; }    
+    #dataTable td:nth-child(8) { width: 5.88%; }    
+    #dataTable td:nth-child(9) { width: 13.88%; }    
+    #dataTable td:nth-child(10) { width: 8.88%; }    
+    #dataTable td:nth-child(11) { width: 4.88%; }    
+    #dataTable td:nth-child(12) { width: 5.88%; }    
+    #dataTable td:nth-child(13) { width: 9.88%; }    
+    #dataTable td:nth-child(14) { width: 7.88%; }    
+    #dataTable td:nth-child(15) { width: 3.88%; }    
+    #dataTable td:nth-child(16) { width: 3.88%; }    
+    #dataTable td:nth-child(17) { width: 3.88%; }    
+
+/* Modal backdrop */
+#imageModal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Modal content */
+#imageModalContent {
+  margin: 10% auto;
+  display: block;
+  max-width: 90%;
+  max-height: 80vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+#imageModalClose {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  color: white;
+  font-size: 30px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      text-align: left;
+    }
+    th {
+      background-color: #003366;
+      color: white;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      cursor: pointer;
+    }
+    th.sort-asc::after { content: " ▲"; font-size: 12px; }
+    th.sort-desc::after { content: " ▼"; font-size: 12px; }
+    tr:nth-child(even) { background-color: #f5f5f5; }
+    #status { margin-top: 10px; font-style: italic; color: #333; }
+    button {
+      padding: 6px 12px;
+      font-size: 10px;
+      font-family: 'Roboto', sans-serif;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #45a049; }
+    img {
+      max-width: 50px;
+      max-height: 50px;
+      border-radius: 4px;
+    }
+    #controls { margin-top: 10px; margin-bottom: 10px; }
+    #maxRowsInput, #searchDate, #searchCustomer {
+      padding: 4px;
+      font-size: 10px;
+    }
+    #searchContainer { margin-top: 10px; }
+    #clearFiltersButton {
+      margin-left: 10px;
+      background-color: #f44336;
+    }
+    #clearTableRows {
+      margin-left: 10px;
+      background-color: #f44336;
+    }
+    #clearFiltersButton:hover { background-color: #e53935; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+</head>
+<body>
+  <button onclick="loadData()">Load Data</button>
+
+  <div id="controls">
+    Max Rows: <input type="number" id="maxRowsInput" value="500" min="1" max="10000">
+  </div>
+
+  <div id="searchContainer">
+    <label for="searchDate">Search by Date:</label>
+    <input type="date" id="searchDate" onchange="filterData()">
+    <label for="searchCustomer">Search by Customer:</label>
+    <select id="searchCustomer" onchange="filterData()">
+      <option value="">Select Customer</option>
+    </select>
+    <button id="clearFiltersButton" onclick="clearFilters()">Clear Filters</button>
+    <button id="clearTableRows" onclick="clearTableRows()">Clear Table</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="tableContainer"></div>
+
+  <script>
+    const apiUrl = "https://script.google.com/macros/s/AKfycbx6fziX1510VRFveZ4hfvGfknrryGgQ85S5AjnvV1g2Ja6pciGz4XSyar2yU-aF2QAw/exec";
+    let allData = [];
+    let filteredData = [];
+
+    
+
+  function formatDateTime(input) {
+    const date = new Date(input);
+    if (isNaN(date)) return input;
+
+
+    date.setHours(date.getHours());
+
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(date).replace(',', '');
+  }
+
+    function formatDateOnly(input) {
+      const date = new Date(input);
+      if (isNaN(date)) return input;
+      return date.toISOString().slice(0, 10); // YYYY-MM-DD
+    }
+
+    function renderTable(data) {
+      const container = document.getElementById("tableContainer");
+      const maxRows = parseInt(document.getElementById("maxRowsInput").value) || 500;
+      container.innerHTML = "";
+
+      const table = document.createElement("table");
+      table.id = "dataTable";
+      
+
+      const headers = [
+        "DATE CREATED", "JO#", "NAME", "AMNT", "DATE PAID", "PAY METHOD",
+        "No. OF BAGS", "FOLDER", "Fold Time", "Comments",
+        "Fold Date", "Delivery Staff", "Delivery Details",
+        "timestamp", "media", "media2", "media3"
+      ];
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      headers.forEach((header, index) => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        th.onclick = () => {
+          const isAscending = !th.classList.contains("sort-asc");
+          [...thead.querySelectorAll("th")].forEach(h => h.classList.remove("sort-asc", "sort-desc"));
+          th.classList.toggle("sort-asc", isAscending);
+          th.classList.toggle("sort-desc", !isAscending);
+          sortTable(table, index, isAscending);
+        };
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+for (let i = 1; i < Math.min(data.length, maxRows + 1); i++) {
+  const rowData = data[i];
+  const row = document.createElement("tr");
+
+  rowData.forEach((cell, index) => {
+    const td = document.createElement("td");
+
+    if (index === 0 || index === 4 || index === 13) {
+      td.textContent = formatDateTime(cell);
+    } else if (index === 10) {
+      td.textContent = formatDateOnly(cell);
+    } else if ([14, 15, 16].includes(index)) {
+      if (typeof cell === "string" && cell.includes("drive.google.com")) {
+        const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
+        if (match && match[1]) {
+          const fileId = match[1];
+          const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
+          const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`; // RAW image view
+
+          const img = document.createElement("img");
+          img.src = thumbUrl;
+          img.alt = "Image";
+          img.style.maxWidth = "80px";
+          img.style.cursor = "pointer";
+
+          // Click opens modal
+          img.onclick = () => {
+            document.getElementById("imageModalContent").src = fullImageUrl;
+            document.getElementById("imageModal").style.display = "flex";
+          };
+
+          td.appendChild(img);
+        } else {
+          td.textContent = "Invalid link";
+        }
+      } else {
+        td.textContent = "";
+      }
+    }else {
+      td.textContent = cell ?? "";
+    }
+
+    row.appendChild(td);
+  });
+
+  tbody.appendChild(row);
+}
+      table.appendChild(tbody);
+      container.appendChild(table);
+    }
+
+    function sortTable(table, colIndex, ascending = true) {
+      const rows = Array.from(table.rows).slice(1);
+      rows.sort((a, b) => {
+        const valA = a.cells[colIndex].textContent.trim();
+        const valB = b.cells[colIndex].textContent.trim();
+        const dateA = new Date(valA);
+        const dateB = new Date(valB);
+        if (!isNaN(dateA) && !isNaN(dateB)) {
+          return ascending ? dateA - dateB : dateB - dateA;
+        }
+        return ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      });
+      rows.forEach(row => table.appendChild(row));
+    }
+
+    async function loadData() {
+      const status = document.getElementById("status");
+      status.textContent = "Loading...";
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        allData = data;
+        filteredData = data;
+        renderTable(filteredData);
+        loadCustomers(data);
+        status.textContent = "";
+      } catch (e) {
+        status.textContent = "Error loading data: " + e.message;
+      }
+    }
+
+function loadCustomers(data) {
+  const select = document.getElementById("searchCustomer");
+  const customerSet = new Set();
+
+  data.slice(1).forEach(row => {
+    let customer = (row[2] || "").trim();
+    if (customer) customerSet.add(customer);
+  });
+
+  
+  select.innerHTML = '<option value="">Select Customer</option>';
+
+  // Sort alphabetically, case-insensitive
+  [...customerSet].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    .forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+}
+
+
+function filterData() {
+  
+  const searchDate = document.getElementById("searchDate").value; // Date picker value
+  const searchCustomer = document.getElementById("searchCustomer").value.trim().toLowerCase(); // Normalize input
+
+  // Convert the search date from yyyy-mm-dd to yyyyMMdd format
+  const formattedSearchDate = searchDate.split('-').join(''); // e.g., '2025-05-14' -> '20250514'
+
+  console.log("Formatted Search Date:", formattedSearchDate); // Debugging: Log the selected date
+
+  filteredData = allData.filter((row, index) => {
+    if (index === 0) return true; // Keep header row
+
+    let isMatch = true;
+
+    // If a date is selected
+    if (searchDate) {
+      const rawDate = row[0] || ""; // full ISO 8601 string "2025-02-22T16:00:00.000Z"
+      console.log("Raw Date from Row:", rawDate); // Debugging: Log the raw date from the row
+
+      // Convert the ISO date string to 'yyyyMMdd' format
+      const dateObj = new Date(rawDate);
+      const formattedRowDate = `${dateObj.getFullYear()}${(dateObj.getMonth() + 1).toString().padStart(2, '0')}${dateObj.getDate().toString().padStart(2, '0')}`; // e.g., '2025-02-22' -> '20250222'
+
+      console.log("Formatted Row Date:", formattedRowDate); // Debugging: Log the formatted row date
+
+      if (formattedRowDate !== formattedSearchDate) {
+        isMatch = false; // If the dates don't match, exclude this row
+      }
+    }
+
+    // If a customer filter is selected
+    if (searchCustomer) {
+      const customer = (row[2] || "").trim().toLowerCase(); // Normalize data row
+      if (customer !== searchCustomer) isMatch = false;
+    }
+
+    return isMatch;
+  });
+
+  renderTable(filteredData); // Re-render table
+}
+
+
+function clearTableRows() {
+  const table = document.querySelector("table"); // Select the first table
+  const tbody = table.querySelector("tbody"); // Select the tbody (where rows are stored)
+  
+  if (tbody) {
+    tbody.innerHTML = ""; // Remove all rows in the tbody, keeping the headers intact
+  }
+}
+
+    function clearFilters() {
+      document.getElementById("searchDate").value = "";
+      document.getElementById("searchCustomer").value = "";
+      filteredData = allData;
+      renderTable(filteredData);
+    }
+
+    function openImageModal(imageUrl) {
+  const modal = document.getElementById("imageModal");
+  const modalImg = document.getElementById("imageModalContent");
+  modal.style.display = "block";
+  modalImg.src = imageUrl;
+}
+
+function closeImageModal() {
+  const modal = document.getElementById("imageModal");
+  modal.style.display = "none";
+  document.getElementById("imageModalContent").src = "";
+}
+  </script>
+  <div id="imageModal" onclick="closeImageModal()">
+  <span id="imageModalClose">&times;</span>
+  <img id="imageModalContent" src="" alt="Full Image">
+</div>
+</body>
+</html>
