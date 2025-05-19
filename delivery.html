@@ -117,26 +117,53 @@
               <option value="" disabled selected hidden>Choose...</option>
               <option value="Joshua">Joshua</option>
               <option value="Marvin">Marvin</option>
-              <option value="Lowi">Lowi</option>
-              <option value="Edward">Edward</option>
+              <option value="Lowi">LOWI</option>
+              <option value="Edward">EDWARD</option>
               <option value="MIA">MIA</option>
               <option value="NIDA">NIDA</option>
             </select>
           </div>
 
-          <!--
           <div class="form-group">
-            <label for="DeliveryPayMethod">Did the Customer Pay During Delivery?</label>
-            <select class="form-control" name="DeliveryPayMethod" id="DeliveryPayMethod" required>
-              <option value="" disabled selected hidden>Choose...</option>
-              <option value="Cash">Cash</option>
-              <option value="G-Cash">G-Cash</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-            </select>
+            <table>
+              <tr>
+                <!-- Column 1: Yes/No -->
+                <td>
+                  <label>Did the Customer Pay During Delivery?</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="DeliveryPayMethod" id="payYes" value="Yes" required onchange="togglePaymentOptions(true)">
+                    <label class="form-check-label" for="payYes">Yes</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="DeliveryPayMethod" id="payNo" value="No" onchange="togglePaymentOptions(false)">
+                    <label class="form-check-label" for="payNo">No</label>
+                  </div>
+                </td>
+                   <td>
+                    
+                   </td>
+                <!-- Column 2: Conditional Payment Options -->
+                <td id="paymentTypeColumn" style="display: none;">
+                  <label>Payment Method</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="PaymentType" id="cash" value="Cash">
+                    <label class="form-check-label" for="cash">Cash</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="PaymentType" id="gcash" value="G-Cash">
+                    <label class="form-check-label" for="gcash">G-Cash</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="PaymentType" id="others" value="Others">
+                    <label class="form-check-label" for="others">Others</label>
+                  </div>
+                </td>
+              </tr>
+            </table>
           </div>
-        -->
+
           <div class="form-group">
-            <label for="Comments">Comments/Notes: Include Delivery Location; Payment Method</label>
+            <label for="Comments">Comments/Notes: Include Delivery Location</label>
             <textarea
               class="form-control"
               name="Comments"
@@ -162,7 +189,7 @@
             <input class="form-control-file" type="file" name="media3" id="media3" />
           </div>
 
-          <button type="submit" class="btn btn-primary btn-block">Submit</button>
+          <button id="mainsubmitbutton" type="submit" class="btn btn-primary btn-block">Submit</button>
         </form>
       </div>
     </div>
@@ -256,6 +283,7 @@ function getDriveThumbnail(url) {
             <br>Customer Name: ${data.value} <br>
             JO#: ${data.JO} <br>
             No. of Bags: ${data.colC} <br>
+            Total Amount: ${data.colK} <br>
             Folder: ${data.colD} <br>
             Details: ${data.colE} <br><br>
             Delivered By: ${data.DeliveryStaff} <br>
@@ -297,12 +325,14 @@ function getDriveThumbnail(url) {
     }
   });
 
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("submit-to-google-sheet");
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
     const fileInputs = ["media", "media2", "media3"];
 
-    // Process file inputs
     for (const id of fileInputs) {
       const input = document.getElementById(id);
       if (input.files.length > 0) {
@@ -318,6 +348,18 @@ function getDriveThumbnail(url) {
 
     await submitForm(formData);
   });
+});
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+console.log("Form submitted");
 
   function readFileAsBase64(file) {
     return new Promise((resolve, reject) => {
@@ -391,12 +433,64 @@ function formatDateTime(timestamp) {
     const fileInputId = picNumber === 1 ? 'media' : `media${picNumber}`;
     const imgId = `pic${picNumber}img`;
 
+    document.getElementById("mainsubmitbutton").innerHTML = "Submit";
+
     const fileInput = document.getElementById(fileInputId);
     const img = document.getElementById(imgId);
 
     if (fileInput) fileInput.disabled = false;
     if (img) img.src = '';
   }
+
+  function enableFormEditing() {
+    document.getElementById("DeliveryStaff").disabled = false;
+    document.getElementById("Comments").disabled = false;
+    document.getElementById("media").disabled = false;
+    document.getElementById("media2").disabled = false;
+    document.getElementById("media3").disabled = false;
+
+    const submitButton = document.querySelector("button[type='submit']");
+    submitButton.disabled = false;
+    submitButton.innerText = "Submit";
+  }
+
+  // Event listener for "Change" button
+  document.getElementById("changeButton").addEventListener("click", enableFormEditing);
+
+  // Event listeners for picture delete buttons
+  ["Pic1Delete", "Pic2Delete", "Pic3Delete"].forEach(function (btnId) {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.addEventListener("click", function () {
+        // Optionally hide the image or clear a field here
+        enableFormEditing();
+      });
+    }
+  });
+
+function enableFormEditing() {
+  document.getElementById("DeliveryStaff").disabled = false;
+  document.getElementById("Comments").disabled = false;
+  document.getElementById("media").disabled = false;
+  document.getElementById("media2").disabled = false;
+  document.getElementById("media3").disabled = false;
+
+  const submitButton = document.querySelector("button[type='submit']");
+  submitButton.disabled = false;
+  submitButton.innerText = "Submit";
+}
+
+// Connect delete buttons to enable editing
+["Pic1Delete", "Pic2Delete", "Pic3Delete"].forEach(function (btnId) {
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.addEventListener("click", function () {
+      enableFormEditing();
+    });
+  }
+});
+
+
 </script>
 
   </body>
