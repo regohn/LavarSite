@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pickup Request Summary</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 1rem;
+    }
+    h1 {
+      text-align: center;
+    }
+    #dateControls {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    #dateControls button {
+      margin: 0 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    #currentDateDisplay {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    img.thumbnail {
+      max-height: 60px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>LAVAR Laundry Pickup Request Summary</h1>
+  <div id="dateControls">
+    <button id="prevDayBtn" title="Previous Day">←</button>
+    <span id="currentDateDisplay"></span>
+    <button id="nextDayBtn" title="Next Day">→</button>
+  </div>
+  <div id="tableContainer">Loading...</div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJs9Dtwd-YDpLV6vkf7fLsysXc4GBjgzXmWFshxDLdk205PTzk4hqPfGHa6y81KDK7/exec?action=getPickupSummary";
+
+    let allData = [];
+    let currentDate = new Date();
+
+    function formatDate(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+
+    function formatDateTime(isoDate) {
+      if (!isoDate) return '';
+      const date = new Date(isoDate);
+      return date.toLocaleString('en-US', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+        hour12: true,
+      }).replace(',', '');
+    }
+
+    function createImageCell(url) {
+      if (!url) return '';
+      const match = url.match(/\/d\/([^/]+)\//);
+      const fileId = match ? match[1] : null;
+      if (!fileId) return '';
+      const thumb = `https://drive.google.com/thumbnail?id=${fileId}`;
+      const link = `https://drive.google.com/file/d/${fileId}/view`;
+      return `<a href="${link}" target="_blank"><img class="thumbnail" src="${thumb}" /></a>`;
+    }
+
+    // Sort data by dateofpickup ascending, then timestamp ascending
+    function sortData(data) {
+      return data.sort((a, b) => {
+        const d1 = new Date(a.dateofpickup || a.timestamp);
+        const d2 = new Date(b.dateofpickup || b.timestamp);
+        if (d1 < d2) return -1;
+        if (d1 > d2) return 1;
+        // If dates equal, sort by timestamp
+        return new Date(a.timestamp) - new Date(b.timestamp);
+      });
+    }
+
+    function datesEqual(d1, d2) {
+      return d1.getFullYear() === d2.getFullYear() &&
+             d1.getMonth() === d2.getMonth() &&
+             d1.getDate() === d2.getDate();
+    }
+
+    function filterByDate(data, date) {
+      return data.filter(row => {
+        if (!row.dateofpickup) return false;
+        const rowDate = new Date(row.dateofpickup);
+        return datesEqual(rowDate, date);
+      });
+    }
+
+    function renderTable(data) {
+      if (data.length === 0) {
+        document.getElementById('tableContainer').innerHTML = "<p>No pickup requests for this date.</p>";
+        return;
+      }
+
+      const headers = [
+        "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
+        "PickupPayMethod", "Comments", "timestamp", "unique_id", "media", "media2", "media3"
+      ];
+
+      let html = `<table><thead><tr>`;
+      headers.forEach(h => html += `<th>${h.toUpperCase()}</th>`);
+      html += `</tr></thead><tbody>`;
+
+      data.forEach(row => {
+        html += `<tr>`;
+        headers.forEach(key => {
+          if (["media", "media2", "media3"].includes(key)) {
+            html += `<td>${createImageCell(row[key])}</td>`;
+          } else if (key === "timestamp" || key === "dateofpickup") {
+            html += `<td>${formatDateTime(row[key])}</td>`;
+          } else {
+            html += `<td>${row[key] || ''}</td>`;
+          }
+        });
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table>`;
+
+      document.getElementById('tableContainer').innerHTML = html;
+    }
+
+    function updateDateDisplay() {
+      document.getElementById('currentDateDisplay').textContent = formatDate(currentDate);
+    }
+
+    function renderForCurrentDate() {
+      updateDateDisplay();
+      const filtered = filterByDate(allData, currentDate);
+      renderTable(filtered);
+    }
+
+    async function loadSummary() {
+      try {
+        const res = await fetch(WEB_APP_URL);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        allData = sortData(data);
+        renderForCurrentDate();
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        document.getElementById('tableContainer').innerHTML = '<p style="color:red;">Error loading data.</p>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSummary();
+
+      document.getElementById('prevDayBtn').addEventListener('click', () => {
+        currentDate.setDate(currentDate.getDate() - 1);
+        renderForCurrentDate();
+      });
+
+      document.getElementById('nextDayBtn').addEventListener('click', () => {
+        currentDate.setDate(currentDate.getDate() + 1);
+        renderForCurrentDate();
+      });
+    });
+  </script>
+</body>
+</html>

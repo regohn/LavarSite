@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lavar Laundry Pickup Form</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@7.12.15/dist/sweetalert2.all.min.js"></script>
+    <style>
+      .form-container {
+        max-width: 500px;
+        margin: auto;
+        margin-top: 50px;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container">
+      <div class="form-container">
+        <h4 class="text-center mb-4">Lavar Laundry Pickup Form</h4>
+        <form id="submit-to-google-sheet">
+          <div class="form-group">
+
+            <label for="nameDropdown" id="selectcustomer">Select Customer</label>
+            <input type="hidden" id="pickuprequestid" name="pickuprequestid" value="">
+            
+            <select class="form-control" id="nameDropdown">
+              <option value="">-- Select Customer --</option>
+            </select>
+
+
+            <label for="name">Customer Name</label>
+            <input
+              class="form-control"
+              type="text"
+              name="name"
+              id="name"
+              placeholder="Name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="PickupLocation">Pickup Location</label>
+            <input
+              class="form-control"
+              type="text"
+              name="PickupLocation"
+              id="PickupLocation"
+              placeholder="Pickup Location"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="slip">Date of Pickup</label>
+            <input
+              class="form-control"
+              type="date"
+              name="dateofpickup"
+              id="dateofpickup"
+              placeholder="Date of Pickup"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="slip">Time of Pickup</label>
+            <input
+              class="form-control"
+              type="text"
+              name="timeofpickup"
+              id="timeofpickup"
+              placeholder="Time of Pickup"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="loc">DeliveryStaff</label>
+            <select class="form-control" name="DeliveryStaff" id="DeliveryStaff" required>
+              <option value="" disabled selected hidden>Choose...</option>
+              <option value="Joshua">Joshua</option>
+              <option value="Marvin">Marvin</option>
+              <option value="Marvin">Lowi</option>
+              <option value="Marvin">Edward</option>
+              <option value="Marvin">MIA</option>
+              <option value="Marvin">NIDA</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="loc">Did the Customer Pay During Pickup?</label>
+            <select class="form-control" name="PickupPayMethod" id="PickupPayMethod" required>
+              <option value="" disabled selected hidden>Choose...</option>
+              <option value="Cash">No</option>
+              <option value="Cash">Cash</option>
+              <option value="G-Cash">G-Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </div>          
+          <div class="form-group">
+            <label for="loc">Comments/Notes:</label>
+            <textarea
+              class="form-control"
+              name="Comments"
+              id="Comments"
+              placeholder="Message"
+              required
+            ></textarea>
+
+            <div class="form-group mt-2">
+                <label for="media" class="form-check-label">Upload Laundry Pickup Picture</label>
+                <input class="form-control-file" type="file" name="media" id="media" />
+            </div>
+
+            <div class="form-group mt-2">
+              <label for="media2" class="form-check-label">Upload Second Picture</label>
+              <input class="form-control-file" type="file" name="media2" id="media2" />
+            </div>
+            
+            <div class="form-group mt-2">
+              <label for="media3" class="form-check-label">Upload Third Picture</label>
+              <input class="form-control-file" type="file" name="media3" id="media3" />
+            </div>            
+
+ 
+          <button type="submit" class="btn btn-primary btn-block">
+            Submit
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+        const scriptURL = "https://script.google.com/macros/s/AKfycby0oqQjqKO4ti3yHeT1f30FvkiLW0YkSO9QJ6EO_zYP9J9wtk7CvyIgqpr9xV9F7b9e/exec";
+        
+        const form = document.forms["submit-to-google-sheet"];
+        const fileInput = document.getElementById("media");
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          const fileInputs = ["media", "media2", "media3"];
+        
+          for (const id of fileInputs) {
+            const input = document.getElementById(id);
+            if (input.files.length > 0) {
+              const file = input.files[0];
+        
+              if (file.size > 5 * 1024 * 1024) {
+                swal("Error", `${id} must be less than 5MB.`, "error");
+                return;
+              }
+        
+              const base64 = await readFileAsBase64(file);
+              formData.set(id, base64);
+            }
+          }
+        
+          await submitForm(formData);
+        });
+        
+        function readFileAsBase64(file) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
+
+      async function submitForm(formData) {
+        const submitButton = document.querySelector("button[type='submit']");
+        submitButton.disabled = true;
+        submitButton.innerText = "Loading...";
+
+        fetch(scriptURL, { method: "POST", body: formData })
+          .then((response) => {
+            swal("Done", "Submitted Successfully.", "success");
+
+            setTimeout(() => {
+              form.reset();
+              resetDropdown();
+            }, 2000); // Wait 2 seconds before resetting the form and dropdown
+          })
+          .catch((error) => {
+            swal("Error", "Something went wrong. Please try again!", "error");
+          })
+          .finally(() => {
+            submitButton.disabled = false;
+            submitButton.innerText = "Submit";
+          });
+      }
+
+
+        document.getElementById("nameDropdown").addEventListener("change", function () {
+          document.getElementById("name").value = this.value;
+        });
+
+        const fetchDataURL =  "https://script.google.com/macros/s/AKfycbzJPNrpWLE9LzGOHbmTBSWHdww4ZOlbkpbKhT_C2hwoYotB7daysgDRN9nrfkrbJ-R1ow/exec"; 
+        //PickupHTMLSearchPickupRequest
+        
+        window.addEventListener("DOMContentLoaded", () => {
+          fetch(fetchDataURL)
+            .then(res => res.json())
+            .then(data => {
+              pickupsData = data.pickups;
+              const dropdown = document.getElementById("nameDropdown");
+              pickupsData.forEach(pickup => {
+                const option = document.createElement("option");
+                option.value = pickup.name;
+                option.textContent = pickup.name;
+                dropdown.appendChild(option);
+              });
+            })
+            .catch(err => {
+              console.error("Failed to load pickups data", err);
+            });
+        });
+        
+        document.getElementById("nameDropdown").addEventListener("change", function () {
+          const selectedName = this.value;
+          const pickup = pickupsData.find(p => p.name === selectedName);
+          
+          if (pickup) {
+            document.getElementById("name").value = pickup.name || "";
+            document.getElementById("PickupLocation").value = pickup.PickupLocation || "";
+            document.getElementById("dateofpickup").value = pickup.dateofpickup || "";
+            document.getElementById("timeofpickup").value = pickup.timeofpickup || "";
+            document.getElementById("Comments").value = pickup.Comments || "";
+            document.getElementById("pickuprequestid").value =  pickup.uniqueID;
+          } else {
+            // Clear if no data found
+            document.getElementById("name").value = "";
+            document.getElementById("PickupLocation").value = "";
+            document.getElementById("dateofpickup").value = "";
+            document.getElementById("timeofpickup").value = "";
+            document.getElementById("Comments").value = "";
+          }
+        });
+
+
+    </script>
+  </body>
+</html>

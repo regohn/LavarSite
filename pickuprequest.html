@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lavar Laundry Pickup Request</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- SweetAlert2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .form-container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+      max-width: 480px;
+      width: 100%;
+      transition: box-shadow 0.3s ease;
+    }
+    .form-container:hover {
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .form-title {
+      text-align: center;
+      font-weight: 700;
+      font-size: 28px;
+      color: #007bff;
+      margin-bottom: 30px;
+      letter-spacing: 1px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #343a40;
+    }
+
+    select.form-control, 
+    input.form-control, 
+    textarea.form-control {
+      border-radius: 8px;
+      border: 1.5px solid #ced4da;
+      font-size: 15px;
+      transition: border-color 0.3s ease;
+    }
+
+    select.form-control:focus, 
+    input.form-control:focus, 
+    textarea.form-control:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 8px rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-submit {
+      background: #007bff;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+    .btn-submit:hover {
+      background-color: #0056b3;
+    }
+
+    .form-check-label {
+      font-weight: 500;
+      user-select: none;
+    }
+
+    .radio-group {
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    .radio-group label {
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* File input spacing */
+    .form-group.file-group {
+      margin-top: 15px;
+    }
+
+    /* Image preview container if needed in future */
+    #preview img {
+      width: 100px;
+      height: auto;
+      margin: 5px;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+    }
+  </style>
+</head>
+<body>
+
+   <div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar -->
+    <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse shadow-sm rounded-right" style="min-height: 100vh; padding-top: 20px;">
+      <div class="sidebar-sticky">
+        <h5 class="text-primary font-weight-bold text-center mb-4">Navigation</h5>
+        <ul class="nav flex-column px-3">
+          <li class="nav-item mb-2">
+            <a class="nav-link" href="pickuprequest.html">Pickup Request</a>
+          </li>
+          <li class="nav-item mb-2">
+            <a class="nav-link" href="delivery.html">Delivery Form</a>
+          </li>
+          <li class="nav-item mb-2">
+            <a class="nav-link" href="viewer.html">Job Order Viewer</a>
+          </li>
+          <!-- Add more links here -->
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Form container -->
+    <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-5 py-4 d-flex justify-content-center align-items-start">
+        <div class="form-container shadow-sm">
+
+            
+            <h1 class="form-title">Lavar Laundry Pickup Request Form</h1>
+
+            <form id="submit-to-google-sheet" novalidate>
+
+            <div class="form-group">
+                <label for="nameDropdown">Select Existing Customer</label>
+                <select id="nameDropdown" class="form-control">
+                <option value="" selected disabled>-- Select Name --</option>
+                </select>
+            </div>
+
+            <div class="radio-group">
+                <div class="form-check">
+                <input class="form-check-input" type="radio" name="customerType" id="existingCustomer" value="existing" checked />
+                <label class="form-check-label" for="existingCustomer">Existing Customer</label>
+                </div>
+                <div class="form-check">
+                <input class="form-check-input" type="radio" name="customerType" id="newCustomer" value="new" />
+                <label class="form-check-label" for="newCustomer">New Customer</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Customer Name</label>
+                <input
+                type="text"
+                id="name"
+                name="name"
+                class="form-control"
+                placeholder="Enter customer name"
+                required
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="PickupLocation">Pickup Location</label>
+                <input
+                type="text"
+                id="PickupLocation"
+                name="PickupLocation"
+                class="form-control"
+                placeholder="Enter pickup location"
+                required
+                />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                <label for="dateofpickup">Date of Pickup</label>
+                <input
+                    type="date"
+                    id="dateofpickup"
+                    name="dateofpickup"
+                    class="form-control"
+                    required
+                />
+                </div>
+
+                <div class="form-group col-md-6">
+                <label for="timeofpickup">Time of Pickup</label>
+                <input
+                    type="text"
+                    id="timeofpickup"
+                    name="timeofpickup"
+                    class="form-control"
+                    required
+                />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="Comments">Comments / Notes / Instructions</label>
+                <textarea
+                id="Comments"
+                name="Comments"
+                class="form-control"
+                rows="3"
+                placeholder="Add any special instructions or notes here..."
+                ></textarea>
+            </div>
+
+            <div class="form-group file-group">
+                <label for="media">Upload Laundry Pickup Picture (Optional)</label>
+                <input
+                type="file"
+                id="media"
+                name="media"
+                class="form-control-file"
+                accept="image/*"
+                />
+            </div>
+
+            <div class="form-group file-group">
+                <label for="media2">Upload Second Picture (Optional)</label>
+                <input
+                type="file"
+                id="media2"
+                name="media2"
+                class="form-control-file"
+                accept="image/*"
+                />
+            </div>
+
+            <div class="form-group file-group">
+                <label for="media3">Upload Third Picture (Optional)</label>
+                <input
+                type="file"
+                id="media3"
+                name="media3"
+                class="form-control-file"
+                accept="image/*"
+                />
+            </div>
+
+            <button type="submit" class="btn btn-submit mt-3">Submit Pickup Request</button>
+            </form>
+        </div>
+            </main>
+        </div>
+    </div>
+ 
+
+  
+
+  <!-- JS Dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+  <script>
+    const scriptURL =
+      "https://script.google.com/macros/s/AKfycbxSgSBzOLmORoSJ_YEK37zbFZDhu5nqv0QkEfGKyOk3sTlUUfUHpi1d0S5yJ53RO09h9g/exec";
+
+    const form = document.forms["submit-to-google-sheet"];
+
+    // Set date and time defaults to current Manila time
+    function setDefaultDateAndTime() {
+      // Manila timezone offset in minutes (+8:00 = -480 minutes offset from UTC)
+      const now = new Date();
+      // Adjust to Manila time by adding offset difference (client timezone vs Manila)
+      const manilaOffset = 8 * 60;
+      const localOffset = now.getTimezoneOffset();
+      const manilaTime = new Date(now.getTime() + (localOffset + manilaOffset) * 60000);
+
+      const year = manilaTime.getFullYear();
+      const month = String(manilaTime.getMonth() + 1).padStart(2, "0");
+      const day = String(manilaTime.getDate()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day}`;
+
+      const hours = String(manilaTime.getHours()).padStart(2, "0");
+      const minutes = String(manilaTime.getMinutes()).padStart(2, "0");
+      const formattedTime = `${hours}:${minutes}`;
+
+      document.getElementById("dateofpickup").value = formattedDate;
+      document.getElementById("timeofpickup").value = "now";
+    }
+
+    // Load names from Google Apps Script web app (expected to return JSON array of strings)
+    async function loadNames() {
+      try {
+        const response = await fetch(scriptURL);
+        const names = await response.json();
+        const select = document.getElementById("nameDropdown");
+
+        names.forEach((name) => {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        console.error("Error loading names:", err);
+      }
+    }
+
+    // Update form state when selecting existing/new customer
+    function updateFormState() {
+      const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
+      const nameInput = document.getElementById("name");
+      const nameDropdown = document.getElementById("nameDropdown");
+
+      if (isExisting) {
+        nameInput.readOnly = true;
+        nameDropdown.disabled = false;
+        nameInput.value = nameDropdown.value || "";
+      } else {
+        nameDropdown.value = "";
+        nameDropdown.disabled = true;
+        nameInput.readOnly = false;
+        nameInput.value = "";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setDefaultDateAndTime();
+      loadNames();
+
+      // Event listeners for existing customer dropdown and radio buttons
+      document.getElementById("nameDropdown").addEventListener("change", (e) => {
+        if (document.querySelector('input[name="customerType"]:checked').value === "existing") {
+          document.getElementById("name").value = e.target.value;
+        }
+      });
+
+      document.querySelectorAll('input[name="customerType"]').forEach((radio) =>
+        radio.addEventListener("change", updateFormState)
+      );
+
+      updateFormState();
+
+      // Handle form submission
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const fileInputs = ["media", "media2", "media3"];
+
+        for (const id of fileInputs) {
+          const input = document.getElementById(id);
+          if (input.files.length > 0) {
+            const file = input.files[0];
+
+            if (file.size > 5 * 1024 * 1024) {
+              Swal.fire("Error", `${id} must be less than 5MB.`, "error");
+              return;
+            }
+
+            const base64 = await toBase64(file);
+            formData.set(id, base64);
+          } else {
+            formData.set(id, "");
+          }
+        }
+
+        try {
+          await fetch(scriptURL, {
+            method: "POST",
+            body: formData,
+          });
+          Swal.fire("Success!", "Pickup request submitted.", "success");
+          form.reset();
+          setDefaultDateAndTime();
+          updateFormState();
+        } catch (error) {
+          Swal.fire("Oops!", "Something went wrong.", "error");
+          console.error("Error!", error.message);
+        }
+      });
+    });
+
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
+    }
+  </script>
+</body>
+</html>
