@@ -228,8 +228,22 @@
         
         document.getElementById("nameDropdown").addEventListener("change", function () {
           const selectedName = this.value;
+            // Clear all form fields
+            document.getElementById("name").value = "";
+            document.getElementById("PickupLocation").value = "";
+            document.getElementById("dateofpickup").value = "";
+            document.getElementById("timeofpickup").value = "";
+            document.getElementById("DeliveryStaff").value = "";
+            document.getElementById("PickupPayMethod").value = "";
+            document.getElementById("Comments").value = "";
+            document.getElementById("pickuprequestid").value = "";
+
+            // Also clear file inputs
+            document.getElementById("media").value = "";
+            document.getElementById("media2").value = "";
+            document.getElementById("media3").value = "";
+
           const pickup = pickupsData.find(p => p.name === selectedName);
-          
           if (pickup) {
             document.getElementById("name").value = pickup.name || "";
             document.getElementById("PickupLocation").value = pickup.PickupLocation || "";
