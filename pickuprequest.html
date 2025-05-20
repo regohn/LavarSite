@@ -114,156 +114,126 @@
   </style>
 </head>
 <body>
+  <div class="form-container shadow-sm">
+    <h1 class="form-title">Lavar Laundry Pickup Request Form</h1>
+    
+    <a href="pickuprequestsummary.html"> Pickup Summary </a> | <a href="pickuprequest.html"> Pickup Request </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> <br>
 
-   <div class="container-fluid">
-  <div class="row">
-    <!-- Sidebar -->
-    <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse shadow-sm rounded-right" style="min-height: 100vh; padding-top: 20px;">
-      <div class="sidebar-sticky">
-        <h5 class="text-primary font-weight-bold text-center mb-4">Navigation</h5>
-        <ul class="nav flex-column px-3">
-          <li class="nav-item mb-2">
-            <a class="nav-link" href="pickuprequest.html">Pickup Request</a>
-          </li>
-          <li class="nav-item mb-2">
-            <a class="nav-link" href="delivery.html">Delivery Form</a>
-          </li>
-          <li class="nav-item mb-2">
-            <a class="nav-link" href="viewer.html">Job Order Viewer</a>
-          </li>
-          <!-- Add more links here -->
-        </ul>
+    <form id="submit-to-google-sheet" novalidate>
+
+      <div class="form-group">
+        <label for="nameDropdown">Select Existing Customer</label>
+        <select id="nameDropdown" class="form-control">
+          <option value="" selected disabled>-- Select Name --</option>
+        </select>
       </div>
-    </nav>
 
-    <!-- Form container -->
-    <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-5 py-4 d-flex justify-content-center align-items-start">
-        <div class="form-container shadow-sm">
-
-            
-            <h1 class="form-title">Lavar Laundry Pickup Request Form</h1>
-
-            <form id="submit-to-google-sheet" novalidate>
-
-            <div class="form-group">
-                <label for="nameDropdown">Select Existing Customer</label>
-                <select id="nameDropdown" class="form-control">
-                <option value="" selected disabled>-- Select Name --</option>
-                </select>
-            </div>
-
-            <div class="radio-group">
-                <div class="form-check">
-                <input class="form-check-input" type="radio" name="customerType" id="existingCustomer" value="existing" checked />
-                <label class="form-check-label" for="existingCustomer">Existing Customer</label>
-                </div>
-                <div class="form-check">
-                <input class="form-check-input" type="radio" name="customerType" id="newCustomer" value="new" />
-                <label class="form-check-label" for="newCustomer">New Customer</label>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="name">Customer Name</label>
-                <input
-                type="text"
-                id="name"
-                name="name"
-                class="form-control"
-                placeholder="Enter customer name"
-                required
-                />
-            </div>
-
-            <div class="form-group">
-                <label for="PickupLocation">Pickup Location</label>
-                <input
-                type="text"
-                id="PickupLocation"
-                name="PickupLocation"
-                class="form-control"
-                placeholder="Enter pickup location"
-                required
-                />
-            </div>
-
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                <label for="dateofpickup">Date of Pickup</label>
-                <input
-                    type="date"
-                    id="dateofpickup"
-                    name="dateofpickup"
-                    class="form-control"
-                    required
-                />
-                </div>
-
-                <div class="form-group col-md-6">
-                <label for="timeofpickup">Time of Pickup</label>
-                <input
-                    type="text"
-                    id="timeofpickup"
-                    name="timeofpickup"
-                    class="form-control"
-                    required
-                />
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="Comments">Comments / Notes / Instructions</label>
-                <textarea
-                id="Comments"
-                name="Comments"
-                class="form-control"
-                rows="3"
-                placeholder="Add any special instructions or notes here..."
-                ></textarea>
-            </div>
-
-            <div class="form-group file-group">
-                <label for="media">Upload Laundry Pickup Picture (Optional)</label>
-                <input
-                type="file"
-                id="media"
-                name="media"
-                class="form-control-file"
-                accept="image/*"
-                />
-            </div>
-
-            <div class="form-group file-group">
-                <label for="media2">Upload Second Picture (Optional)</label>
-                <input
-                type="file"
-                id="media2"
-                name="media2"
-                class="form-control-file"
-                accept="image/*"
-                />
-            </div>
-
-            <div class="form-group file-group">
-                <label for="media3">Upload Third Picture (Optional)</label>
-                <input
-                type="file"
-                id="media3"
-                name="media3"
-                class="form-control-file"
-                accept="image/*"
-                />
-            </div>
-
-            <button type="submit" class="btn btn-submit mt-3">Submit Pickup Request</button>
-            </form>
+      <div class="radio-group">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="customerType" id="existingCustomer" value="existing" checked />
+          <label class="form-check-label" for="existingCustomer">Existing Customer</label>
         </div>
-            </main>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="customerType" id="newCustomer" value="new" />
+          <label class="form-check-label" for="newCustomer">New Customer</label>
         </div>
-    </div>
- 
+      </div>
 
-  
+      <div class="form-group">
+        <label for="name">Customer Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          class="form-control"
+          placeholder="Enter customer name"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="PickupLocation">Pickup Location</label>
+        <input
+          type="text"
+          id="PickupLocation"
+          name="PickupLocation"
+          class="form-control"
+          placeholder="Enter pickup location"
+          required
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <label for="dateofpickup">Date of Pickup</label>
+          <input
+            type="date"
+            id="dateofpickup"
+            name="dateofpickup"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <div class="form-group col-md-6">
+          <label for="timeofpickup">Time of Pickup</label>
+          <input
+            type="text"
+            id="timeofpickup"
+            name="timeofpickup"
+            class="form-control"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="Comments">Comments / Notes / Instructions</label>
+        <textarea
+          id="Comments"
+          name="Comments"
+          class="form-control"
+          rows="3"
+          placeholder="Add any special instructions or notes here..."
+        ></textarea>
+      </div>
+
+      <div class="form-group file-group">
+        <label for="media">Upload Laundry Pickup Picture (Optional)</label>
+        <input
+          type="file"
+          id="media"
+          name="media"
+          class="form-control-file"
+          accept="image/*"
+        />
+      </div>
+
+      <div class="form-group file-group">
+        <label for="media2">Upload Second Picture (Optional)</label>
+        <input
+          type="file"
+          id="media2"
+          name="media2"
+          class="form-control-file"
+          accept="image/*"
+        />
+      </div>
+
+      <div class="form-group file-group">
+        <label for="media3">Upload Third Picture (Optional)</label>
+        <input
+          type="file"
+          id="media3"
+          name="media3"
+          class="form-control-file"
+          accept="image/*"
+        />
+      </div>
+
+      <button type="submit" class="btn btn-submit mt-3">Submit Pickup Request</button>
+    </form>
+  </div>
 
   <!-- JS Dependencies -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
