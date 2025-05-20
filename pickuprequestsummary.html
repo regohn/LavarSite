@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pickup Request Summary</title>
+  <title>Pickup/Delivery Request Summary</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -47,13 +47,18 @@
   </style>
 </head>
 <body>
-  <h1>LAVAR Laundry Pickup Request Summary</h1>
+  <h1>Pickup/Delivery Request Summary</h1>
 <a href="pickuprequestsummary.html"> Pickup Summary </a> | <a href="pickuprequest.html"> Pickup Request </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>  
   <div id="dateControls">
     <button id="prevDayBtn" title="Previous Day">←</button>
     <span id="currentDateDisplay"></span>
     <button id="nextDayBtn" title="Next Day">→</button>
   </div>
+  <div id="typeFilter" style="text-align: center; margin-top: 1rem;">
+  <label><input type="radio" name="type" value="All" checked> All</label>
+  <label><input type="radio" name="type" value="Pickup"> Pickup</label>
+  <label><input type="radio" name="type" value="Delivery"> Delivery</label>
+</div>
   <div id="tableContainer">Loading...</div>
 
   <script>
@@ -120,10 +125,10 @@
         return;
       }
 
-      const headers = [
-        "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
-        "PickupPayMethod", "Comments", "timestamp", "unique_id", "media", "media2", "media3"
-      ];
+const headers = [
+  "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
+  "request_type", "Comments", "timestamp", "unique_id", "media", "media2", "media3"
+];
 
       let html = `<table><thead><tr>`;
       headers.forEach(h => html += `<th>${h.toUpperCase()}</th>`);
@@ -183,7 +188,28 @@
         currentDate.setDate(currentDate.getDate() + 1);
         renderForCurrentDate();
       });
+
+    document.querySelectorAll('input[name="type"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        renderForCurrentDate();
     });
+    });
+
+
+    });
+
+function renderForCurrentDate() {
+  updateDateDisplay();
+  const filtered = filterByDate(allData, currentDate);
+
+  const selectedType = document.querySelector('input[name="type"]:checked').value;
+  const finalFiltered = selectedType === 'All'
+    ? filtered
+    : filtered.filter(row => row.request_type?.toLowerCase() === selectedType.toLowerCase());
+
+  renderTable(finalFiltered);
+}
+
   </script>
 </body>
 </html>
