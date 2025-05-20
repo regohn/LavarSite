@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Delivery Summary</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f4f4f4;
+    }
+
+    img.thumbnail {
+      height: 60px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Delivery Summary</h2>
+  <a href="pickuprequestsummary.html"> Pickup Summary </a> | <a href="pickuprequest.html"> Pickup Request </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
+  <table id="deliveryTable">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>JOR</th>
+        <th>Delivery Staff</th>
+        <th>Comments</th>
+        <th>Payment Method</th>
+        <th>Payment Type</th>
+        <th>Media 1</th>
+        <th>Media 2</th>
+        <th>Media 3</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyBDFVFZz1LVT5pefiCSx4AJC_jRekKyyTTlj5fghUW8hehEhZCKqLUy1w094DxfkeBbw/exec";
+
+    fetch(SHEET_WEBAPP_URL)
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.length) return;
+
+        // Sort by timestamp (Column D)
+        data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        const tbody = document.querySelector("#deliveryTable tbody");
+        data.forEach(row => {
+          const tr = document.createElement("tr");
+
+          tr.innerHTML = `
+            <td>${formatDateTime(row.timestamp)}</td>
+            <td>${row.JOR || ""}</td>
+            <td>${row.DeliveryStaff || ""}</td>
+            <td>${row.Comments || ""}</td>
+            <td>${row.DeliveryPayMethod || ""}</td>
+            <td>${row.PaymentType || ""}</td>
+            <td>${createThumbnail(row.media)}</td>
+            <td>${createThumbnail(row.media2)}</td>
+            <td>${createThumbnail(row.media3)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+
+    function formatDateTime(iso) {
+      const date = new Date(iso);
+      if (isNaN(date)) return "";  // Handle invalid dates
+      return date.toLocaleString("en-US", {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+function createThumbnail(url) {
+  if (!url) return "";
+
+  const match = url.match(/[-\w]{25,}/);
+  if (!match) return "";
+
+  const fileId = match[0];
+  const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
+  const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+
+  return `<img src="${thumbnailUrl}" class="thumbnail" onclick="openImagePopup('${fullImageUrl}')">`;
+}
+
+    function openImagePopup(url) {
+      const newWin = window.open("", "_blank", "width=600,height=600");
+      newWin.document.write(`
+        <html>
+          <head><title>Image Viewer</title></head>
+          <body style="margin:0;text-align:center;">
+            <img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain;">
+          </body>
+        </html>
+      `);
+    }
+  </script>
+</body>
+</html>
