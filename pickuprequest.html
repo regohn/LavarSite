@@ -126,7 +126,7 @@
       <div class="form-group">
         <label for="nameDropdown">Select Existing Customer</label>
         <select id="nameDropdown" class="form-control" placeholder="Search name...">
-        <option value="" disabled selected>-- Select Name --</option>
+
         </select>
       </div>
 
@@ -272,31 +272,36 @@
     }
 
     // Load names from Google Apps Script web app (expected to return JSON array of strings)
-async function loadNames() {
-  try {
-    const response = await fetch(scriptURL);
-    const names = await response.json();
-    const select = document.getElementById("nameDropdown");
 
-    names.forEach((name) => {
-      const option = document.createElement("option");
-      option.value = name;
-      option.textContent = name;
-      select.appendChild(option);
-    });
+    async function loadNames() {
+    try {
+        const response = await fetch(scriptURL);
+        const names = await response.json();
+        const select = document.getElementById("nameDropdown");
 
-    // Initialize Tom Select
-    new TomSelect("#nameDropdown", {
-      create: false,
-      sortField: { field: "text", direction: "asc" },
-      maxOptions: 1000,
-      allowEmptyOption: true,
-      placeholder: "Search for a name...",
-    });
-  } catch (err) {
-    console.error("Error loading names:", err);
-  }
-}
+        // Clear any existing options
+        select.innerHTML = '<option value="" disabled selected>-- Select Name --</option>';
+
+        // Add name options
+        names.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+        });
+
+        // Initialize Tom Select AFTER options are added
+        new TomSelect("#nameDropdown", {
+        create: false,
+        sortField: { field: "text", direction: "asc" },
+        placeholder: "Search for a name...",
+        allowEmptyOption: true,
+        });
+    } catch (err) {
+        console.error("Error loading names:", err);
+    }
+    }
+
 
     // Update form state when selecting existing/new customer
     function updateFormState() {
