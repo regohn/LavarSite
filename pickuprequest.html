@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
-  <title>Pickup Request Lavar Laundry </title>
+  <title>Pickup/Delivery Request Lavar Laundry </title>
 
   <!-- Bootstrap CSS -->
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
@@ -124,26 +124,6 @@
     <form id="submit-to-google-sheet" >
 
       <div class="form-group">
-        <label for="nameDropdown">Select Existing Customer</label>
-        <select id="nameDropdown" class="form-control" placeholder="Search name...">
-
-        </select>
-      </div>
-
-      <div class="radio-group">
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="customerType" id="existingCustomer" value="existing" checked required />
-          <label class="form-check-label" for="existingCustomer">Existing Customer</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="customerType" id="newCustomer" value="new" />
-          <label class="form-check-label" for="newCustomer">New Customer</label>
-        </div>
-      </div>
-
-      
-
-      <div class="form-group">
         <label><strong>Request Type:</strong></label><br>
         <label>
             <input type="radio" name="request_type" value="Pickup" required>
@@ -155,6 +135,30 @@
             Delivery
         </label>
          <br>   
+        <div class="form-group" id="joDropdownContainer" style="display:none; margin-top: 15px;">
+            <label for="joDropdown"><strong>Select Job Order (JO) for Delivery:</strong></label>
+            <select id="joDropdown" class="form-control" placeholder="Select JO...">
+                <option value="" disabled selected>-- Select JO --</option>
+                <!-- JO options will be dynamically loaded here later -->
+            </select>
+        </div>         
+        <div id="nameDropdownContainer">
+            <label for="nameDropdown">Select Existing Customer</label>
+            <select id="nameDropdown" class="form-control" placeholder="Search name..."></select>
+        </div>
+      </div>
+
+      <div id="customerTypeContainer" class="radio-group">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="customerType" id="existingCustomer" value="existing" checked required />
+          <label class="form-check-label" for="existingCustomer">Existing Customer</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="customerType" id="newCustomer" value="new" />
+          <label class="form-check-label" for="newCustomer">New Customer</label>
+        </div>
+      </div>
+      <div class="form-group">
         <label for="name">Customer Name</label>
         <input
           type="text"
@@ -305,7 +309,8 @@
         });
 
         // Initialize Tom Select AFTER options are added
-        new TomSelect("#nameDropdown", {
+
+        window.tomSelectInstance = new TomSelect("#nameDropdown", {
         create: false,
         sortField: { field: "text", direction: "asc" },
         placeholder: "Search for a name...",
@@ -314,83 +319,162 @@
     } catch (err) {
         console.error("Error loading names:", err);
     }
+
+        window.tomSelectInstance.on('change', function(value) {
+        document.getElementById("name").value = value;
+        });
     }
 
 
     // Update form state when selecting existing/new customer
-    function updateFormState() {
-      const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
-      const nameInput = document.getElementById("name");
-      const nameDropdown = document.getElementById("nameDropdown");
+function updateFormState() {
+  const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
+  const nameInput = document.getElementById("name");
+  const nameDropdown = document.getElementById("nameDropdown");
 
-      if (isExisting) {
-        nameInput.readOnly = true;
-        nameDropdown.disabled = false;
-        nameInput.value = nameDropdown.value || "";
-      } else {
-        nameDropdown.value = "";
-        nameDropdown.disabled = true;
-        nameInput.readOnly = false;
-        nameInput.value = "";
+  if (isExisting) {
+    nameInput.readOnly = true;
+    nameDropdown.disabled = false;
+    nameInput.value = nameDropdown.value || "";
+    if (window.tomSelectInstance) {
+      window.tomSelectInstance.enable();
+    }
+  } else {
+    nameDropdown.value = "";
+    nameDropdown.disabled = true;
+    nameInput.readOnly = false;
+    nameInput.value = "";
+    if (window.tomSelectInstance) {
+      window.tomSelectInstance.disable();
+    }
+  }
+}
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  setDefaultDateAndTime();
+  loadNames();
+
+  // — NEW: load folded JO numbers —
+  // JO_FETCH_URL must be defined before loadJOs() is called
+  const JO_FETCH_URL = "https://script.google.com/macros/s/AKfycbygc_nrRs-_gcwMSw5ZIwvRC7O6KZ7x2rOQQo6DQTwBkRGvQXkG5o37BbF46J-bknAT1w/exec";
+  async function loadJOs() {
+    try {
+      const res = await fetch(JO_FETCH_URL);
+      const { jos } = await res.json();
+            jos.sort((a, b) => {
+            const nameA = (a.foundInRAW || "").toLowerCase();
+            const nameB = (b.foundInRAW || "").toLowerCase();
+            return nameA.localeCompare(nameB);
+            });
+
+
+      const sel = document.getElementById("joDropdown");
+      sel.innerHTML = '<option value="" disabled selected>-- Select JO --</option>'; // clear existing and add default option
+    jos.forEach(jo => {
+    const opt = document.createElement("option");
+    const date = new Date(jo.joDateCreated);
+    const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
+    opt.value = jo.foundInRAW;
+    opt.textContent = `${jo.foundInRAW} || ${jo.jo} || ${formattedDate}`;
+    sel.appendChild(opt);
+    });
+    } catch (err) {
+      console.error("Failed to load JOs", err);
+    }
+  }
+
+  loadJOs();
+  // — end new —
+
+  // --- START: JO Dropdown show/hide + disable logic ---
+  const requestTypeRadios   = document.querySelectorAll('input[name="request_type"]');
+  const joDropdownContainer = document.getElementById("joDropdownContainer");
+  const customerTypeRadios  = document.querySelectorAll('input[name="customerType"]');
+
+  function toggleJODropdown() {
+    const isDelivery = document.querySelector('input[name="request_type"]:checked')?.value === "Delivery";
+
+    // show/hide JO dropdown container
+    joDropdownContainer.style.display = isDelivery ? "block" : "none";
+    if (!isDelivery) {
+      document.getElementById("joDropdown").value = "";
+    }
+
+    // disable/enable the TomSelect on nameDropdown
+    if (window.tomSelectInstance) {
+      isDelivery
+        ? window.tomSelectInstance.disable()
+        : window.tomSelectInstance.enable();
+    }
+
+    // disable/enable customerType radios
+    customerTypeRadios.forEach(r => r.disabled = isDelivery);
+  }
+
+  requestTypeRadios.forEach(radio => radio.addEventListener("change", toggleJODropdown));
+  toggleJODropdown();  // initial check on load
+  // --- END: JO Dropdown show/hide + disable logic ---
+
+  // … rest of your existing listeners (nameDropdown, customerType, submit, etc.) …
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
+
+    let customerName;
+
+    if (isExisting) {
+      // Use the value from Tom Select synced input (#name)
+      customerName = document.getElementById("name").value;
+      if (!customerName) {
+        alert("Please select a customer from the dropdown.");
+        return;
+      }
+    } else {
+      // New customer: use the typed name input
+      customerName = document.getElementById("name").value.trim();
+      if (!customerName) {
+        alert("Please enter the new customer name.");
+        return;
       }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      setDefaultDateAndTime();
-      loadNames();
+    // Prepare form data to submit
+    const formData = new FormData(form);
 
-      // Event listeners for existing customer dropdown and radio buttons
-      document.getElementById("nameDropdown").addEventListener("change", (e) => {
-        if (document.querySelector('input[name="customerType"]:checked').value === "existing") {
-          document.getElementById("name").value = e.target.value;
-        }
+    // Overwrite the "name" field to ensure proper customer name is sent
+    formData.set("name", customerName);
+
+    try {
+      const response = await fetch(scriptURL, {
+        method: 'POST',
+        body: formData,
       });
 
-      document.querySelectorAll('input[name="customerType"]').forEach((radio) =>
-        radio.addEventListener("change", updateFormState)
-      );
-
-      updateFormState();
-
-      // Handle form submission
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const formData = new FormData(form);
-        const fileInputs = ["media", "media2", "media3"];
-
-        for (const id of fileInputs) {
-          const input = document.getElementById(id);
-          if (input.files.length > 0) {
-            const file = input.files[0];
-
-            if (file.size > 5 * 1024 * 1024) {
-              Swal.fire("Error", `${id} must be less than 5MB.`, "error");
-              return;
-            }
-
-            const base64 = await toBase64(file);
-            formData.set(id, base64);
-          } else {
-            formData.set(id, "");
-          }
+      if (response.ok) {
+        alert("Form submitted successfully!");
+        form.reset();
+        setDefaultDateAndTime();
+        updateFormState();
+        if (window.tomSelectInstance) {
+          window.tomSelectInstance.clear();
         }
+      } else {
+        alert("Failed to submit the form. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Error submitting form. Please try again.");
+    }
+  });
+  customerTypeRadios.forEach(radio => radio.addEventListener('change', updateFormState));
+});
 
-        try {
-          await fetch(scriptURL, {
-            method: "POST",
-            body: formData,
-          });
-          Swal.fire("Success!", "Pickup request submitted.", "success");
-          form.reset();
-          setDefaultDateAndTime();
-          updateFormState();
-        } catch (error) {
-          Swal.fire("Oops!", "Something went wrong.", "error");
-          console.error("Error!", error.message);
-        }
-      });
-    });
+
+
 
     function toBase64(file) {
       return new Promise((resolve, reject) => {
@@ -400,6 +484,8 @@
         reader.onerror = (error) => reject(error);
       });
     }
+
+    
   </script>
 </body>
 </html>
