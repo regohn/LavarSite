@@ -117,10 +117,33 @@
       background-color: #f44336;
     }
     #clearFiltersButton:hover { background-color: #e53935; }
+.editable-cell {
+  cursor: pointer;
+}
+
+.editable-cell input {
+  padding: 2px;
+  font-size: 0.9rem;
+}
+
+.editable-cell button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+}    
+
+  #tableContainer table tr td:last-child,
+  #tableContainer table tr th:last-child {
+    display: none;
+  }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 </head>
 <body>
+  <a href="pickuprequestsummary.html"> Requests Summary </a> | <a href="pickuprequest.html"> Request Forms </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
+  <br>  
+   <br>  
   <button onclick="loadData()">Load Data</button>
 
   <div id="controls">
@@ -180,12 +203,7 @@
       table.id = "dataTable";
       
 
-      const headers = [
-        "DATE CREATED", "JO#", "NAME", "AMNT", "DATE PAID", "PAY METHOD",
-        "No. OF BAGS", "FOLDER", "Fold Time", "Comments",
-        "Fold Date", "Delivery Staff", "Delivery Details",
-        "timestamp", "media", "media2", "media3"
-      ];
+  const headers = data[0];
 
       const thead = document.createElement("thead");
       const headerRow = document.createElement("tr");
@@ -208,50 +226,134 @@
 for (let i = 1; i < Math.min(data.length, maxRows + 1); i++) {
   const rowData = data[i];
   const row = document.createElement("tr");
+  row.id = rowData[18];  // Set the JO# as the row ID
+rowData.forEach((cell, index) => {
+  const td = document.createElement("td");
+  
+  if (index === 0 || index === 4 || index === 13) {
+    td.textContent = formatDateTime(cell);
+  } else if (index === 10) {
+    td.textContent = formatDateOnly(cell);
+  } else if ([14, 15, 16].includes(index)) {
+    if (typeof cell === "string" && cell.includes("drive.google.com")) {
+      const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
+      if (match && match[1]) {
+        const fileId = match[1];
+        const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
+        const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
-  rowData.forEach((cell, index) => {
-    const td = document.createElement("td");
+        const img = document.createElement("img");
+        img.src = thumbUrl;
+        img.alt = "Image";
+        img.style.maxWidth = "80px";
+        img.style.cursor = "pointer";
 
-    if (index === 0 || index === 4 || index === 13) {
-      td.textContent = formatDateTime(cell);
-    } else if (index === 10) {
-      td.textContent = formatDateOnly(cell);
-    } else if ([14, 15, 16].includes(index)) {
-      if (typeof cell === "string" && cell.includes("drive.google.com")) {
-        const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
-        if (match && match[1]) {
-          const fileId = match[1];
-          const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
-          const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`; // RAW image view
+        img.onclick = () => {
+          document.getElementById("imageModalContent").src = fullImageUrl;
+          document.getElementById("imageModal").style.display = "flex";
+        };
 
-          const img = document.createElement("img");
-          img.src = thumbUrl;
-          img.alt = "Image";
-          img.style.maxWidth = "80px";
-          img.style.cursor = "pointer";
-
-          // Click opens modal
-          img.onclick = () => {
-            document.getElementById("imageModalContent").src = fullImageUrl;
-            document.getElementById("imageModal").style.display = "flex";
-          };
-
-          td.appendChild(img);
-        } else {
-          td.textContent = "Invalid link";
-        }
+        td.appendChild(img);
       } else {
-        td.textContent = "";
+        td.textContent = "Invalid link";
       }
-    }else {
-      td.textContent = cell ?? "";
+    } else {
+      td.textContent = "";
     }
+  } else if (index === 17) {
+  // "Admin Comments" editable
+  td.textContent = cell ?? "";
+  td.classList.add("editable-cell");
+  td.onclick = () => {
+    const original = td.textContent;
+    td.innerHTML = "";
 
-    row.appendChild(td);
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = original;
+    input.style.width = "80%";
+
+    const saveBtn = document.createElement("span");
+    saveBtn.textContent = "✅";
+    saveBtn.style.cursor = "pointer";
+    saveBtn.style.marginLeft = "5px";
+
+    const cancelBtn = document.createElement("span");
+    cancelBtn.textContent = "❌";
+    cancelBtn.style.cursor = "pointer";
+    cancelBtn.style.marginLeft = "5px";
+
+    saveBtn.onclick = () => {
+      const newValue = input.value;
+      td.textContent = newValue;
+      console.log("Saved:", newValue);
+      // TODO: Save to backend here
+    };
+
+  cancelBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    td.innerHTML = "";
+    td.textContent = original;
   });
+
+
+    td.appendChild(input);
+    td.appendChild(saveBtn);
+    td.appendChild(cancelBtn);
+    input.focus();
+  };
+} else if (index === 18) {
+  // "Resolved Y/N" editable
+  td.textContent = cell ?? "";
+  td.classList.add("editable-cell");
+  td.onclick = () => {
+    const original = td.textContent;
+    td.innerHTML = "";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = original;
+    input.style.width = "80%";
+
+    const saveBtn = document.createElement("span");
+    saveBtn.textContent = "✅";
+    saveBtn.style.cursor = "pointer";
+    saveBtn.style.marginLeft = "5px";
+
+    const cancelBtn = document.createElement("span");
+    cancelBtn.textContent = "❌";
+    cancelBtn.style.cursor = "pointer";
+    cancelBtn.style.marginLeft = "5px";
+
+    saveBtn.onclick = () => {
+      const newValue = input.value;
+      td.textContent = newValue;
+      console.log("Saved:", newValue);
+      // TODO: Save to backend here
+    };
+
+  cancelBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    td.innerHTML = "";
+    td.textContent = original;
+  });
+
+
+    td.appendChild(input);
+    td.appendChild(saveBtn);
+    td.appendChild(cancelBtn);
+    input.focus();
+  };
+} else {
+    td.textContent = cell ?? "";
+  }
+
+  row.appendChild(td);
+});
 
   tbody.appendChild(row);
 }
+
       table.appendChild(tbody);
       container.appendChild(table);
     }

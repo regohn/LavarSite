@@ -48,7 +48,7 @@
       <div class="form-container">
         <h4 class="text-center mb-4">Lavar Laundry Delivery Form</h4>
         <div>
-        <a href="pickuprequestsummary.html"> Pickup Summary </a> | <a href="pickuprequest.html"> Pickup Request </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
+        <a href="pickuprequestsummary.html"> Requests Summary </a> | <a href="pickuprequest.html"> Request Forms </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
 
         </div>
         <form id="submit-to-google-sheet">
@@ -273,7 +273,7 @@ function getDriveThumbnail(url) {
           }
 
       if (data.result === "not found") {
-        JOresult.innerHTML = "JO not found.";
+        JOresult.innerHTML = "Di Pa Na Log ng Mga Nagtupi. Tawagan sila at ipalog.";
       } else {
         const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
         if (data.JO && (!data.DeliveryStaff || data.DeliveryStaff.trim() === "")) {
@@ -294,23 +294,30 @@ function getDriveThumbnail(url) {
             Comments: ${data.Comments} <br>
             Date of Delivery: ${formattedDeliveryDatetime} <br>
             Delivery ID: ${data.UniqueID} <p id="deliveryid" style="color: white;">${data.UniqueID}</p> ${picturesHTML}
+            <input type="hidden" id="UniqueID" name="UniqueID" value="${data.UniqueID || ''}">
           </div>
         `;
 
 // After setting JOresult.innerHTML and before ending the else block
     if (data.DeliveryStaff && data.DeliveryStaff.trim() !== "") {
       // Disable form fields
-          document.getElementById("DeliveryStaff").disabled = true;
-          document.getElementById("Comments").disabled = true; 
+          //document.getElementById("DeliveryStaff").disabled = true;
+          //document.getElementById("Comments").disabled = true; 
 
-          document.getElementById("JOR").disabled = true;
-          document.getElementById("media").disabled = true;
-          document.getElementById("media2").disabled = true;
-          document.getElementById("media3").disabled = true;
+          document.getElementById("JOR").disabled = false;
+          document.getElementById("JOR").value = data.JO;
+          document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
+          document.getElementById("Comments").value = data.Comments;
+          document.getElementById("DeliveryPayMethod").value = data.DeliveryPayMethod;
 
+          //document.getElementById("media").disabled = true;
+          //document.getElementById("media2").disabled = true;
+          //document.getElementById("media3").disabled = true;
+        
           const submitButton = document.querySelector("button[type='submit']");
-          submitButton.disabled = true;
-          submitButton.innerText = "Already Delivered";
+          submitButton.disabled = false;
+          submitButton.innerText = "Update";
+
       } else if (!data.DeliveryStaff || data.DeliveryStaff.trim() === "") {
         // If DeliveryStaff is missing/empty, prefill the JOR field with JO
           document.getElementById("DeliveryStaff").disabled = false;
@@ -352,7 +359,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
     await submitForm(formData);
   });
+
+  async function submitForm(formData) {
+    try {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+
+      if (result.result === "success") {
+        // Update hidden unique_id input with the server-generated unique_id
+        if (result.unique_id) {
+          const uniqueIdInput = document.getElementById("UniqueID") || document.querySelector('input[name="unique_id"]');
+          if (uniqueIdInput) {
+            uniqueIdInput.value = result.unique_id;
+          }
+        }
+        swal("Success", "Record saved successfully!", "success");
+      } else {
+        swal("Error", result.error || "Unknown error", "error");
+      }
+    } catch (err) {
+      swal("Error", err.message || "Network error", "error");
+    }
+  }
+
+  // Helper function to convert file to base64 string
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]); // get base64 without prefix
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  }
 });
+
 
 function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {

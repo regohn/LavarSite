@@ -117,9 +117,9 @@
 </head>
 <body>
   <div class="form-container shadow-sm">
-    <h1 class="form-title">Pickup/Delivery Request Form</h1>
+    <h1 class="form-title">Pickup/Delivery Request and Drop-Off Form</h1>
     
-    <a href="pickuprequestsummary.html"> Pickup Summary </a> | <a href="pickuprequest.html"> Pickup Request </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
+    <a href="pickuprequestsummary.html"> Requests Summary </a> | <a href="pickuprequest.html"> Request Forms </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
 
     <form id="submit-to-google-sheet" >
 
@@ -129,6 +129,11 @@
             <input type="radio" name="request_type" value="Pickup" required>
             Pickup
         </label>
+        &nbsp;&nbsp;
+        <label>
+            <input type="radio" name="request_type" value="Drop-Off">
+            Drop-Off
+        </label>        
         &nbsp;&nbsp;
         <label>
             <input type="radio" name="request_type" value="Delivery">
@@ -141,7 +146,10 @@
                 <option value="" disabled selected>-- Select JO --</option>
                 <!-- JO options will be dynamically loaded here later -->
             </select>
-        </div>         
+        </div>  
+        
+        <div id="joDetailsContainer" style="margin-top: 3px; display: none; padding: 1em; border: 1px solid #ccc; border-radius:2px; background-color: #f9f9f9;"></div>
+        
         <div id="nameDropdownContainer">
             <label for="nameDropdown">Select Existing Customer</label>
             <select id="nameDropdown" class="form-control" placeholder="Search name..."></select>
@@ -171,20 +179,20 @@
       </div>
 
       <div class="form-group">
-        <label for="PickupLocation">Pickup Location</label>
+        <label for="PickupLocation">Location</label>
         <input
           type="text"
           id="PickupLocation"
           name="PickupLocation"
           class="form-control"
-          placeholder="Enter pickup location"
+          placeholder="Enter location"
           required
         />
       </div>
 
       <div class="form-row">
         <div class="form-group col-md-6">
-          <label for="dateofpickup">Date of Pickup</label>
+          <label for="dateofpickup">Date of Request</label>
           <input
             type="date"
             id="dateofpickup"
@@ -195,7 +203,7 @@
         </div>
 
         <div class="form-group col-md-6">
-          <label for="timeofpickup">Time of Pickup</label>
+          <label for="timeofpickup">Time of Request</label>
           <input
             type="text"
             id="timeofpickup"
@@ -217,7 +225,7 @@
           placeholder="Add any special instructions or notes here..."
         ></textarea>
       </div>
-
+<!--
       <div class="form-group file-group">
         <label for="media">Upload Laundry Pickup Picture (Optional)</label>
         <input
@@ -250,7 +258,7 @@
           accept="image/*"
         />
       </div>
-
+    -->
       <button type="submit" class="btn btn-submit mt-3">Submit Pickup Request</button>
     </form>
   </div>
@@ -262,230 +270,295 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
   <script>
-    const scriptURL =
-      "https://script.google.com/macros/s/AKfycbxSgSBzOLmORoSJ_YEK37zbFZDhu5nqv0QkEfGKyOk3sTlUUfUHpi1d0S5yJ53RO09h9g/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxSgSBzOLmORoSJ_YEK37zbFZDhu5nqv0QkEfGKyOk3sTlUUfUHpi1d0S5yJ53RO09h9g/exec";
+  const JO_FETCH_URL = "https://script.google.com/macros/s/AKfycbygc_nrRs-_gcwMSw5ZIwvRC7O6KZ7x2rOQQo6DQTwBkRGvQXkG5o37BbF46J-bknAT1w/exec";
 
-    const form = document.forms["submit-to-google-sheet"];
+  const form = document.forms["submit-to-google-sheet"];
+  let allJOs = []; // global JO list
+  let joDetailsContainer, joDropdown;
 
-    // Set date and time defaults to current Manila time
-    function setDefaultDateAndTime() {
-      // Manila timezone offset in minutes (+8:00 = -480 minutes offset from UTC)
-      const now = new Date();
-      // Adjust to Manila time by adding offset difference (client timezone vs Manila)
-      const manilaOffset = 8 * 60;
-      const localOffset = now.getTimezoneOffset();
-      const manilaTime = new Date(now.getTime() + (localOffset + manilaOffset) * 60000);
+  function setDefaultDateAndTime() {
+    const now = new Date();
+    const manilaOffset = 8 * 60;
+    const localOffset = now.getTimezoneOffset();
+    const manilaTime = new Date(now.getTime() + (localOffset + manilaOffset) * 60000);
 
-      const year = manilaTime.getFullYear();
-      const month = String(manilaTime.getMonth() + 1).padStart(2, "0");
-      const day = String(manilaTime.getDate()).padStart(2, "0");
-      const formattedDate = `${year}-${month}-${day}`;
+    const year = manilaTime.getFullYear();
+    const month = String(manilaTime.getMonth() + 1).padStart(2, "0");
+    const day = String(manilaTime.getDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`;
 
-      const hours = String(manilaTime.getHours()).padStart(2, "0");
-      const minutes = String(manilaTime.getMinutes()).padStart(2, "0");
-      const formattedTime = `${hours}:${minutes}`;
+    const hours = String(manilaTime.getHours()).padStart(2, "0");
+    const minutes = String(manilaTime.getMinutes()).padStart(2, "0");
+    const formattedTime = `${hours}:${minutes}`;
 
-      document.getElementById("dateofpickup").value = formattedDate;
-      document.getElementById("timeofpickup").value = "now";
-    }
+    document.getElementById("dateofpickup").value = formattedDate;
+    document.getElementById("timeofpickup").value = "now";
+  }
 
-    // Load names from Google Apps Script web app (expected to return JSON array of strings)
-
-    async function loadNames() {
+  async function loadNames() {
     try {
-        const response = await fetch(scriptURL);
-        const names = await response.json();
-        const select = document.getElementById("nameDropdown");
-
-        // Clear any existing options
-        select.innerHTML = '<option value="" disabled selected>-- Select Name --</option>';
-
-        // Add name options
-        names.forEach((name) => {
+      const response = await fetch(scriptURL);
+      const names = await response.json();
+      const select = document.getElementById("nameDropdown");
+      select.innerHTML = '<option value="" disabled selected>-- Select Name --</option>';
+      names.forEach(name => {
         const option = document.createElement("option");
         option.value = name;
         option.textContent = name;
         select.appendChild(option);
-        });
+      });
 
-        // Initialize Tom Select AFTER options are added
-
-        window.tomSelectInstance = new TomSelect("#nameDropdown", {
+      window.tomSelectInstance = new TomSelect("#nameDropdown", {
         create: false,
         sortField: { field: "text", direction: "asc" },
         placeholder: "Search for a name...",
         allowEmptyOption: true,
-        });
-    } catch (err) {
-        console.error("Error loading names:", err);
-    }
+      });
 
-        window.tomSelectInstance.on('change', function(value) {
+      window.tomSelectInstance.on("change", function (value) {
         document.getElementById("name").value = value;
-        });
-    }
-
-
-    // Update form state when selecting existing/new customer
-function updateFormState() {
-  const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
-  const nameInput = document.getElementById("name");
-  const nameDropdown = document.getElementById("nameDropdown");
-
-  if (isExisting) {
-    nameInput.readOnly = true;
-    nameDropdown.disabled = false;
-    nameInput.value = nameDropdown.value || "";
-    if (window.tomSelectInstance) {
-      window.tomSelectInstance.enable();
-    }
-  } else {
-    nameDropdown.value = "";
-    nameDropdown.disabled = true;
-    nameInput.readOnly = false;
-    nameInput.value = "";
-    if (window.tomSelectInstance) {
-      window.tomSelectInstance.disable();
+      });
+    } catch (err) {
+      console.error("Error loading names:", err);
     }
   }
-}
 
+  function updateFormState() {
+    const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
+    const nameInput = document.getElementById("name");
+    const nameDropdown = document.getElementById("nameDropdown");
 
+    if (isExisting) {
+      nameInput.readOnly = true;
+      nameDropdown.disabled = false;
+      nameInput.value = nameDropdown.value || "";
+      if (window.tomSelectInstance) {
+        window.tomSelectInstance.enable();
+      }
+    } else {
+      nameDropdown.value = "";
+      nameDropdown.disabled = true;
+      nameInput.readOnly = false;
+      nameInput.value = "";
+      if (window.tomSelectInstance) {
+        window.tomSelectInstance.disable();
+      }
+    }
+  }
 
-document.addEventListener("DOMContentLoaded", () => {
-
-  setDefaultDateAndTime();
-  loadNames();
-
-  // — NEW: load folded JO numbers —
-  // JO_FETCH_URL must be defined before loadJOs() is called
-  const JO_FETCH_URL = "https://script.google.com/macros/s/AKfycbygc_nrRs-_gcwMSw5ZIwvRC7O6KZ7x2rOQQo6DQTwBkRGvQXkG5o37BbF46J-bknAT1w/exec";
   async function loadJOs() {
     try {
       const res = await fetch(JO_FETCH_URL);
       const { jos } = await res.json();
-            jos.sort((a, b) => {
-            const nameA = (a.foundInRAW || "").toLowerCase();
-            const nameB = (b.foundInRAW || "").toLowerCase();
-            return nameA.localeCompare(nameB);
-            });
+      allJOs = jos;
 
+      jos.sort((a, b) => {
+        const nameA = (a.foundInRAW || "").toLowerCase();
+        const nameB = (b.foundInRAW || "").toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
 
       const sel = document.getElementById("joDropdown");
-      sel.innerHTML = '<option value="" disabled selected>-- Select JO --</option>'; // clear existing and add default option
-    jos.forEach(jo => {
-    const opt = document.createElement("option");
-    const date = new Date(jo.joDateCreated);
-    const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
-    opt.value = jo.foundInRAW;
-    opt.textContent = `${jo.foundInRAW} || ${jo.jo} || ${formattedDate}`;
-    sel.appendChild(opt);
-    });
+      sel.innerHTML = '<option value="" disabled selected>-- Select JO --</option>';
+
+      jos.forEach(jo => {
+        const opt = document.createElement("option");
+        const date = new Date(jo.joDateCreated);
+        const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
+
+        opt.textContent = `${jo.foundInRAW} || ${jo.jo} || ${formattedDate}`;
+        opt.value = jo.jo;
+        sel.appendChild(opt);
+      });
     } catch (err) {
       console.error("Failed to load JOs", err);
     }
   }
 
-  loadJOs();
-  // — end new —
+  document.addEventListener("DOMContentLoaded", () => {
+    setDefaultDateAndTime();
+    loadNames();
+    loadJOs();
 
-  // --- START: JO Dropdown show/hide + disable logic ---
-  const requestTypeRadios   = document.querySelectorAll('input[name="request_type"]');
-  const joDropdownContainer = document.getElementById("joDropdownContainer");
-  const customerTypeRadios  = document.querySelectorAll('input[name="customerType"]');
+    joDetailsContainer = document.getElementById("joDetailsContainer");
+    joDropdown = document.getElementById("joDropdown");
 
-  function toggleJODropdown() {
-    const isDelivery = document.querySelector('input[name="request_type"]:checked')?.value === "Delivery";
+    // JO change listener
+joDropdown.addEventListener("change", function () {
+  const selectedJO = this.value.trim();
+  console.log("Selected JO:", selectedJO);
 
-    // show/hide JO dropdown container
-    joDropdownContainer.style.display = isDelivery ? "block" : "none";
-    if (!isDelivery) {
-      document.getElementById("joDropdown").value = "";
-    }
-
-    // disable/enable the TomSelect on nameDropdown
-    if (window.tomSelectInstance) {
-      isDelivery
-        ? window.tomSelectInstance.disable()
-        : window.tomSelectInstance.enable();
-    }
-
-    // disable/enable customerType radios
-    customerTypeRadios.forEach(r => r.disabled = isDelivery);
-  }
-
-  requestTypeRadios.forEach(radio => radio.addEventListener("change", toggleJODropdown));
-  toggleJODropdown();  // initial check on load
-  // --- END: JO Dropdown show/hide + disable logic ---
-
-  // … rest of your existing listeners (nameDropdown, customerType, submit, etc.) …
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
-
-    let customerName;
-
-    if (isExisting) {
-      // Use the value from Tom Select synced input (#name)
-      customerName = document.getElementById("name").value;
-      if (!customerName) {
-        alert("Please select a customer from the dropdown.");
-        return;
-      }
-    } else {
-      // New customer: use the typed name input
-      customerName = document.getElementById("name").value.trim();
-      if (!customerName) {
-        alert("Please enter the new customer name.");
-        return;
-      }
-    }
-
-    // Prepare form data to submit
-    const formData = new FormData(form);
-
-    // Overwrite the "name" field to ensure proper customer name is sent
-    formData.set("name", customerName);
-
-    try {
-      const response = await fetch(scriptURL, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        alert("Form submitted successfully!");
-        form.reset();
-        setDefaultDateAndTime();
-        updateFormState();
-        if (window.tomSelectInstance) {
-          window.tomSelectInstance.clear();
-        }
-      } else {
-        alert("Failed to submit the form. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Error submitting form. Please try again.");
-    }
+  const selectedData = allJOs.find(item => {
+    if (!item.jo) return false;
+    // Normalize both sides to string, strip leading #, trim
+    const itemJO = String(item.jo).replace(/^#/, "").trim();
+    return itemJO === selectedJO;
   });
-  customerTypeRadios.forEach(radio => radio.addEventListener('change', updateFormState));
+
+  console.log("Found JO data:", selectedData);
+
+  if (selectedData) {
+    joDetailsContainer.style.display = "block";
+    document.getElementById("name").value = selectedData.foundInRAW || "N/A";
+    joDetailsContainer.innerHTML = `
+      <h4>JO Details</h4>
+      <p>Name of Folder: ${selectedData.nameOfFolder || "N/A"}</p>
+      <p>Time of Folds: ${selectedData.timeOfFolds || "N/A"}</p>
+      <p>Date of Fold: ${formatDateTime(selectedData.dateOfFold) || "N/A"}</p>
+      <p>Found in RAW: ${selectedData.foundInRAW || "N/A"}</p>
+      <p>Amount: ${selectedData.amount || "N/A"}</p>
+      <p>JO Date Created: ${formatDateTime2(selectedData.joDateCreated) || "N/A"}</p>
+    `;
+  } else {
+    console.warn("No JO data found for selected value.");
+    joDetailsContainer.style.display = "none";
+    joDetailsContainer.innerHTML = "";
+  }
 });
 
+    // Toggle JO section
+    const requestTypeRadios = document.querySelectorAll('input[name="request_type"]');
+    const customerTypeRadios = document.querySelectorAll('input[name="customerType"]');
+    const joDropdownContainer = document.getElementById("joDropdownContainer");
+
+function toggleJODropdown() {
+  const isDelivery = document.querySelector('input[name="request_type"]:checked')?.value === "Delivery";
+
+  // show/hide JO dropdown container
+  joDropdownContainer.style.display = isDelivery ? "block" : "none";
+  
+  // hide JO details container if not Delivery
+  if (!isDelivery) {
+    joDetailsContainer.style.display = "none";
+    joDetailsContainer.innerHTML = "";
+  }
+
+  if (!isDelivery) {
+    document.getElementById("joDropdown").value = "";
+  }
+
+  // disable/enable the TomSelect on nameDropdown
+  if (window.tomSelectInstance) {
+    isDelivery
+      ? window.tomSelectInstance.disable()
+      : window.tomSelectInstance.enable();
+  }
+
+  // disable/enable customerType radios
+  customerTypeRadios.forEach(r => r.disabled = isDelivery);
+}
 
 
+    requestTypeRadios.forEach(radio => radio.addEventListener("change", toggleJODropdown));
+    customerTypeRadios.forEach(radio => radio.addEventListener("change", updateFormState));
+    toggleJODropdown();
 
-    function toBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-      });
-    }
+    // Submit handler
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    
-  </script>
+      const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
+      let customerName;
+
+      if (isExisting) {
+        customerName = document.getElementById("name").value;
+        if (!customerName) {
+          alert("Please select a customer from the dropdown.");
+          return;
+        }
+      } else {
+        customerName = document.getElementById("name").value.trim();
+        if (!customerName) {
+          alert("Please enter the new customer name.");
+          return;
+        }
+      }
+
+const formData = new FormData(form);
+
+// If request type is Delivery, include the selected JO
+const requestType = document.querySelector('input[name="request_type"]:checked')?.value;
+if (requestType === "Delivery") {
+  const selectedJO = document.getElementById("joDropdown")?.value;
+  if (!selectedJO) {
+    alert("Please select a Job Order (JO) for Delivery.");
+    return;
+  }
+  formData.append("DeliveryJONumber", selectedJO); // You can change the key name to match your expected server param
+}
+      formData.set("name", customerName);
+
+      try {
+        const response = await fetch(scriptURL, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          alert("Form submitted successfully!");
+          form.reset();
+          setDefaultDateAndTime();
+          updateFormState();
+          if (window.tomSelectInstance) window.tomSelectInstance.clear();
+        } else {
+          alert("Failed to submit the form. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        alert("Error submitting form. Please try again.");
+      }
+    });
+  });
+
+  // Optional helper
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+
+  function formatDateTime(dateString) {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  if (isNaN(date)) return "Invalid date";
+
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
+}
+
+  function formatDateTime2(dateString) {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  if (isNaN(date)) return "Invalid date";
+
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${month}/${day}/${year}`;
+}
+</script>
+
 </body>
 </html>
