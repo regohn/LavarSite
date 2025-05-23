@@ -14,6 +14,9 @@
       border-collapse: collapse;
       margin-top: 1rem;
     }
+  table, th, td {
+    font-size: 12px; /* 👈 Add this to set font size */
+  }    
     .table-container {
     overflow-x: auto;
     width: 100%;
@@ -49,6 +52,9 @@
     .current-date-label {
       font-weight: bold;
     }
+th[onclick] {
+  cursor: pointer;
+}    
   </style>
 </head>
 <body>
@@ -62,19 +68,20 @@
   </div>
 <div class="table-container">
   <table id="deliveryTable">
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>JOR</th>
-        <th>Delivery Staff</th>
-        <th>Comments</th>
-        <th>Payment Method</th>
-        <th>Payment Type</th>
-        <th>Media 1</th>
-        <th>Media 2</th>
-        <th>Media 3</th>
-      </tr>
-    </thead>
+<thead>
+  <tr>
+    <th onclick="sortTable('timestamp')">Timestamp ▲▼</th>
+    <th onclick="sortTable('JOR')">JOR ▲▼</th>
+    <th onclick="sortTable('DeliveryStaff')">Delivery Staff ▲▼</th>
+    <th onclick="sortTable('Comments')">Comments ▲▼</th>
+    <th onclick="sortTable('DeliveryPayMethod')">Payment Method ▲▼</th>
+    <th onclick="sortTable('PaymentType')">Payment Type ▲▼</th>
+    <th>Media 1</th>
+    <th>Media 2</th>
+    <th>Media 3</th>
+  </tr>
+</thead>
+
     <tbody></tbody>
   </table>
 
@@ -84,7 +91,7 @@
     const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyBDFVFZz1LVT5pefiCSx4AJC_jRekKyyTTlj5fghUW8hehEhZCKqLUy1w094DxfkeBbw/exec";
     let allData = [];
     let currentDate = new Date(); // Today by default
-
+    let currentSort = { column: null, asc: true };
     fetch(SHEET_WEBAPP_URL)
       .then(res => res.json())
       .then(data => {
@@ -196,6 +203,32 @@
         tbody.appendChild(tr);
       });
     }
+
+function sortTable(column) {
+  if (currentSort.column === column) {
+    currentSort.asc = !currentSort.asc; // toggle
+  } else {
+    currentSort.column = column;
+    currentSort.asc = true;
+  }
+
+  allData.sort((a, b) => {
+    const valA = a[column] || '';
+    const valB = b[column] || '';
+
+    if (column === 'timestamp') {
+      return currentSort.asc
+        ? new Date(valA) - new Date(valB)
+        : new Date(valB) - new Date(valA);
+    }
+
+    return currentSort.asc
+      ? valA.toString().localeCompare(valB.toString())
+      : valB.toString().localeCompare(valA.toString());
+  });
+
+  displayDataForDate(currentDate);
+}    
   </script>
 </body>
 </html>

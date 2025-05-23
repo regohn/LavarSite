@@ -141,6 +141,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Modal Viewer for Enlarged Images -->
+  <div id="imageModal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; overflow:auto; background-color: rgba(0,0,0,0.8);">
+    <span id="imageModalClose" style="position:absolute; top:20px; right:35px; color:white; font-size:40px; font-weight:bold; cursor:pointer;">&times;</span>
+    <img id="imageModalContent" style="margin:auto; display:block; max-width:90%; max-height:90%; margin-top:5%;" />
+  </div>
   <a href="pickuprequestsummary.html"> Requests Summary </a> | <a href="pickuprequest.html"> Request Forms </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
   <br>  
    <br>  
@@ -248,10 +253,25 @@ rowData.forEach((cell, index) => {
         img.style.maxWidth = "80px";
         img.style.cursor = "pointer";
 
-        img.onclick = () => {
-          document.getElementById("imageModalContent").src = fullImageUrl;
-          document.getElementById("imageModal").style.display = "flex";
-        };
+let imgPopup = null; // Keep reference to the popup window
+
+img.onclick = () => {
+  const width = 600;
+  const height = 400;
+  const left = (window.screen.width / 2) - (width / 2);
+  const top = (window.screen.height / 2) - (height / 2);
+
+  const windowFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`;
+
+  if (imgPopup && !imgPopup.closed) {
+    // If popup is already open, just change its location to the new image
+    imgPopup.location.href = fullImageUrl;
+    imgPopup.focus();
+  } else {
+    // Open a new popup window with the image URL
+    imgPopup = window.open(fullImageUrl, "imagePopup", windowFeatures);
+  }
+};
 
         td.appendChild(img);
       } else {
@@ -272,6 +292,8 @@ rowData.forEach((cell, index) => {
     input.type = "text";
     input.value = original;
     input.style.width = "80%";
+    input.classList.add("comment-input"); // Add class for easier selection
+    
 
     const saveBtn = document.createElement("span");
     saveBtn.textContent = "✅";
@@ -283,13 +305,61 @@ rowData.forEach((cell, index) => {
     cancelBtn.style.cursor = "pointer";
     cancelBtn.style.marginLeft = "5px";
 
-    saveBtn.onclick = () => {
-      const newValue = input.value;
-      td.textContent = newValue;
-      console.log("Saved:", newValue);
-      // TODO: Save to backend here
-    };
+saveBtn.onclick = () => {
+  // Assuming the saveBtn is inside a <td> inside a <tr> representing a row
+  const row = saveBtn.closest('tr');
 
+  // Grab the text input inside the same row (adjust selector if needed)
+  const input = row.querySelector('input.comment-input');  // the input with comment text
+  if (!input) {
+    alert("Comment input not found");
+    return;
+  }
+
+  const newValue = input.value.trim();
+  if (!newValue) {
+    alert("Please enter a comment");
+    return;
+  }
+
+  // Grab the unique ID stored as a data attribute on the row
+  const uniqueId = row.id; // this gets the <tr> id attribute
+  if (!uniqueId) {
+    alert("Unique ID not found on row");
+    return;
+  }
+
+  // Column name to update in your sheet
+  const columnName = 'Admin Comments';
+
+  // Prepare payload to send to backend
+  const payload = {
+    id: uniqueId,
+    column: columnName,
+    value: newValue
+  };
+
+  // Your deployed Google Apps Script Web App URL
+  const apiUrl = "https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec";
+
+  // POST to backend
+  fetch(apiUrl, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (result.status === 'success') {
+      alert('Comment saved successfully!');
+    } else {
+      alert('Error saving comment: ' + result.message);
+    }
+  })
+  .catch(err => {
+    alert('Network error: ' + err.message);
+  });
+};
   cancelBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     td.innerHTML = "";
@@ -306,44 +376,78 @@ rowData.forEach((cell, index) => {
   // "Resolved Y/N" editable
   td.textContent = cell ?? "";
   td.classList.add("editable-cell");
-  td.onclick = () => {
-    const original = td.textContent;
-    td.innerHTML = "";
+ td.onclick = () => {
+  const original = td.textContent;
+  td.innerHTML = "";
 
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = original;
-    input.style.width = "80%";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = original;
+  input.style.width = "80%";
+  input.classList.add("comment-input");
 
-    const saveBtn = document.createElement("span");
-    saveBtn.textContent = "✅";
-    saveBtn.style.cursor = "pointer";
-    saveBtn.style.marginLeft = "5px";
+  const saveBtn = document.createElement("span");
+  saveBtn.textContent = "✅";
+  saveBtn.style.cursor = "pointer";
+  saveBtn.style.marginLeft = "5px";
 
-    const cancelBtn = document.createElement("span");
-    cancelBtn.textContent = "❌";
-    cancelBtn.style.cursor = "pointer";
-    cancelBtn.style.marginLeft = "5px";
+  const cancelBtn = document.createElement("span");
+  cancelBtn.textContent = "❌";
+  cancelBtn.style.cursor = "pointer";
+  cancelBtn.style.marginLeft = "5px";
 
-    saveBtn.onclick = () => {
-      const newValue = input.value;
-      td.textContent = newValue;
-      console.log("Saved:", newValue);
-      // TODO: Save to backend here
+  td.appendChild(input);
+  td.appendChild(saveBtn);
+  td.appendChild(cancelBtn);
+
+  // Get unique ID from the row (assuming it's set as a data attribute)
+  const tr = td.parentElement;
+  const uniqueId = tr.getAttribute("id"); // e.g. <tr data-uniqueid="UID-1234">
+
+  saveBtn.onclick = async () => {
+    const newValue = input.value.trim();
+
+    if (!uniqueId) {
+      alert("Unique ID not found on this row.");
+      td.textContent = original;
+      return;
+    }
+
+    // Prepare payload for POST request
+    const payload = {
+      id: uniqueId,
+      column: "Comments",  // Must match your sheet header exactly
+      value: newValue
     };
 
-  cancelBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    td.innerHTML = "";
-    td.textContent = original;
-  });
+    try {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
+      const result = await response.json();
 
-    td.appendChild(input);
-    td.appendChild(saveBtn);
-    td.appendChild(cancelBtn);
-    input.focus();
+      if (result.status === "success") {
+        td.textContent = newValue;
+        alert("Comment saved successfully!");
+      } else {
+        alert("Error saving comment: " + result.message);
+        td.textContent = original; // revert on error
+      }
+    } catch (err) {
+      alert("Network error: " + err.message);
+      td.textContent = original; // revert on error
+    }
   };
+
+  cancelBtn.onclick = (e) => {
+    e.stopPropagation();
+    td.textContent = original;
+  };
+};
+
 } else {
     td.textContent = cell ?? "";
   }
@@ -484,6 +588,56 @@ function closeImageModal() {
   modal.style.display = "none";
   document.getElementById("imageModalContent").src = "";
 }
+
+document.getElementById("imageModalClose").onclick = function () {
+  document.getElementById("imageModal").style.display = "none";
+};
+
+
+document.getElementById("imageModalClose").onclick = function () {
+  document.getElementById("imageModal").style.display = "none";
+};
+
+window.onclick = function (event) {
+  const modal = document.getElementById("imageModal");
+  if (event.target === modal) {
+    modal.style.display = "none";
+  }
+};
+
+document.querySelectorAll('.save-comment-btn').forEach((button, index) => {
+  button.addEventListener('click', () => {
+    const row = button.closest('tr');
+    const comment = row.querySelector('.comment-input').value.trim();
+    const uniqueId = row.getAttribute('data-id');
+
+    if (!comment || !uniqueId) {
+      alert("Missing comment or ID");
+      return;
+    }
+
+    fetch('https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_URL/exec', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: uniqueId,
+        column: 'Admin Comments',
+        value: comment
+      })
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.status === 'success') {
+        alert('Comment saved!');
+      } else {
+        alert('Error: ' + result.message);
+      }
+    })
+    .catch(err => alert('Network error: ' + err.message));
+  });
+});
+
+
   </script>
   <div id="imageModal" onclick="closeImageModal()">
   <span id="imageModalClose">&times;</span>
