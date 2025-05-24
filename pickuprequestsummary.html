@@ -73,6 +73,10 @@
     height: auto;
     cursor: pointer;
   }
+  table td:nth-child(9),
+  table th:nth-child(9) {
+  display: none;
+}
   </style>
 </head>
 <body>
@@ -190,8 +194,11 @@
         headers.forEach(key => {
           if (["media", "media2", "media3"].includes(key)) {
             html += `<td>${createImageCell(row[key])}</td>`;
-          } else if (key === "timestamp" || key === "dateofpickup") {
+          } else if (key === "timestamp" ) {
             html += `<td>${formatDateTime(row[key])}</td>`;
+          } else if ( key === "dateofpickup") {
+            html += `<td>${formatDate(row[key])}</td>`;
+            
           } else {
             html += `<td>${row[key] || ''}</td>`;
           }
