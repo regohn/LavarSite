@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pickup/Delivery Request Summary</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 1rem; }
+    h1 { text-align: center; }
+    #dateControls { text-align: center; margin-top: 1rem; }
+    #dateControls button { margin: 0 1rem; padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer; }
+    #currentDateDisplay { font-weight: bold; font-size: 1.1rem; }
+    #typeFilter { text-align: center; margin-top: 1rem; }
+    #tableContainer { margin-top: 1rem; overflow-x: auto; }
+
+ /* Base table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th, tbody td {
+  padding: 8px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+/* Mobile card style */
+@media (max-width: 768px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  td {
+    border: none;
+    border-bottom: 1px solid #eee;
+    padding: 10px;
+    text-align: left;
+    position: relative;
+  }
+
+  td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    display: block;
+    color: #333;
+    margin-bottom: 5px;
+  }
+
+  td:last-child {
+    border-bottom: none;
+  }
+}
+
+
+    img.thumbnail { max-height: 60px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Pickup/Delivery Request Summary</h1>
+  <a href="pickuprequestsummary.html"> Requests Summary </a> | 
+  <a href="pickuprequest.html"> Request Forms </a> | 
+  <a href="pickup.html"> Pickup </a>  | 
+  <a href="delivery.html"> Delivery </a> | 
+  <a href="deliverysummary.html"> DVS </a> <br>
+
+  <div id="dateControls">
+    <button id="prevDayBtn" title="Previous Day">←</button>
+    <span id="currentDateDisplay"></span>
+    <button id="nextDayBtn" title="Next Day">→</button>
+  </div>
+
+  <div id="typeFilter">
+    <label><input type="radio" name="type" value="All" checked> All</label>
+    <label><input type="radio" name="type" value="Pickup"> Pickup</label>
+    <label><input type="radio" name="type" value="Drop-Off"> Drop-Off</label>
+    <label><input type="radio" name="type" value="Delivery"> Delivery</label>
+  </div>
+
+  <div id="tableContainer">Loading...</div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJs9Dtwd-YDpLV6vkf7fLsysXc4GBjgzXmWFshxDLdk205PTzk4hqPfGHa6y81KDK7/exec?action=getPickupSummary";
+    let allData = [];
+    let currentDate = new Date();
+    let currentSort = { column: '', direction: '' };
+
+    const headers = [
+      "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
+      "request_type", "Comments", "timestamp", "unique_id", "media", "media2", "media3"
+    ];
+
+    function formatDate(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+
+    function formatDateTime(isoDate) {
+      if (!isoDate) return '';
+      const date = new Date(isoDate);
+      return date.toLocaleString('en-US', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+        hour12: true,
+      }).replace(',', '');
+    }
+
+    function createImageCell(url) {
+      if (!url) return '';
+      const match = url.match(/\/d\/([^/]+)\//);
+      const fileId = match ? match[1] : null;
+      if (!fileId) return '';
+      const thumb = `https://drive.google.com/thumbnail?id=${fileId}`;
+      const link = `https://drive.google.com/file/d/${fileId}/view`;
+      return `<a href="${link}" target="_blank"><img class="thumbnail" src="${thumb}" onerror="this.style.display='none'" /></a>`;
+    }
+
+    function datesEqual(d1, d2) {
+      return d1.getFullYear() === d2.getFullYear() &&
+             d1.getMonth() === d2.getMonth() &&
+             d1.getDate() === d2.getDate();
+    }
+
+    function filterByDate(data, date) {
+      return data.filter(row => {
+        if (!row.dateofpickup) return false;
+        const rowDate = new Date(row.dateofpickup);
+        return datesEqual(rowDate, date);
+      });
+    }
+
+    function sortData(data, column, direction) {
+      if (!column || !direction) return data;
+      return [...data].sort((a, b) => {
+        let valA = a[column] || '';
+        let valB = b[column] || '';
+
+        // Convert to Date if applicable
+        if (column.includes('date') || column.includes('time') || column.includes('timestamp')) {
+          valA = new Date(valA);
+          valB = new Date(valB);
+        }
+
+        if (valA < valB) return direction === 'asc' ? -1 : 1;
+        if (valA > valB) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    function updateDateDisplay() {
+      document.getElementById('currentDateDisplay').textContent = formatDate(currentDate);
+    }
+
+function renderTable(data) {
+  const container = document.getElementById('tableContainer');
+
+  if (data.length === 0) {
+    container.innerHTML = "<p>No pickup requests for this date.</p>";
+    return;
+  }
+
+  let html = `<table><thead><tr>`;
+  headers.forEach(h => {
+    const isSorted = currentSort.column === h;
+    const sortClass = isSorted ? `sorted-${currentSort.direction}` : '';
+    html += `<th class="sortable ${sortClass}" data-column="${h}">${h.toUpperCase()}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  data.forEach(row => {
+    html += `<tr>`;
+    headers.forEach(key => {
+      const label = key.toUpperCase(); // Used for mobile display
+      let cellContent = '';
+
+      if (["media", "media2", "media3"].includes(key)) {
+        cellContent = createImageCell(row[key]);
+      } else if (key === "timestamp" || key === "dateofpickup") {
+        cellContent = formatDateTime(row[key]);
+      } else {
+        cellContent = row[key] || '';
+      }
+
+      html += `<td data-label="${label}">${cellContent}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+
+  // Sorting handlers
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.getAttribute('data-column');
+      let dir = 'asc';
+      if (currentSort.column === col && currentSort.direction === 'asc') {
+        dir = 'desc';
+      }
+      currentSort = { column: col, direction: dir };
+      renderForCurrentDate();
+    });
+  });
+}
+
+
+    function renderForCurrentDate() {
+      updateDateDisplay();
+      const selectedType = document.querySelector('input[name="type"]:checked').value;
+      let filtered = filterByDate(allData, currentDate);
+      if (selectedType !== 'All') {
+        filtered = filtered.filter(row => row.request_type?.toLowerCase() === selectedType.toLowerCase());
+      }
+      if (currentSort.column) {
+        filtered = sortData(filtered, currentSort.column, currentSort.direction);
+      }
+      renderTable(filtered);
+    }
+
+    async function loadSummary() {
+      document.getElementById('tableContainer').innerHTML = '<p>Loading...</p>';
+      try {
+        const res = await fetch(WEB_APP_URL);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        allData = data;
+        renderForCurrentDate();
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        document.getElementById('tableContainer').innerHTML = '<p style="color:red;">Error loading data.</p>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSummary();
+
+      document.getElementById('prevDayBtn').addEventListener('click', () => {
+        currentDate.setDate(currentDate.getDate() - 1);
+        renderForCurrentDate();
+      });
+
+      document.getElementById('nextDayBtn').addEventListener('click', () => {
+        currentDate.setDate(currentDate.getDate() + 1);
+        renderForCurrentDate();
+      });
+
+      document.querySelectorAll('input[name="type"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          renderForCurrentDate();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
