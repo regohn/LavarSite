@@ -106,7 +106,7 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJs9Dtwd-YDpLV6vkf7fLsysXc4GBjgzXmWFshxDLdk205PTzk4hqPfGHa6y81KDK7/exec?action=getPickupSummary";
     let allData = [];
     let currentDate = new Date();
-    let currentSort = { column: '', direction: '' };
+    let currentSort = { column: 'timestamp', direction: 'desc' };
 
     const headers = [
       "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
