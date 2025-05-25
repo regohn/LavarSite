@@ -432,7 +432,8 @@ async function submitForm(formData) {
   fetch(scriptURL, { method: "POST", body: formData })
     .then((response) => {
       swal("Done", "Submitted Successfully.", "success");
-      form.reset();
+      location.reload();
+      //form.reset();
     })
     .catch((error) => {
       swal("Error", "Something went wrong. Please try again!", "error");
