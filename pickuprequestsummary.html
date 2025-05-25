@@ -110,7 +110,7 @@
 
     const headers = [
       "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
-      "request_type", "Comments", "timestamp", "unique_id", "media", "media2", "media3", "DeliveryJONumber"
+      "request_type", "Comments", "timestamp", "unique_id", "media", "media2", "media3", "Pickup Pic", "DeliveryJONumber"
     ];
 
     function formatDate(date) {
@@ -192,7 +192,7 @@
       data.forEach(row => {
         html += `<tr>`;
         headers.forEach(key => {
-          if (["media", "media2", "media3"].includes(key)) {
+          if (["media", "media2", "media3","Pickup Pic"].includes(key)) {
             html += `<td>${createImageCell(row[key])}</td>`;
           } else if (key === "timestamp" ) {
             html += `<td>${formatDateTime(row[key])}</td>`;
