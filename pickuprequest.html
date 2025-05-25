@@ -311,8 +311,9 @@
 
       window.tomSelectInstance = new TomSelect("#nameDropdown", {
         create: false,
+        searchField: "text", // <- enables search
         sortField: { field: "text", direction: "asc" },
-        placeholder: "Search for a name...",
+        placeholder: "Search for customer...",
         allowEmptyOption: true,
       });
 
@@ -347,34 +348,62 @@
     }
   }
 
-  async function loadJOs() {
-    try {
-      const res = await fetch(JO_FETCH_URL);
-      const { jos } = await res.json();
-      allJOs = jos;
+ async function loadJOs() {
+  try {
+    const res = await fetch(JO_FETCH_URL);
+    const { jos } = await res.json();
+    allJOs = jos;
 
-      jos.sort((a, b) => {
-        const nameA = (a.foundInRAW || "").toLowerCase();
-        const nameB = (b.foundInRAW || "").toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
+    jos.sort((a, b) => {
+      const nameA = (a.foundInRAW || "").toLowerCase();
+      const nameB = (b.foundInRAW || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
-      const sel = document.getElementById("joDropdown");
-      sel.innerHTML = '<option value="" disabled selected>-- Select JO --</option>';
+    const sel = document.getElementById("joDropdown");
+    sel.innerHTML = ""; // Clear existing options
 
-      jos.forEach(jo => {
-        const opt = document.createElement("option");
-        const date = new Date(jo.joDateCreated);
-        const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
+    // Add a placeholder option
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "-- Select JO --";
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    sel.appendChild(defaultOption);
 
-        opt.textContent = `${jo.foundInRAW} || ${jo.jo} || ${formattedDate}`;
-        opt.value = jo.jo;
-        sel.appendChild(opt);
-      });
-    } catch (err) {
-      console.error("Failed to load JOs", err);
+    jos.forEach(jo => {
+      const opt = document.createElement("option");
+      const date = new Date(jo.joDateCreated);
+      const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
+
+      opt.textContent = `${jo.foundInRAW} || ${jo.jo} || ${formattedDate}`;
+      opt.value = jo.jo;
+      sel.appendChild(opt);
+    });
+
+    // Initialize Tom Select on #joDropdown
+    if (window.joTomSelectInstance) {
+      window.joTomSelectInstance.destroy();
     }
+    window.joTomSelectInstance = new TomSelect("#joDropdown", {
+      create: false,
+      searchField: "text",
+      placeholder: "Search JO...",
+      sortField: { field: "text", direction: "asc" },
+      allowEmptyOption: false,
+    });
+
+    window.joTomSelectInstance.on("change", (value) => {
+      // Trigger change event manually to update JO details
+      const event = new Event("change", { bubbles: true });
+      document.getElementById("joDropdown").dispatchEvent(event);
+    });
+
+  } catch (err) {
+    console.error("Failed to load JOs", err);
   }
+}
+
 
   document.addEventListener("DOMContentLoaded", () => {
     setDefaultDateAndTime();
