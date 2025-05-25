@@ -431,9 +431,9 @@ async function submitForm(formData) {
 
   fetch(scriptURL, { method: "POST", body: formData })
     .then((response) => {
-      swal("Done", "Submitted Successfully.", "success");
-      location.reload();
-      //form.reset();
+      swal("Done", "Submitted Successfully.", "success").then(() => {
+        window.location.href = window.location.origin + "/pickuprequest.html?t=" + new Date().getTime();
+      });
     })
     .catch((error) => {
       swal("Error", "Something went wrong. Please try again!", "error");
