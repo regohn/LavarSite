@@ -432,12 +432,15 @@ joDropdown.addEventListener("change", function () {
     document.getElementById("name").value = selectedData.foundInRAW || "N/A";
     joDetailsContainer.innerHTML = `
       <h4>JO Details</h4>
-      <p>Name of Folder: ${selectedData.nameOfFolder || "N/A"}</p>
-      <p>Time of Folds: ${selectedData.timeOfFolds || "N/A"}</p>
-      <p>Date of Fold: ${formatDateTime(selectedData.dateOfFold) || "N/A"}</p>
-      <p>Found in RAW: ${selectedData.foundInRAW || "N/A"}</p>
-      <p>Amount: ${selectedData.amount || "N/A"}</p>
+      <p>Customer Name: ${selectedData.foundInRAW || "N/A"}</p>
       <p>JO Date Created: ${formatDateTime2(selectedData.joDateCreated) || "N/A"}</p>
+      <p>Amount: ${selectedData.amount || "N/A"}</p>
+      <p>Folder Name: ${selectedData.nameOfFolder || "N/A"}</p>
+      <p>Fold Time: ${selectedData.timeOfFolds || "N/A"}</p>
+      <p>Fold Date: ${formatDateTime(selectedData.dateOfFold) || "N/A"}</p>
+      
+      
+      
     `;
   } else {
     console.warn("No JO data found for selected value.");
@@ -487,6 +490,10 @@ function toggleJODropdown() {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+    const submitButton = document.querySelector(".btn-submit");
+    submitButton.disabled = true;
+    submitButton.textContent = "Sending...";
+
       const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
       let customerName;
 
@@ -526,7 +533,7 @@ if (requestType === "Delivery") {
 
         if (response.ok) {
           alert("Form submitted successfully!");
-          form.reset();
+          location.reload(); // <- This reloads the page to reset everything
           setDefaultDateAndTime();
           updateFormState();
           if (window.tomSelectInstance) window.tomSelectInstance.clear();
