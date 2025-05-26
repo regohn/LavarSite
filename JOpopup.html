@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>JO Details</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; font-size: small; }
+    .comment-box { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    .timestamp { font-size: 0.9em; color: gray; }
+    .hidden {
+      display: none;
+    }    
+    #new-comment-container {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div id="joNumber"></div>
+  <div id="commentsContainer">Loading comments...</div>
+
+<script>
+  // Helper: Get URL query parameter
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  const joNumber = getQueryParam('joNumber');
+  document.getElementById('joNumber').textContent = `Job Order: ${joNumber}`;
+
+  // Load comments from your Web App
+  function loadComments(jo) {
+    const container = document.getElementById('commentsContainer');
+    container.innerHTML = "Loading comments...";
+
+    fetch(`https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec?action=getComments&joNumber=${encodeURIComponent(jo)}`)
+      .then(res => res.json())
+      .then(data => {
+        container.innerHTML = "";
+
+        if (data.status === "success" && data.comments.length > 0) {
+          data.comments.sort((a, b) => new Date(b.TimeStamp) - new Date(a.TimeStamp));
+
+          data.comments.forEach(comment => {
+            const box = document.createElement("div");
+            box.className = "comment-box";
+            box.innerHTML = `
+              <div>Comment/Issue: ${comment.Comments}</div>
+              <div class="resolution">
+                Resolution:
+                <select onchange="updateResolution('${comment.unique_id}', this.value)">
+                  <option value="Unresolved" ${comment.Resolution === 'Unresolved' ? 'selected' : ''}>Unresolved</option>
+                  <option value="Resolved" ${comment.Resolution === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                </select>
+              </div>
+              <div class="timestamp">Timestamp: ${new Date(comment.TimeStamp).toLocaleString()}</div>
+              <div class="hidden">Unique ID: ${comment.unique_id}</div>
+            `;
+            container.appendChild(box);
+          });
+        } else {
+          container.textContent = "No comments found for this JO.";
+        }
+
+        // Add new comment textarea + submit button at the bottom
+        const newCommentHtml = `
+          <div id="new-comment-container">
+            <h3>Add New Comment</h3>
+            <textarea id="new-comment-text" rows="3" style="width: 100%;" placeholder="Type your comment here..."></textarea>
+            <br/>
+            <button id="submit-new-comment" style="margin-top: 8px;">Submit Comment</button>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', newCommentHtml);
+
+        document.getElementById('submit-new-comment').addEventListener('click', () => {
+          const newComment = document.getElementById('new-comment-text').value.trim();
+          if (!newComment) {
+            alert('Please enter a comment before submitting.');
+            return;
+          }
+
+          const uniqueId = 'UID-' + Date.now();
+
+          const payload = {
+            unique_id: uniqueId,
+            comment: newComment,
+            resolution: 'Unresolved',
+            joNumber: joNumber
+          };
+
+          fetch('https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              action: 'addComment',
+              unique_id: payload.unique_id,
+              comment: payload.comment,
+              resolution: payload.resolution,
+              joNumber: payload.joNumber
+            }),
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
+              alert('Comment submitted successfully.');
+              document.getElementById('new-comment-text').value = '';
+              loadComments(joNumber); // reload comments after submit
+            } else {
+              alert('Error submitting comment: ' + data.message);
+            }
+          })
+          .catch(err => alert('Network error: ' + err.message));
+        });
+      })
+      .catch(error => {
+        console.error("Error loading JO data:", error);
+        container.textContent = "Failed to load comments.";
+      });
+  }
+
+  // Updated updateResolution function to POST to your web app and update the Resolution
+  function updateResolution(uniqueId, resolutionValue) {
+    if (!confirm(`Change resolution to "${resolutionValue}"?`)) {
+      // If user cancels, reload comments to reset select dropdown state
+      loadComments(joNumber);
+      return;
+    }
+
+    fetch('https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        unique_id: uniqueId,
+        resolution: resolutionValue
+        // No need to send comment or joNumber here unless your doPost expects it
+      }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.status === 'success') {
+        alert('Resolution updated successfully.');
+        loadComments(joNumber);
+      } else {
+        alert('Failed to update resolution: ' + data.message);
+        loadComments(joNumber);
+      }
+    })
+    .catch(err => {
+      alert('Network error: ' + err.message);
+      loadComments(joNumber);
+    });
+  }
+
+  // Initial load
+  loadComments(joNumber);
+</script>
+
+</body>
+</html>
