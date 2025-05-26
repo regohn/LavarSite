@@ -206,9 +206,7 @@
 
       const table = document.createElement("table");
       table.id = "dataTable";
-      
-
-  const headers = data[0];
+      const headers = data[0];
 
       const thead = document.createElement("thead");
       const headerRow = document.createElement("tr");
@@ -228,240 +226,102 @@
       table.appendChild(thead);
 
       const tbody = document.createElement("tbody");
-for (let i = 1; i < Math.min(data.length, maxRows + 1); i++) {
-  const rowData = data[i];
-  const row = document.createElement("tr");
-  row.id = rowData[18];  // Set the JO# as the row ID
-rowData.forEach((cell, index) => {
-  const td = document.createElement("td");
-  
-  if (index === 0 || index === 4 || index === 13) {
-    td.textContent = formatDateTime(cell);
-  } else if (index === 10) {
-    td.textContent = formatDateOnly(cell);
-  } else if ([14, 15, 16].includes(index)) {
-    if (typeof cell === "string" && cell.includes("drive.google.com")) {
-      const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
-      if (match && match[1]) {
-        const fileId = match[1];
-        const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
-        const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    for (let i = 1; i < Math.min(data.length, maxRows + 1); i++) {
+      const rowData = data[i];
+      const row = document.createElement("tr");
+      row.id = rowData[18];  // Set the JO# as the row ID
+      rowData.forEach((cell, index) => {
+      const td = document.createElement("td");
 
-        const img = document.createElement("img");
-        img.src = thumbUrl;
-        img.alt = "Image";
-        img.style.maxWidth = "80px";
-        img.style.cursor = "pointer";
+      if (index === 0 || index === 4 || index === 13) {
+        td.textContent = formatDateTime(cell);
+      } else if (index === 10) {
+        td.textContent = formatDateOnly(cell);
+      } else if ([14, 15, 16].includes(index)) {
+        if (typeof cell === "string" && cell.includes("drive.google.com")) {
+          const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
+          if (match && match[1]) {
+            const fileId = match[1];
+            const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
+            const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
-let imgPopup = null; // Keep reference to the popup window
+            const img = document.createElement("img");
+            img.src = thumbUrl;
+            img.alt = "Image";
+            img.style.maxWidth = "80px";
+            img.style.cursor = "pointer";
 
-img.onclick = () => {
-  const width = 600;
-  const height = 400;
-  const left = (window.screen.width / 2) - (width / 2);
-  const top = (window.screen.height / 2) - (height / 2);
+            let imgPopup = null; // Keep reference to the popup window
 
-  const windowFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`;
+            img.onclick = () => {
+              const width = 600;
+              const height = 400;
+              const left = (window.screen.width / 2) - (width / 2);
+              const top = (window.screen.height / 2) - (height / 2);
 
-  if (imgPopup && !imgPopup.closed) {
-    // If popup is already open, just change its location to the new image
-    imgPopup.location.href = fullImageUrl;
-    imgPopup.focus();
-  } else {
-    // Open a new popup window with the image URL
-    imgPopup = window.open(fullImageUrl, "imagePopup", windowFeatures);
-  }
-};
+              const windowFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`;
 
-        td.appendChild(img);
+              if (imgPopup && !imgPopup.closed) {
+                // If popup is already open, just change its location to the new image
+                imgPopup.location.href = fullImageUrl;
+                imgPopup.focus();
+              } else {
+                // Open a new popup window with the image URL
+                imgPopup = window.open(fullImageUrl, "imagePopup", windowFeatures);
+              }
+            };
+
+            td.appendChild(img);
+          } else {
+            td.textContent = "Invalid link";
+          }
+        } else {
+          td.textContent = "";
+        }
+      
+      } else if (index === 1) {
+          const a = document.createElement("a");
+          a.href = "#";
+          a.textContent = cell ?? "N/A";
+          a.style.cursor = "pointer";
+          a.style.color = "#0066cc";
+          a.style.textDecoration = "underline";
+
+          a.onclick = (e) => {
+            e.preventDefault();
+            const joNumber = cell; // e.g., "#12669"
+            const encodedJO = encodeURIComponent(joNumber);
+            const width = 600;
+            const height = 400;
+            const left = (window.screen.width / 2) - (width / 2);
+            const top = (window.screen.height / 2) - (height / 2);
+
+            window.open(
+              `JOpopup.html?joNumber=${encodedJO}`,
+              "JOpopupWindow",
+              `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+            );
+          };
+
+          td.appendChild(a);
+
       } else {
-        td.textContent = "Invalid link";
+        td.textContent = cell ?? "";
       }
-    } else {
-      td.textContent = "";
+      row.appendChild(td);
+    });
+
+      tbody.appendChild(row);
     }
-  } else if (index === 17) {
-  // "Admin Comments" editable
-  td.textContent = cell ?? "";
-  td.classList.add("editable-cell");
-  td.onclick = () => {
-    const original = td.textContent;
-    td.innerHTML = "";
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = original;
-    input.style.width = "80%";
-    input.classList.add("comment-input"); // Add class for easier selection
-    
-
-    const saveBtn = document.createElement("span");
-    saveBtn.textContent = "✅";
-    saveBtn.style.cursor = "pointer";
-    saveBtn.style.marginLeft = "5px";
-
-    const cancelBtn = document.createElement("span");
-    cancelBtn.textContent = "❌";
-    cancelBtn.style.cursor = "pointer";
-    cancelBtn.style.marginLeft = "5px";
-
-saveBtn.onclick = () => {
-  // Assuming the saveBtn is inside a <td> inside a <tr> representing a row
-  const row = saveBtn.closest('tr');
-
-  // Grab the text input inside the same row (adjust selector if needed)
-  const input = row.querySelector('input.comment-input');  // the input with comment text
-  if (!input) {
-    alert("Comment input not found");
-    return;
-  }
-
-  const newValue = input.value.trim();
-  if (!newValue) {
-    alert("Please enter a comment");
-    return;
-  }
-
-  // Grab the unique ID stored as a data attribute on the row
-  const uniqueId = row.id; // this gets the <tr> id attribute
-  if (!uniqueId) {
-    alert("Unique ID not found on row");
-    return;
-  }
-
-  // Column name to update in your sheet
-  const columnName = 'Admin Comments';
-
-  // Prepare payload to send to backend
-  const payload = {
-    id: uniqueId,
-    column: columnName,
-    value: newValue
-  };
-
-  // Your deployed Google Apps Script Web App URL
-  const apiUrl = "https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec";
-
-  // POST to backend
-  fetch(apiUrl, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(response => response.json())
-  .then(result => {
-    if (result.status === 'success') {
-      alert('Comment saved successfully!');
-    } else {
-      alert('Error saving comment: ' + result.message);
-    }
-  })
-  .catch(err => {
-    alert('Network error: ' + err.message);
-  });
-};
-  cancelBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    td.innerHTML = "";
-    td.textContent = original;
-  });
-
-
-    td.appendChild(input);
-    td.appendChild(saveBtn);
-    td.appendChild(cancelBtn);
-    input.focus();
-  };
-} else if (index === 18) {
-  // "Resolved Y/N" editable
-  td.textContent = cell ?? "";
-  td.classList.add("editable-cell");
- td.onclick = () => {
-  const original = td.textContent;
-  td.innerHTML = "";
-
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = original;
-  input.style.width = "80%";
-  input.classList.add("comment-input");
-
-  const saveBtn = document.createElement("span");
-  saveBtn.textContent = "✅";
-  saveBtn.style.cursor = "pointer";
-  saveBtn.style.marginLeft = "5px";
-
-  const cancelBtn = document.createElement("span");
-  cancelBtn.textContent = "❌";
-  cancelBtn.style.cursor = "pointer";
-  cancelBtn.style.marginLeft = "5px";
-
-  td.appendChild(input);
-  td.appendChild(saveBtn);
-  td.appendChild(cancelBtn);
-
-  // Get unique ID from the row (assuming it's set as a data attribute)
-  const tr = td.parentElement;
-  const uniqueId = tr.getAttribute("id"); // e.g. <tr data-uniqueid="UID-1234">
-
-  saveBtn.onclick = async () => {
-    const newValue = input.value.trim();
-
-    if (!uniqueId) {
-      alert("Unique ID not found on this row.");
-      td.textContent = original;
-      return;
-    }
-
-    // Prepare payload for POST request
-    const payload = {
-      id: uniqueId,
-      column: "Comments",  // Must match your sheet header exactly
-      value: newValue
-    };
-
-    try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (result.status === "success") {
-        td.textContent = newValue;
-        alert("Comment saved successfully!");
-      } else {
-        alert("Error saving comment: " + result.message);
-        td.textContent = original; // revert on error
-      }
-    } catch (err) {
-      alert("Network error: " + err.message);
-      td.textContent = original; // revert on error
-    }
-  };
-
-  cancelBtn.onclick = (e) => {
-    e.stopPropagation();
-    td.textContent = original;
-  };
-};
-
-} else {
-    td.textContent = cell ?? "";
-  }
-
-  row.appendChild(td);
-});
-
-  tbody.appendChild(row);
-}
 
       table.appendChild(tbody);
       container.appendChild(table);
+      setTimeout(() => {
+        markJOIssuesInTable();
+      }, 0);
     }
 
+    // Add sorting functionality
     function sortTable(table, colIndex, ascending = true) {
       const rows = Array.from(table.rows).slice(1);
       rows.sort((a, b) => {
@@ -476,7 +336,7 @@ saveBtn.onclick = () => {
       });
       rows.forEach(row => table.appendChild(row));
     }
-
+    // Load data from the API  
     async function loadData() {
       const status = document.getElementById("status");
       status.textContent = "Loading...";
@@ -492,150 +352,185 @@ saveBtn.onclick = () => {
         status.textContent = "Error loading data: " + e.message;
       }
     }
+    
+    // Load customers into the dropdown
+    function loadCustomers(data) {
+      const select = document.getElementById("searchCustomer");
+      const customerSet = new Set();
 
-function loadCustomers(data) {
-  const select = document.getElementById("searchCustomer");
-  const customerSet = new Set();
+      data.slice(1).forEach(row => {
+        let customer = (row[2] || "").trim();
+        if (customer) customerSet.add(customer);
+      });
 
-  data.slice(1).forEach(row => {
-    let customer = (row[2] || "").trim();
-    if (customer) customerSet.add(customer);
-  });
+      
+      select.innerHTML = '<option value="">Select Customer</option>';
 
-  
-  select.innerHTML = '<option value="">Select Customer</option>';
+      // Sort alphabetically, case-insensitive
+      [...customerSet].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+        .forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+    }
 
-  // Sort alphabetically, case-insensitive
-  [...customerSet].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
-    .forEach(name => {
-      const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      select.appendChild(opt);
-    });
-}
+    // Filter data based on date and customer
+    function filterData() {
+      
+      const searchDate = document.getElementById("searchDate").value; // Date picker value
+      const searchCustomer = document.getElementById("searchCustomer").value.trim().toLowerCase(); // Normalize input
 
+      // Convert the search date from yyyy-mm-dd to yyyyMMdd format
+      const formattedSearchDate = searchDate.split('-').join(''); // e.g., '2025-05-14' -> '20250514'
 
-function filterData() {
-  
-  const searchDate = document.getElementById("searchDate").value; // Date picker value
-  const searchCustomer = document.getElementById("searchCustomer").value.trim().toLowerCase(); // Normalize input
+      console.log("Formatted Search Date:", formattedSearchDate); // Debugging: Log the selected date
 
-  // Convert the search date from yyyy-mm-dd to yyyyMMdd format
-  const formattedSearchDate = searchDate.split('-').join(''); // e.g., '2025-05-14' -> '20250514'
+      filteredData = allData.filter((row, index) => {
+        if (index === 0) return true; // Keep header row
 
-  console.log("Formatted Search Date:", formattedSearchDate); // Debugging: Log the selected date
+        let isMatch = true;
 
-  filteredData = allData.filter((row, index) => {
-    if (index === 0) return true; // Keep header row
+        // If a date is selected
+        if (searchDate) {
+          const rawDate = row[0] || ""; // full ISO 8601 string "2025-02-22T16:00:00.000Z"
+          console.log("Raw Date from Row:", rawDate); // Debugging: Log the raw date from the row
 
-    let isMatch = true;
+          // Convert the ISO date string to 'yyyyMMdd' format
+          const dateObj = new Date(rawDate);
+          const formattedRowDate = `${dateObj.getFullYear()}${(dateObj.getMonth() + 1).toString().padStart(2, '0')}${dateObj.getDate().toString().padStart(2, '0')}`; // e.g., '2025-02-22' -> '20250222'
 
-    // If a date is selected
-    if (searchDate) {
-      const rawDate = row[0] || ""; // full ISO 8601 string "2025-02-22T16:00:00.000Z"
-      console.log("Raw Date from Row:", rawDate); // Debugging: Log the raw date from the row
+          console.log("Formatted Row Date:", formattedRowDate); // Debugging: Log the formatted row date
 
-      // Convert the ISO date string to 'yyyyMMdd' format
-      const dateObj = new Date(rawDate);
-      const formattedRowDate = `${dateObj.getFullYear()}${(dateObj.getMonth() + 1).toString().padStart(2, '0')}${dateObj.getDate().toString().padStart(2, '0')}`; // e.g., '2025-02-22' -> '20250222'
+          if (formattedRowDate !== formattedSearchDate) {
+            isMatch = false; // If the dates don't match, exclude this row
+          }
+        }
 
-      console.log("Formatted Row Date:", formattedRowDate); // Debugging: Log the formatted row date
+        // If a customer filter is selected
+        if (searchCustomer) {
+          const customer = (row[2] || "").trim().toLowerCase(); // Normalize data row
+          if (customer !== searchCustomer) isMatch = false;
+        }
 
-      if (formattedRowDate !== formattedSearchDate) {
-        isMatch = false; // If the dates don't match, exclude this row
+        return isMatch;
+      });
+
+      renderTable(filteredData); // Re-render table
+      
+    }
+
+    // Clear all rows in the table, keeping the headers intact
+    function clearTableRows() {
+      const table = document.querySelector("table"); // Select the first table
+      const tbody = table.querySelector("tbody"); // Select the tbody (where rows are stored)
+      
+      if (tbody) {
+        tbody.innerHTML = ""; // Remove all rows in the tbody, keeping the headers intact
       }
     }
-
-    // If a customer filter is selected
-    if (searchCustomer) {
-      const customer = (row[2] || "").trim().toLowerCase(); // Normalize data row
-      if (customer !== searchCustomer) isMatch = false;
-    }
-
-    return isMatch;
-  });
-
-  renderTable(filteredData); // Re-render table
-}
-
-
-function clearTableRows() {
-  const table = document.querySelector("table"); // Select the first table
-  const tbody = table.querySelector("tbody"); // Select the tbody (where rows are stored)
-  
-  if (tbody) {
-    tbody.innerHTML = ""; // Remove all rows in the tbody, keeping the headers intact
-  }
-}
-
+    // Clear filters and reset the table to show all data
     function clearFilters() {
       document.getElementById("searchDate").value = "";
       document.getElementById("searchCustomer").value = "";
       filteredData = allData;
       renderTable(filteredData);
     }
-
+    
+    // Create a thumbnail image cell
     function openImageModal(imageUrl) {
-  const modal = document.getElementById("imageModal");
-  const modalImg = document.getElementById("imageModalContent");
-  modal.style.display = "block";
-  modalImg.src = imageUrl;
-}
-
-function closeImageModal() {
-  const modal = document.getElementById("imageModal");
-  modal.style.display = "none";
-  document.getElementById("imageModalContent").src = "";
-}
-
-document.getElementById("imageModalClose").onclick = function () {
-  document.getElementById("imageModal").style.display = "none";
-};
-
-
-document.getElementById("imageModalClose").onclick = function () {
-  document.getElementById("imageModal").style.display = "none";
-};
-
-window.onclick = function (event) {
-  const modal = document.getElementById("imageModal");
-  if (event.target === modal) {
-    modal.style.display = "none";
-  }
-};
-
-document.querySelectorAll('.save-comment-btn').forEach((button, index) => {
-  button.addEventListener('click', () => {
-    const row = button.closest('tr');
-    const comment = row.querySelector('.comment-input').value.trim();
-    const uniqueId = row.getAttribute('data-id');
-
-    if (!comment || !uniqueId) {
-      alert("Missing comment or ID");
-      return;
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("imageModalContent");
+      modal.style.display = "block";
+      modalImg.src = imageUrl;
     }
 
-    fetch('https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_URL/exec', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: uniqueId,
-        column: 'Admin Comments',
-        value: comment
-      })
-    })
-    .then(res => res.json())
-    .then(result => {
-      if (result.status === 'success') {
-        alert('Comment saved!');
-      } else {
-        alert('Error: ' + result.message);
+   
+    // Close the image modal
+    function closeImageModal() {
+      const modal = document.getElementById("imageModal");
+      modal.style.display = "none";
+      document.getElementById("imageModalContent").src = "";
+    }
+    // Event listener for closing the modal when clicking outside the image
+    document.getElementById("imageModalClose").onclick = function () {
+      document.getElementById("imageModal").style.display = "none";
+    };
+
+
+    document.getElementById("imageModalClose").onclick = function () {
+      document.getElementById("imageModal").style.display = "none";
+    };
+    // 
+    window.onclick = function (event) {
+      const modal = document.getElementById("imageModal");
+      if (event.target === modal) {
+        modal.style.display = "none";
       }
-    })
-    .catch(err => alert('Network error: ' + err.message));
+    };
+    // Load data on page load
+  document.querySelectorAll('.save-comment-btn').forEach((button, index) => {
+    button.addEventListener('click', () => {
+      const row = button.closest('tr');
+      const comment = row.querySelector('.comment-input').value.trim();
+      const uniqueId = row.getAttribute('data-id');
+
+      if (!comment || !uniqueId) {
+        alert("Missing comment or ID");
+        return;
+      }
+    
+      fetch('https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_URL/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: uniqueId,
+          column: 'Admin Comments',
+          value: comment
+        })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.status === 'success') {
+          alert('Comment saved!');
+        } else {
+          alert('Error: ' + result.message);
+        }
+      })
+      .catch(err => alert('Network error: ' + err.message));
+    });
   });
-});
+
+async function checkUnresolvedIssues(joNumber) {
+  try {
+    const response = await fetch(`https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec?action=checkIssues&jo=${encodeURIComponent(joNumber)}`);
+    const data = await response.json();
+    return data.unresolvedCount || 0;
+  } catch (err) {
+    console.error(`Error checking issues for ${joNumber}:`, err);
+    return 0;
+  }
+}
+
+async function markJOIssuesInTable() {
+  console.log("markJOIssuesInTable called");
+  const rows = document.querySelectorAll("#dataTable tbody tr");
+  for (const row of rows) {
+    const joCell = row.querySelector("td:nth-child(1)");  // 2nd column is JO#
+    const customerCell = row.querySelector("td:nth-child(2)"); // 3rd column is customer
+
+    if (joCell && customerCell) {
+      const joNumber = joCell.textContent.trim();
+
+      const unresolvedCount = await checkUnresolvedIssues(joNumber);
+      if (unresolvedCount > 0) {
+        customerCell.innerHTML += ` <span title="${unresolvedCount} unresolved issue(s)" style="color: red; font-weight: bold;">&#x26A0;</span>`;
+      }
+    }
+  }
+}
+
 
 
   </script>
