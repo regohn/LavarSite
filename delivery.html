@@ -43,7 +43,8 @@
         }      
     </style>
   </head>
-  <body class="bg-light">
+  <body class="bg-light"  >
+
     <div class="container">
       <div class="form-container">
         <h4 class="text-center mb-4">Lavar Laundry Delivery Form</h4>
@@ -53,7 +54,7 @@
         </div>
         <form id="submit-to-google-sheet">
           <div class="form-group">
-            <label for="JOR">Job Order Reference <br>(Only Folded Laundry JOs will appear in search)<br> (Use Delivery form also for In-shop Pickup of laundry by customer)</label>
+            <label for="JOR">(Only Folded Laundry JOs will appear in search)<br> (Use Delivery form also for In-shop Pickup of laundry by customer)</label>
             <input
                 class="form-control"
                 type="text"
@@ -62,7 +63,30 @@
                 placeholder="Enter Job Order Ref"
                 required
                 readonly
+                hidden
             />
+          <div class="d-flex justify-content-center align-items-center mb-3" style="gap: 1rem;">
+            <img
+              src="https://img.icons8.com/ios-glyphs/20/000000/chevron-left.png"
+              style="cursor: pointer;"
+              onclick="changeDate(-1)"
+              alt="Previous Day"
+            />
+            <span id="currentDate" class="fw-semibold" style="min-width: 120px; text-align: center;"></span>
+            <img
+              src="https://img.icons8.com/ios-glyphs/20/000000/chevron-right.png"
+              style="cursor: pointer;"
+              onclick="changeDate(1)"
+              alt="Next Day"
+            />
+          </div>
+          
+          <!-- JO Dropdown -->
+            <select class="form-control mb-2" id="joDropdown" onchange="loadDeliveryData()">
+              <option value="">Select Requested JO# for Delivery</option>
+            </select>   
+            <!-- Delivery Info Display -->
+            <div id="deliveryInfoBox" class="mt-3"></div>         
             <input
                 class="form-control mt-2"
                 type="text"
@@ -136,11 +160,11 @@
                 <td>
                   <label>Did the Customer Pay During Delivery?</label>
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="DeliveryPayMethod" id="payYes" value="Yes" required onchange="togglePaymentOptions(true)">
+                    <input class="form-check-input" type="radio" name="DeliveryPayMethod" id="payYes" value="Yes" required ">
                     <label class="form-check-label" for="payYes">Yes</label>
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="DeliveryPayMethod" id="payNo" value="No" onchange="togglePaymentOptions(false)">
+                    <input class="form-check-input" type="radio" name="DeliveryPayMethod" id="payNo" value="No" ">
                     <label class="form-check-label" for="payNo">No</label>
                   </div>
                 </td>
@@ -201,181 +225,209 @@
 
 <script>
   const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
-  const form = document.forms["submit-to-google-sheet"];
+  const form = document.getElementById("submit-to-google-sheet");
   const JOsearchField = document.getElementById("JOsearch");
   const JOresult = document.getElementById("JOresult");
-
-  // Grab the search button and add the event listener
   const searchButton = document.getElementById("searchButton");
 
-
-
-function getDriveThumbnail(url) {
-  const match = url.match(/[-\w]{25,}/);
-  return match ? `https://drive.google.com/thumbnail?id=${match[0]}` : "";
-}
+  function getDriveThumbnail(url) {
+    const match = url.match(/[-\w]{25,}/);
+    return match ? `https://drive.google.com/thumbnail?id=${match[0]}` : "";
+  }
 
   searchButton.addEventListener("click", async function () {
     const joNumber = JOsearchField.value.trim();
-    if (joNumber) {
-      const response = await fetch(`${scriptURL}?JO=${joNumber}`);
-      const data = await response.json();
-      
-          let picturesHTML = "";
+    document.getElementById("DeliveryStaff").value = "";
+    const radios = document.getElementsByName("DeliveryPayMethod");
+    radios.forEach(radio => radio.checked = false);
+    document.getElementById("Comments").value = "";
+    JOresult.innerHTML = ""; // Clear previous results
 
-          if (data.Picture1) {
-            picturesHTML += `
-              <div>
-                <table>
-                  <tr>
-                    <td>Picture1:</td>
-                    <td>
-                      <a href="${data.Picture1}" target="_blank">
-                        <img id="pic1img" src="${getDriveThumbnail(data.Picture1)}" alt="Picture1" style="height: 60px; margin: 5px; border-radius: 5px;" />
-                      </a>
-                    </td>
-                    <td>
-                      <button id="Pic1Delete"  onclick="deletePicture(1)" type="button" style="height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 10px;">Delete</button>
-                  </tr>
-              </div>`;
-          }
-          if (data.Picture2) {
-            picturesHTML += `
-              <div>
-                <table>
-                  <tr>
-                    <td>Picture2:</td>
-                    <td>
-                      <a href="${data.Picture2}" target="_blank">
-                        <img id="pic2img" src="${getDriveThumbnail(data.Picture2)}" alt="Picture2" style="height: 60px; margin: 5px; border-radius: 5px;" />
-                      </a>
-                    </td>
-                    <td>
-                      <button id="Pic2Delete"  onclick="deletePicture(2)"  type="button" style="height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 10px;">Delete</button>
-                  </tr>
-              </div>`;
-          }
-          if (data.Picture3) {
-            picturesHTML += `
-              <div>
-                <table>
-                  <tr>
-                    <td>Picture3:</td>
-                    <td>
-                      <a href="${data.Picture3}" target="_blank">
-                        <img id="pi31img" src="${getDriveThumbnail(data.Picture3)}" alt="Picture3" style="height: 60px; margin: 5px; border-radius: 5px;" />
-                      </a>
-                    </td>
-                    <td>
-                      <button id="Pic3Delete" onclick="deletePicture(3)"  type="button" style="height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 10px;">Delete</button>
-                  </tr>
-
-              </div>`;
-          }
-
-      if (data.result === "not found") {
-        JOresult.innerHTML = "Di Pa Na Log ng Mga Nagtupi. Tawagan sila at ipalog.";
-      } else {
-        const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
-        if (data.JO && (!data.DeliveryStaff || data.DeliveryStaff.trim() === "")) {
-          document.getElementById("JOR").value = data.JO;
-          const submitButton = document.querySelector("button[type='submit']");
-          submitButton.disabled = false;
-          submitButton.innerText = "SUBMIT";          
-        }        
-        JOresult.innerHTML = `
-          <div style="font-size: 11px;">
-            <br>Customer Name: ${data.value} <br>
-            JO#: ${data.JO} <br>
-            No. of Bags: ${data.colC} <br>
-            Total Amount: ${data.colK} <br>
-            Folder: ${data.colD} <br>
-            Details: ${data.colE} <br><br>
-            Delivered By: ${data.DeliveryStaff} <br>
-            Comments: ${data.Comments} <br>
-            Date of Delivery: ${formattedDeliveryDatetime} <br>
-            Delivery ID: ${data.UniqueID} <p id="deliveryid" style="color: white;">${data.UniqueID}</p> ${picturesHTML}
-            <input type="hidden" id="UniqueID" name="UniqueID" value="${data.UniqueID || ''}">
-          </div>
-        `;
-
-// After setting JOresult.innerHTML and before ending the else block
-    if (data.DeliveryStaff && data.DeliveryStaff.trim() !== "") {
-      // Disable form fields
-          //document.getElementById("DeliveryStaff").disabled = true;
-          //document.getElementById("Comments").disabled = true; 
-
-          document.getElementById("JOR").disabled = false;
-          document.getElementById("JOR").value = data.JO;
-          document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
-          document.getElementById("Comments").value = data.Comments;
-          document.getElementById("DeliveryPayMethod").value = data.DeliveryPayMethod;
-
-          //document.getElementById("media").disabled = true;
-          //document.getElementById("media2").disabled = true;
-          //document.getElementById("media3").disabled = true;
-        
-          const submitButton = document.querySelector("button[type='submit']");
-          submitButton.disabled = false;
-          submitButton.innerText = "Update";
-
-      } else if (!data.DeliveryStaff || data.DeliveryStaff.trim() === "") {
-        // If DeliveryStaff is missing/empty, prefill the JOR field with JO
-          document.getElementById("DeliveryStaff").disabled = false;
-          document.getElementById("Comments").disabled = false; 
-
-          document.getElementById("JOR").disabled = false;
-          document.getElementById("media").disabled = false;
-          document.getElementById("media2").disabled = false;
-          document.getElementById("media3").disabled = false;
-      }
-    
-    
-      }
-    } else {
+    if (!joNumber) {
       JOresult.innerHTML = "Please enter a JO number.";
+      return;
     }
-  });
 
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("submit-to-google-sheet");
+    const response = await fetch(`${scriptURL}?JO=${joNumber}`);
+    const data = await response.json();
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
-    const fileInputs = ["media", "media2", "media3"];
+    if (data.result === "not found") {
+      JOresult.innerHTML = "Di Pa Na Log ng Mga Nagtupi. Tawagan sila at ipalog.";
+      return;
+    }
 
-    for (const id of fileInputs) {
-      const input = document.getElementById(id);
-      if (input.files.length > 0) {
-        const file = input.files[0];
-        if (file.size > 5 * 1024 * 1024) {
-          swal("Error", `${id} must be less than 5MB.`, "error");
-          return;
-        }
-        const base64 = await readFileAsBase64(file);
-        formData.set(id, base64);
+    let picturesHTML = "";
+    ["Picture1", "Picture2", "Picture3"].forEach((pic, i) => {
+      if (data[pic]) {
+        picturesHTML += `
+          <div>
+            <table>
+              <tr>
+                <td>${pic}:</td>
+                <td>
+                  <a href="${data[pic]}" target="_blank">
+                    <img id="pic${i + 1}img" src="${getDriveThumbnail(data[pic])}" style="height: 60px; margin: 5px; border-radius: 5px;" />
+                  </a>
+                </td>
+                <td>
+                  <button id="Pic${i + 1}Delete" onclick="deletePicture(${i + 1})" type="button" style="height: 20px;">Delete</button>
+                </td>
+              </tr>
+            </table>
+          </div>`;
       }
-    }
+    });
 
-    await submitForm(formData);
+    const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
+
+    JOresult.innerHTML = `
+      <div style="font-size: 11px;">
+        <br>Customer Name: ${data.value} <br>
+        JO#: ${data.JO} <br>
+        No. of Bags: ${data.colC} <br>
+        Total Amount: ${data.colK} <br>
+        Folder: ${data.colD} <br>
+        Details: ${data.colE} <br><br>
+        Delivered By: ${data.DeliveryStaff} <br>
+        Comments: ${data.Comments} <br>
+        Date of Delivery: ${formattedDeliveryDatetime} <br>
+        Delivery ID: ${data.UniqueID} <p id="deliveryid" style="color: white;">${data.UniqueID}</p> ${picturesHTML}
+        <input type="hidden" id="UniqueID" name="UniqueID" value="${data.UniqueID || ''}">
+      </div>`;
+
+    // Prefill fields and control form interactivity
+    const submitButton = document.querySelector("button[type='submit']");
+    document.getElementById("JOR").value = data.JO;
+    document.getElementById("JOR").disabled = false;
+    
+    submitButton.disabled = false;
+
+    if (data.DeliveryStaff?.trim()) {
+      submitButton.innerText = "Update";
+      document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
+      document.getElementById("Comments").value = data.Comments;
+      document.getElementById("DeliveryPayMethod").value = data.DeliveryPayMethod;
+    } else {
+      submitButton.innerText = "SUBMIT";
+      
+      
+      ["DeliveryStaff", "Comments", "media", "media2", "media3"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = false;
+      });
+    }
   });
+
+  document.getElementById("clearButton").addEventListener("click", function () {
+  // Option 1: Clear the form manually
+  form.reset();
+
+  // Optional: Clear image previews, result areas, etc.
+  document.getElementById("JOresult").innerHTML = "";
+  document.getElementById("JOR").value = "";
+  document.getElementById("media").value = "";
+  document.getElementById("media2").value = "";
+  document.getElementById("media3").value = "";
+
+  // Re-enable submit button if it was disabled
+  const submitButton = document.querySelector("button[type='submit']");
+  submitButton.disabled = false;
+  submitButton.innerText = "SUBMIT";
+});
+
+  function formatDateTime(isoString) {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    return date.toLocaleString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    });
+  }
+
+  function formatDate(date) {
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+  }
+
+  let currentDate = new Date();
+  function updateDisplayedDate() {
+    document.getElementById("currentDate").textContent = formatDate(currentDate);
+  }
+function changeDate(offsetDays) {
+  const currentDateEl = document.getElementById("currentDate");
+  const currentDate = new Date(currentDateEl.innerText);
+
+  currentDate.setDate(currentDate.getDate() + offsetDays);
+
+  // Format to yyyy-MM-dd
+  const formatted = currentDate.toISOString().split("T")[0];
+  currentDateEl.innerText = formatted;
+
+  // Reload JO dropdown for the new date
+  loadJODropdown(formatted);
+}
+
+  document.addEventListener("DOMContentLoaded", () => {
+    updateDisplayedDate();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const fileInputs = ["media", "media2", "media3"];
+      for (const id of fileInputs) {
+        const input = document.getElementById(id);
+        if (input?.files.length > 0) {
+          const file = input.files[0];
+          if (file.size > 5 * 1024 * 1024) {
+            swal("Error", `${id} must be less than 5MB.`, "error");
+            return;
+          }
+          const base64 = await readFileAsBase64(file);
+          formData.set(id, base64);
+        }
+      }
+      await submitForm(formData);
+    });
+  });
+
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
   async function submitForm(formData) {
+    const JOR = formData.get("JOR");
+    if (!JOR || JOR.trim() === "") {
+      swal("Missing JO#", "Please enter the Job Order Reference before submitting.", "warning");
+      return;
+    }
+
+    const submitButton = document.querySelector("button[type='submit']");
+    submitButton.disabled = true;
+    submitButton.innerText = "Loading...";
+
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec", {
+      const response = await fetch(scriptURL, {
         method: "POST",
         body: formData,
       });
       const result = await response.json();
 
       if (result.result === "success") {
-        // Update hidden unique_id input with the server-generated unique_id
         if (result.unique_id) {
-          const uniqueIdInput = document.getElementById("UniqueID") || document.querySelector('input[name="unique_id"]');
-          if (uniqueIdInput) {
-            uniqueIdInput.value = result.unique_id;
-          }
+          const uniqueIdInput = document.getElementById("UniqueID");
+          if (uniqueIdInput) uniqueIdInput.value = result.unique_id;
         }
         swal("Success", "Record saved successfully!", "success");
       } else {
@@ -383,164 +435,83 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     } catch (err) {
       swal("Error", err.message || "Network error", "error");
-    }
-  }
-
-  // Helper function to convert file to base64 string
-  function readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]); // get base64 without prefix
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  }
-});
-
-
-function readFileAsBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-console.log("Form submitted");
-
-  function readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(",")[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-async function submitForm(formData) {
-  const JOR = formData.get("JOR");
-  if (!JOR || JOR.trim() === "") {
-    swal("Missing JO#", "Please enter the Job Order Reference before submitting.", "warning");
-    return; // Stop the function if JOR is empty
-  }
-
-  const submitButton = document.querySelector("button[type='submit']");
-  submitButton.disabled = true;
-  submitButton.innerText = "Loading...";
-
-  fetch(scriptURL, { method: "POST", body: formData })
-    .then((response) => {
-      swal("Done", "Submitted Successfully.", "success").then(() => {
-        window.location.href = window.location.origin + "/pickuprequest.html?t=" + new Date().getTime();
-      });
-    })
-    .catch((error) => {
-      swal("Error", "Something went wrong. Please try again!", "error");
-    })
-    .finally(() => {
+    } finally {
       submitButton.disabled = false;
       submitButton.innerText = "Submit";
-    });
-}
-
-
-
-
-function clearInput() {
-  // Clear the content of the JOsearch input field
-  document.getElementById("JOresult").innerHTML = "";
-  document.getElementById("JOR").value = "";
-  document.getElementById("JOsearch").value = "";
-}
-
-
-function copyJO(joNumber) {
-    document.getElementById("JOR").value = joNumber;
-    document.getElementById("JOsearch").value = "";  
-}
-
-function formatDateTime(timestamp) {
-  const date = new Date(timestamp);
-
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  const yyyy = date.getFullYear();
-
-  let hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const ampm = hours >= 12 ? "pm" : "am";
-
-  hours = hours % 12;
-  hours = hours ? hours : 12; // 0 should be 12
-
-  return `${mm}/${dd}/${yyyy} ${hours}:${minutes} ${ampm}`;
-}
-
-
-  function deletePicture(picNumber) {
-    const fileInputId = picNumber === 1 ? 'media' : `media${picNumber}`;
-    const imgId = `pic${picNumber}img`;
-
-    document.getElementById("mainsubmitbutton").innerHTML = "Submit";
-
-    const fileInput = document.getElementById(fileInputId);
-    const img = document.getElementById(imgId);
-
-    if (fileInput) fileInput.disabled = false;
-    if (img) img.src = '';
-  }
-
-  function enableFormEditing() {
-    document.getElementById("DeliveryStaff").disabled = false;
-    document.getElementById("Comments").disabled = false;
-    document.getElementById("media").disabled = false;
-    document.getElementById("media2").disabled = false;
-    document.getElementById("media3").disabled = false;
-
-    const submitButton = document.querySelector("button[type='submit']");
-    submitButton.disabled = false;
-    submitButton.innerText = "Submit";
-  }
-
-  // Event listener for "Change" button
-  document.getElementById("changeButton").addEventListener("click", enableFormEditing);
-
-  // Event listeners for picture delete buttons
-  ["Pic1Delete", "Pic2Delete", "Pic3Delete"].forEach(function (btnId) {
-    const btn = document.getElementById(btnId);
-    if (btn) {
-      btn.addEventListener("click", function () {
-        // Optionally hide the image or clear a field here
-        enableFormEditing();
-      });
     }
-  });
+  }
+  
+let deliveryData = [];
 
-function enableFormEditing() {
-  document.getElementById("DeliveryStaff").disabled = false;
-  document.getElementById("Comments").disabled = false;
-  document.getElementById("media").disabled = false;
-  document.getElementById("media2").disabled = false;
-  document.getElementById("media3").disabled = false;
+async function loadJODropdown(passedDate) {
+  
+  const dropdown = document.getElementById("joDropdown");
+  //const currentDate = document.getElementById("currentDate").innerText.trim(); // get date from span
 
-  const submitButton = document.querySelector("button[type='submit']");
-  submitButton.disabled = false;
-  submitButton.innerText = "Submit";
+  dropdown.innerHTML = '<option value="">Select Requested JO# for Delivery</option>';
+
+  try {
+    const url = `https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec?date=${encodeURIComponent(passedDate)}`;
+    const response = await fetch(url);
+
+    if (!response.ok) throw new Error("Network error");
+
+    const data = await response.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      dropdown.innerHTML += '<option value="">No JOs found</option>';
+      return;
+    }
+
+    data.forEach(item => {
+      if (item.DeliveryJONumber) {
+        const option = document.createElement("option");
+        option.value = item.DeliveryJONumber;
+        option.textContent = `${item.DeliveryJONumber} || ${item.name}`;
+        dropdown.appendChild(option);
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    dropdown.innerHTML += '<option value="">Error loading JOs</option>';
+  }
 }
 
-// Connect delete buttons to enable editing
-["Pic1Delete", "Pic2Delete", "Pic3Delete"].forEach(function (btnId) {
-  const btn = document.getElementById(btnId);
-  if (btn) {
-    btn.addEventListener("click", function () {
-      enableFormEditing();
-    });
+const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+window.onload = loadJODropdown(manilaDate); // Load JOs for today on page load
+
+function initializePage() {
+    currentDate=document.getElementById("currentDate").innerText.trim();
+    //const currentDate = document.getElementById("currentDate").innerText.trim()
+    loadJODropdown(currentDate);
+}
+function loadDeliveryData() {
+  const joDropdown = document.getElementById("joDropdown");
+  const selectedValue = joDropdown.value;
+  const searchInput = document.getElementById("JOsearch"); // use correct ID here
+
+  if (searchInput) {
+    searchInput.value = selectedValue;
+    document.getElementById("searchButton").click();
+  } else {
+    console.warn("JOsearch element not found");
   }
-});
 
+  const joResultContainer = document.getElementById("JOresult");
+  if (joResultContainer) {
+    // example: clear previous results before loading new ones
+    joResultContainer.innerHTML = "";
+  } else {
+    console.warn("JOresult container not found");
+  }
 
+  // Continue with your code...
+}
+
+  function clearInput() {
+  }
 </script>
+
 
   </body>
 </html>
