@@ -65,6 +65,16 @@
                 readonly
                 hidden
             />
+            <input
+                class="form-control"
+                type="text"
+                name="CustomerName"
+                id="CustomerName"
+                placeholder="a"
+                required
+                readonly
+                hidden
+            />            
 
             <div class="form-group text-center">
               <label class="mb-2 d-block">Delivery/In-Shop:</label>
@@ -159,10 +169,10 @@
               <option value="" disabled selected hidden>Choose...</option>
               <option value="Joshua">Joshua</option>
               <option value="Marvin">Marvin</option>
-              <option value="Lowi">LOWI</option>
-              <option value="Edward">EDWARD</option>
-              <option value="LAVAR">LAVAR</option>
-              <option value="NIDA">NIDA</option>
+              <option value="Lowi">Lowi</option>
+              <option value="Edward">Edward</option>
+              <option value="LAVAR">Lavar</option>
+              <option value="NIDA">Nida</option>
             </select>
           </div>
 
@@ -170,6 +180,7 @@
             <table>
               <tr>
                 <!-- Column 1: Yes/No -->
+                 <!--
                 <td>
                   <label>Did the Customer Pay During Delivery?</label>
                   <div class="form-check">
@@ -182,23 +193,31 @@
                   </div>
                 </td>
                    <td>
-                    
+                   -->  
                    </td>
                 <!-- Column 2: Conditional Payment Options -->
-                <td id="paymentTypeColumn" style="display: none;">
-                  <label>Payment Method</label>
+                <td id="paymentTypeColumn" >
+                  <label>Did the customer pay during delivery?</label>
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="PaymentType" id="cash" value="Cash">
+                    <input class="form-check-input" type="radio" name="PaymentType" id="Cash" value="Cash" required>
                     <label class="form-check-label" for="cash">Cash</label>
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="PaymentType" id="gcash" value="G-Cash">
+                    <input class="form-check-input" type="radio" name="PaymentType" id="G-Cash" value="G-Cash">
                     <label class="form-check-label" for="gcash">G-Cash</label>
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="PaymentType" id="others" value="Others">
-                    <label class="form-check-label" for="others">Others</label>
+                    <input class="form-check-input" type="radio" name="PaymentType" id="Others" value="Other Online Payment">
+                    <label class="form-check-label" for="Other Online Payment">Other Online Payment</label>
                   </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="PaymentType" id="UnPaid" value="Unpaid">
+                    <label class="form-check-label" for="Unpaid">Unpaid</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="PaymentType" id="UnPaid" value="Paid During Pickup/Drop-Off">
+                    <label class="form-check-label" for="Unpaid">Paid During Pickup/Drop-Off</label>
+                  </div>                                    
                 </td>
               </tr>
             </table>
@@ -311,6 +330,7 @@
     // Prefill fields and control form interactivity
     const submitButton = document.querySelector("button[type='submit']");
     document.getElementById("JOR").value = data.JO;
+    document.getElementById("CustomerName").value = data.value;
     document.getElementById("JOR").disabled = false;
     
     submitButton.disabled = false;

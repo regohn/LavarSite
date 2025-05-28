@@ -22,6 +22,9 @@
     width: 100%;
     }
 
+    #staffFilter {
+      font-size: 10px;
+    }
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
@@ -66,19 +69,24 @@ th[onclick] {
     <button onclick="changeDay(1)">Next Day ➡️</button>
     <button onclick="showAll()">Show All</button>
   </div>
+  <br>
+  <div id="staffFilter"></div>
+  <br>
 <div class="table-container">
   <table id="deliveryTable">
 <thead>
   <tr>
     <th onclick="sortTable('timestamp')">Timestamp ▲▼</th>
     <th onclick="sortTable('JOR')">JOR ▲▼</th>
+    <th onclick="sortTable('CustomerName')">Customer Name ▲▼</th>
+    <th onclick="sortTable('serviceType')">Service Type ▲▼</th>   
+    <th onclick="sortTable('paymentType')">Payment Type ▲▼</th>    
     <th onclick="sortTable('DeliveryStaff')">Delivery Staff ▲▼</th>
     <th onclick="sortTable('Comments')">Comments ▲▼</th>
-    <th onclick="sortTable('DeliveryPayMethod')">Payment Method ▲▼</th>
-    <th onclick="sortTable('PaymentType')">Payment Type ▲▼</th>
     <th>Media 1</th>
     <th>Media 2</th>
     <th>Media 3</th>
+
   </tr>
 </thead>
 
@@ -99,8 +107,42 @@ th[onclick] {
 
         // Sort by timestamp (Column D)
         allData = data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        generateDeliveryStaffFilters(allData);
         displayDataForDate(currentDate);
       });
+
+function generateDeliveryStaffFilters(data) {
+  const container = document.getElementById("staffFilter");
+  container.innerHTML = ""; // Clear previous radios if any
+
+  const uniqueNames = [...new Set(data.map(row => row.DeliveryStaff).filter(name => name && name.trim() !== ""))];
+
+  // Add "All" option
+  const allRadio = document.createElement("input");
+  allRadio.type = "radio";
+  allRadio.name = "staff";
+  allRadio.value = "ALL";
+  allRadio.checked = true;
+  allRadio.addEventListener("change", () => {
+    displayDataForDate(currentDate);
+  });
+  container.appendChild(allRadio);
+  container.appendChild(document.createTextNode(" All "));
+  
+  // Add radios for each unique DeliveryStaff name
+  uniqueNames.forEach(name => {
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "staff";
+    radio.value = name;
+    radio.addEventListener("change", () => {
+      displayDataForDate(currentDate);
+    });
+
+    container.appendChild(radio);
+    container.appendChild(document.createTextNode(" " + name + " "));
+  });
+}
 
     function displayDataForDate(date) {
       const tbody = document.querySelector("#deliveryTable tbody");
@@ -112,9 +154,13 @@ th[onclick] {
       const dayEnd = new Date(date);
       dayEnd.setHours(23, 59, 59, 999);
 
+      const selectedStaff = document.querySelector('input[name="staff"]:checked')?.value || "ALL";
+
       const filtered = allData.filter(row => {
         const ts = new Date(row.timestamp);
-        return ts >= dayStart && ts <= dayEnd;
+        const inDateRange = ts >= dayStart && ts <= dayEnd;
+        const matchesStaff = selectedStaff === "ALL" || row.DeliveryStaff === selectedStaff;
+        return inDateRange && matchesStaff;
       });
 
       document.getElementById("currentDateLabel").textContent =
@@ -130,10 +176,11 @@ th[onclick] {
         tr.innerHTML = `
           <td>${formatDateTime(row.timestamp)}</td>
           <td>${row.JOR || ""}</td>
+          <td>${row.CustomerName || ""}</td>
+          <td>${row.serviceType || ""}</td>
+          <td>${row.paymentType || ""}</td>
           <td>${row.DeliveryStaff || ""}</td>
           <td>${row.Comments || ""}</td>
-          <td>${row.DeliveryPayMethod || ""}</td>
-          <td>${row.PaymentType || ""}</td>
           <td>${createThumbnail(row.media)}</td>
           <td>${createThumbnail(row.media2)}</td>
           <td>${createThumbnail(row.media3)}</td>
@@ -192,10 +239,11 @@ th[onclick] {
         tr.innerHTML = `
           <td>${formatDateTime(row.timestamp)}</td>
           <td>${row.JOR || ""}</td>
+          <td>${row.CustomerName || ""}</td>
+          <td>${row.serviceType || ""}</td>
+          <td>${row.paymentType || ""}</td>
           <td>${row.DeliveryStaff || ""}</td>
           <td>${row.Comments || ""}</td>
-          <td>${row.DeliveryPayMethod || ""}</td>
-          <td>${row.PaymentType || ""}</td>
           <td>${createThumbnail(row.media)}</td>
           <td>${createThumbnail(row.media2)}</td>
           <td>${createThumbnail(row.media3)}</td>
@@ -226,9 +274,44 @@ function sortTable(column) {
       ? valA.toString().localeCompare(valB.toString())
       : valB.toString().localeCompare(valA.toString());
   });
-
+  
+  
   displayDataForDate(currentDate);
-}    
+}   
+
+function generateDeliveryStaffFilters(data) {
+  const container = document.getElementById("staffFilter");
+  container.innerHTML = ""; // Clear previous radios if any
+
+  const uniqueNames = [...new Set(data.map(row => row.DeliveryStaff).filter(name => name && name.trim() !== ""))];
+
+  // Add "All" option
+  const allRadio = document.createElement("input");
+  allRadio.type = "radio";
+  allRadio.name = "staff";
+  allRadio.value = "ALL";
+  allRadio.checked = true;
+  allRadio.addEventListener("change", () => {
+    displayDataForDate(currentDate);
+  });
+  container.appendChild(allRadio);
+  container.appendChild(document.createTextNode(" All "));
+  
+  // Add radios for each unique DeliveryStaff name
+  uniqueNames.forEach(name => {
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "staff";
+    radio.value = name;
+    radio.addEventListener("change", () => {
+      displayDataForDate(currentDate);
+    });
+
+    container.appendChild(radio);
+    container.appendChild(document.createTextNode(" " + name + " "));
+  });
+}
+
   </script>
 </body>
 </html>
