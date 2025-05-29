@@ -136,6 +136,12 @@
         </label>        
         &nbsp;&nbsp;
         <label>
+            <input type="radio" name="request_type" value="Self-Service">
+            Self-Service
+        </label>
+&nbsp;&nbsp;
+
+        <label>
             <input type="radio" name="request_type" value="Delivery">
             Delivery
         </label>
@@ -524,13 +530,11 @@ if (requestType === "Delivery") {
   formData.append("DeliveryJONumber", selectedJO); // You can change the key name to match your expected server param
 }
       formData.set("name", customerName);
-
       try {
         const response = await fetch(scriptURL, {
           method: "POST",
           body: formData,
         });
-
         if (response.ok) {
           alert("Form submitted successfully!");
           location.reload(); // <- This reloads the page to reset everything
@@ -594,7 +598,75 @@ if (requestType === "Delivery") {
 
   return `${month}/${day}/${year}`;
 }
-</script>
 
+const webAppUrl = 'https://script.google.com/macros/s/AKfycbzeIuG3m2_l4_5MzZVohVvDaxNsy9K32ZCg2zQ2bMnwXYUvYUh6IVe2mQ70duhWxxU8Tw/exec';
+
+// Listen for radio button changes
+document.querySelectorAll('input[name="request_type"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const selectedType = document.querySelector('input[name="request_type"]:checked').value;
+    fetch(`${webAppUrl}?type=${encodeURIComponent(selectedType)}`)
+      .then(response => response.json())
+      .then(data => {
+        displayFilteredNamesToday(data);
+      })
+      .catch(err => {
+        document.getElementById('filtered-results').innerHTML = 'Error loading data.';
+        console.error(err);
+      });
+  });
+});
+
+function displayFilteredNamesToday(data) {
+  const container = document.getElementById('filtered-results');
+  const rows = data.rows;
+
+  const nameIndex = data.headers.indexOf('name');
+  const dateOfPickupIndex = data.headers.indexOf('dateofpickup');
+  const requestTypeIndex = data.headers.indexOf('request_type');
+
+  if (nameIndex === -1 || dateOfPickupIndex === -1 || requestTypeIndex === -1) {
+    container.innerHTML = `<p>Required columns not found.</p>`;
+    return;
+  }
+
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
+  const filteredRows = rows.filter(row => {
+    let rowDate = row[dateOfPickupIndex];
+    if (rowDate instanceof Date) {
+      rowDate = `${rowDate.getFullYear()}-${String(rowDate.getMonth()+1).padStart(2,'0')}-${String(rowDate.getDate()).padStart(2,'0')}`;
+    } else if (typeof rowDate === 'string') {
+      const d = new Date(rowDate);
+      if (!isNaN(d)) {
+        rowDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      }
+    }
+    return rowDate === todayStr && row[requestTypeIndex] === selectedType;
+  });
+
+  if (filteredRows.length === 0) {
+    container.innerHTML = `<p>No ${selectedType} requests found for today (${todayStr}).</p>`;
+    return;
+  }
+
+  const uniqueNames = [...new Set(filteredRows.map(r => r[nameIndex]))];
+
+  let html = `<h3>${selectedType} Requests for Today (${todayStr}):</h3><ul>`;
+  uniqueNames.forEach(name => {
+    html += `<li>${name}</li>`;
+  });
+  html += '</ul>';
+
+  container.innerHTML = html;
+}
+
+
+</script>
+<div id="filtered-results" style="margin-top: 20px;"></div>
 </body>
 </html>
