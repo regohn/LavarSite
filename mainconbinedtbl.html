@@ -103,7 +103,7 @@
       border-radius: 4px;
     }
     #controls { margin-top: 10px; margin-bottom: 10px; }
-    #maxRowsInput, #searchDate, #searchCustomer {
+    #maxDaysInput, #searchDate, #searchCustomer {
       padding: 4px;
       font-size: 10px;
     }
@@ -133,10 +133,13 @@
   cursor: pointer;
 }    
 
-  #tableContainer table tr td:last-child,
-  #tableContainer table tr th:last-child {
-    display: none;
-  }
+#tableContainer table tr td:nth-child(21){
+  display: none;
+}
+#tableContainer table tr th:nth-child(21) {
+  display: none;
+}
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 </head>
@@ -150,10 +153,12 @@
   <br>  
    <br>  
   <button onclick="loadData()">Load Data</button>
-
+  <button onclick="triggerCSVImport()">📥 Import CSV</button>
+  <button onclick="addUnresolvedWarnings()">Exclamation</button>
   <div id="controls">
-    Max Rows: <input type="number" id="maxRowsInput" value="500" min="1" max="10000">
+    Max Rows: <input type="number" id="maxDaysInput" value="90" min="1" max="10000">
   </div>
+
 
   <div id="searchContainer">
     <label for="searchDate">Search by Date:</label>
@@ -170,6 +175,8 @@
   <div id="tableContainer"></div>
 
   <script>
+    //SummaryPageHTML - appscript
+    //https://script.google.com/macros/s/AKfycbx6fziX1510VRFveZ4hfvGfknrryGgQ85S5AjnvV1g2Ja6pciGz4XSyar2yU-aF2QAw/exec
     const apiUrl = "https://script.google.com/macros/s/AKfycbx6fziX1510VRFveZ4hfvGfknrryGgQ85S5AjnvV1g2Ja6pciGz4XSyar2yU-aF2QAw/exec";
     let allData = [];
     let filteredData = [];
@@ -201,12 +208,13 @@
 
     function renderTable(data) {
       const container = document.getElementById("tableContainer");
-      const maxRows = parseInt(document.getElementById("maxRowsInput").value) || 500;
+      const maxDays = parseInt(document.getElementById("maxDaysInput").value) || 30;
       container.innerHTML = "";
 
       const table = document.createElement("table");
       table.id = "dataTable";
       const headers = data[0];
+      console.log("Headers:", headers); // Debugging: Log the headers
 
       const thead = document.createElement("thead");
       const headerRow = document.createElement("tr");
@@ -226,7 +234,7 @@
       table.appendChild(thead);
 
       const tbody = document.createElement("tbody");
-    for (let i = 1; i < Math.min(data.length, maxRows + 1); i++) {
+    for (let i = 1; i < Math.min(data.length, 10000); i++) {
       const rowData = data[i];
       const row = document.createElement("tr");
       row.id = rowData[18];  // Set the JO# as the row ID
@@ -237,7 +245,7 @@
         td.textContent = formatDateTime(cell);
       } else if (index === 10) {
         td.textContent = formatDateOnly(cell);
-      } else if ([14, 15, 16].includes(index)) {
+      } else if ([16, 17, 18].includes(index)) {
         if (typeof cell === "string" && cell.includes("drive.google.com")) {
           const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
           if (match && match[1]) {
@@ -346,6 +354,7 @@
         allData = data;
         filteredData = data;
         renderTable(filteredData);
+        addUnresolvedWarnings();
         loadCustomers(data);
         status.textContent = "";
       } catch (e) {
@@ -418,7 +427,7 @@
       });
 
       renderTable(filteredData); // Re-render table
-      
+      addUnresolvedWarnings();
     }
 
     // Clear all rows in the table, keeping the headers intact
@@ -436,6 +445,7 @@
       document.getElementById("searchCustomer").value = "";
       filteredData = allData;
       renderTable(filteredData);
+      addUnresolvedWarnings();
     }
     
     // Create a thumbnail image cell
@@ -533,7 +543,55 @@ async function markJOIssuesInTable() {
 
 
 
-  </script>
+
+function triggerCSVImport() {
+  if (confirm("Are you sure you want to import the latest CSV? This may overwrite existing data.")) {
+    fetch('https://script.google.com/macros/s/AKfycbyLoVXjWg9_qrFtdeW8CTjc-QuKWxRGRP0-08LcOPfU61T0tWn4NLJKaYeLMEyK11vM7w/exec?importCSV=true')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.text(); // or response.json() if JSON
+      })
+      .then(data => {
+        alert("Success:\n" + data);
+        location.reload();
+      })
+      .catch(error => {
+        alert("Error:\n" + error.message);
+      });
+  }
+}
+
+
+function addUnresolvedWarnings() {
+  const table = document.querySelector('#dataTable'); // Replace with your actual table ID
+  if (!table) return;
+
+  const rows = table.querySelectorAll('tbody tr');
+
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length >= 22) {
+      const unresolved = parseInt(cells[21].textContent) || 0;
+      if (unresolved > 0) {
+        const customerCell = cells[2]; // Column 3 = CUSTOMER
+        if (!customerCell.innerHTML.includes('⚠️')) {
+          customerCell.innerHTML =  customerCell.innerHTML + '⚠️ ';
+          customerCell.style.color = 'red';
+          customerCell.style.fontWeight = 'bold';
+          customerCell.title = `${unresolved} unresolved issue${unresolved > 1 ? 's' : ''}`;
+        }
+      }
+    }
+  });
+}
+    // Load data on page load
+    window.onload = function() {
+      loadData();
+    };
+
+</script>  
   <div id="imageModal" onclick="closeImageModal()">
   <span id="imageModalClose">&times;</span>
   <img id="imageModalContent" src="" alt="Full Image">
