@@ -3,7 +3,36 @@
 <head>
   <title>Delivery Summary</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script> 
+
+
+function openImagePopup(imageUrl) {
+  const cleanUrl = imageUrl.replace(/&amp;/g, "&");
+  console.log("Opening image:", cleanUrl); // Debugging
+
+  const popup = window.open("", "_blank", "width=800,height=600");
+  popup.document.write(`
+    <html>
+      <head>
+        <title>Image Preview</title>
+        <style>
+          body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+          img { max-width: 100%; max-height: 100%; }
+        </style>
+      </head>
+      <body>
+        <img src="${cleanUrl}" alt="Full Image" />
+      </body>
+    </html>
+  `);
+}
+
+
+
+
+  </script>
   <style>
+    
     body {
       font-family: Arial, sans-serif;
       padding: 1rem;
@@ -62,6 +91,9 @@ th[onclick] {
 </head>
 <body>
   <h2>Delivery Summary</h2>
+      
+       
+
 <a href="pickuprequestsummary.html"> Requests Summary </a> | <a href="pickuprequest.html"> Request Forms </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
   <div class="controls">
     <button onclick="changeDay(-1)">⬅️ Previous Day</button>
@@ -202,27 +234,22 @@ function generateDeliveryStaffFilters(data) {
       });
     }
 
-    function createThumbnail(url) {
-      if (!url) return "";
-      const match = url.match(/[-\w]{25,}/);
-      if (!match) return "";
-      const fileId = match[0];
-      const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
-      const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-      return `<img src="${thumbnailUrl}" class="thumbnail" onclick="openImagePopup('${fullImageUrl}')">`;
-    }
+function createThumbnail(url) {
+  if (!url) return "";
+  const match = url.match(/[-\w]{25,}/);
+  if (!match) return "";
+  const fileId = match[0];
+  const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
+  const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
-    function openImagePopup(url) {
-      const newWin = window.open("", "_blank", "width=600,height=600");
-      newWin.document.write(`
-        <html>
-          <head><title>Image Viewer</title></head>
-          <body style="margin:0;text-align:center;">
-            <img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain;">
-          </body>
-        </html>
-      `);
-    }
+  // Use double quotes for attribute and encode only necessary characters
+  return `<a href="${fullImageUrl}" target="_blank">
+           <img src="${thumbnailUrl}" class="thumbnail"> 
+          </a>`;
+}
+
+
+
 
     function changeDay(delta) {
       currentDate.setDate(currentDate.getDate() + delta);
