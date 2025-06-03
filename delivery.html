@@ -41,6 +41,7 @@
         button:hover {
         background-color: #45a049;
         }      
+        
     </style>
   </head>
   <body class="bg-light"  >
@@ -549,6 +550,27 @@ function loadDeliveryData() {
 
   function clearInput() {
   }
+
+    // Function to toggle the JO dropdown based on selected service type
+  function toggleJODropdown() {
+    const deliveryOption = document.getElementById("deliveryOption");
+    const joDropdown = document.getElementById("joDropdown");
+
+    if (deliveryOption.checked) {
+      joDropdown.disabled = false;
+    } else {
+      joDropdown.disabled = true;
+      joDropdown.value = ""; // Optionally reset value if switching away
+    }
+  }
+
+  // Attach event listeners on DOM load
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("deliveryOption").addEventListener("change", toggleJODropdown);
+    document.getElementById("pickupOption").addEventListener("change", toggleJODropdown);
+
+    toggleJODropdown(); // Initial check on load
+  });
 </script>
 
 

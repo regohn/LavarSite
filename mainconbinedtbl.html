@@ -154,7 +154,9 @@
    <br>  
   <button onclick="loadData()">Load Data</button>
   <button onclick="triggerCSVImport()">📥 Import CSV</button>
-  <button onclick="addUnresolvedWarnings()">Exclamation</button>
+<button type="button" onclick="window.open('customer_issues.html', 'CustomerIssues', 'width='+ (window.innerWidth * 0.8) + ',height=' + (window.innerHeight * 0.8) + ',left=' + (window.innerWidth * 0.1) + ',top=' + (window.innerHeight * 0.1))">
+  View Customer Issues
+</button>
   <div id="controls">
     Max Rows: <input type="number" id="maxDaysInput" value="90" min="1" max="10000">
   </div>
