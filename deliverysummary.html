@@ -112,13 +112,13 @@ th[onclick] {
     <th onclick="sortTable('JOR')">JOR ▲▼</th>
     <th onclick="sortTable('CustomerName')">Customer Name ▲▼</th>
     <th onclick="sortTable('serviceType')">Service Type ▲▼</th>   
-    <th onclick="sortTable('paymentType')">Payment Type ▲▼</th>    
+    <th onclick="sortTable('paymenttype')">Payment Type ▲▼</th>    
     <th onclick="sortTable('DeliveryStaff')">Delivery Staff ▲▼</th>
     <th onclick="sortTable('Comments')">Comments ▲▼</th>
     <th>Media 1</th>
     <th>Media 2</th>
     <th>Media 3</th>
-
+    <th onclick="sortTable('deliverednorequest')">Delivered No Request ▲▼</th>
   </tr>
 </thead>
 
@@ -128,6 +128,7 @@ th[onclick] {
 
 </div>
   <script>
+    
     const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyBDFVFZz1LVT5pefiCSx4AJC_jRekKyyTTlj5fghUW8hehEhZCKqLUy1w094DxfkeBbw/exec";
     let allData = [];
     let currentDate = new Date(); // Today by default
@@ -210,12 +211,13 @@ function generateDeliveryStaffFilters(data) {
           <td>${row.JOR || ""}</td>
           <td>${row.CustomerName || ""}</td>
           <td>${row.serviceType || ""}</td>
-          <td>${row.paymentType || ""}</td>
+          <td>${row.paymenttype || ""}</td>
           <td>${row.DeliveryStaff || ""}</td>
           <td>${row.Comments || ""}</td>
           <td>${createThumbnail(row.media)}</td>
           <td>${createThumbnail(row.media2)}</td>
           <td>${createThumbnail(row.media3)}</td>
+          <td>${row.deliverednorequest || ""}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -242,13 +244,13 @@ function createThumbnail(url) {
   const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
   const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
-  // Use double quotes for attribute and encode only necessary characters
-  return `<a href="${fullImageUrl}" target="_blank">
-           <img src="${thumbnailUrl}" class="thumbnail"> 
-          </a>`;
+  // Return the HTML string for the image thumbnail
+return `<img 
+  src="${thumbnailUrl}" 
+  class="thumbnail" 
+  onclick="openOrReusePopup('${fullImageUrl}')"
+>`;
 }
-
-
 
 
     function changeDay(delta) {
@@ -268,12 +270,13 @@ function createThumbnail(url) {
           <td>${row.JOR || ""}</td>
           <td>${row.CustomerName || ""}</td>
           <td>${row.serviceType || ""}</td>
-          <td>${row.paymentType || ""}</td>
+          <td>${row.paymenttype || ""}</td>
           <td>${row.DeliveryStaff || ""}</td>
           <td>${row.Comments || ""}</td>
           <td>${createThumbnail(row.media)}</td>
           <td>${createThumbnail(row.media2)}</td>
           <td>${createThumbnail(row.media3)}</td>
+          <td>${row.deliverednorequest || ""}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -338,6 +341,16 @@ function generateDeliveryStaffFilters(data) {
     container.appendChild(document.createTextNode(" " + name + " "));
   });
 }
+
+  let popupWindow = null;
+  function openOrReusePopup(url) {
+    if (popupWindow && !popupWindow.closed) {
+      popupWindow.location.href = url;
+      popupWindow.focus();
+    } else {
+      popupWindow = window.open(url, '_blank', 'width=800,height=600,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
+    }
+  }
 
   </script>
 </body>
