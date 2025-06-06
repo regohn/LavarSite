@@ -272,9 +272,13 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
 
   const form = e.target;
   const formData = new FormData(form);
-  
 
-  // Prepare data to send
+  // Disable the submit button and show "Submitting..."
+  const submitButton = form.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  const originalButtonText = submitButton.textContent;
+  submitButton.textContent = "Submitting...";
+
   const data = {
     "JO NUMBER": formData.get("JO NUMBER"),
     "NUMBER OF BAGS": formData.get("NUMBER OF BAGS"),
@@ -297,15 +301,20 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
 
     if (resultText.trim() === "Success") {
       alert("Submission successful!");
-     location.reload(); 
+      location.reload(); 
     } else {
       alert("Submission failed: " + resultText);
     }
   } catch (error) {
     console.error("Submit error:", error);
     alert("Submission failed. Please try again.");
+  } finally {
+    // Re-enable the button and reset its label
+    submitButton.disabled = false;
+    submitButton.textContent = originalButtonText;
   }
 });
+
 </script>
 
 </body>
