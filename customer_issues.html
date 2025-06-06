@@ -82,115 +82,204 @@
   </style>
 </head>
 <body>
+    
   <div class="container">
+       <div> 
+        <select id="customerDropdown">
+        <option value="">Filter by Customer Name</option>
+        </select>
+    </div> 
     <h2>Customer Issues (Past 12 Months)</h2>
+
+    <div style="margin-bottom: 1rem;">
+      <label><input type="radio" name="resolutionFilter" value="all" checked> All</label>
+      <label style="margin-left: 1rem;"><input type="radio" name="resolutionFilter" value="unresolved" checked> Unresolved</label>
+      <label style="margin-left: 1rem;"><input type="radio" name="resolutionFilter" value="resolved"> Resolved</label>
+    </div>
+
     <div class="table-wrapper" id="issueContainer">
       <p class="loading">Loading issues...</p>
     </div>
+
   </div>
 
   <script>
-    const SHEET_ID = "1j6_dUObTmC479ol5FNQ-JjozhBVbQXM6ZMM5Vf96MO8";
-    const SHEET_NAME = "AdminComments";
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzS9Ve7k065Jl5CVNZHmnonGPOb-xhZx-tIWBf0tQC78kFopDSLyPInqziklmGsVqmQ/exec";
-    let tableData = [];
+  const SHEET_ID = "1j6_dUObTmC479ol5FNQ-JjozhBVbQXM6ZMM5Vf96MO8";
+  const SHEET_NAME = "AdminComments";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzS9Ve7k065Jl5CVNZHmnonGPOb-xhZx-tIWBf0tQC78kFopDSLyPInqziklmGsVqmQ/exec";
+  let tableData = [];
+  let currentSort = { key: null, direction: 'asc' };
 
-    async function fetchIssues() {
-      try {
-        const res = await fetch(`${WEB_APP_URL}?sheet=${SHEET_NAME}`);
-        const data = await res.json();
-        const rows = data.records || data;
+  async function fetchIssues() {
+    try {
+      const res = await fetch(`${WEB_APP_URL}?sheet=${SHEET_NAME}`);
+      const data = await res.json();
+      const rows = data.records || data;
 
-        const twelveMonthsAgo = new Date();
-        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-        tableData = rows.filter(row => {
-          const ts = new Date(row['TimeStamp']);
-          return !isNaN(ts) && ts >= twelveMonthsAgo;
-        }).sort((a, b) => new Date(b['TimeStamp']) - new Date(a['TimeStamp']));
+      tableData = rows.filter(row => {
+        const ts = new Date(row['TimeStamp']);
+        return !isNaN(ts) && ts >= twelveMonthsAgo;
+      }).sort((a, b) => new Date(b['TimeStamp']) - new Date(a['TimeStamp']));
 
-        renderTable(tableData);
-      } catch (err) {
-        document.getElementById("issueContainer").innerHTML = `<p class="no-data">Error loading issues: ${err.message}</p>`;
-      }
+      populateCustomerDropdown(tableData);
+      applyFilters();
+    } catch (err) {
+      document.getElementById("issueContainer").innerHTML = `<p class="no-data">Error loading issues: ${err.message}</p>`;
+    }
+  }
+
+function populateCustomerDropdown(data) {
+  const dropdown = document.getElementById("customerDropdown");
+  dropdown.innerHTML = ''; // Clear existing options
+
+  // Create "All Customers" option
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "All Customers";
+  dropdown.appendChild(allOption);
+
+  // Get unique, filtered names
+  const uniqueNames = [...new Set(
+    data
+      .map(row => row['CustomerName'])
+      .filter(name => name && !name.toLowerCase().includes("error") && !name.includes("#"))
+  )].sort();
+
+  uniqueNames.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    dropdown.appendChild(option);
+  });
+
+  dropdown.addEventListener("change", () => {
+    const selected = dropdown.value;
+    const filtered = selected ? tableData.filter(row => row['CustomerName'] === selected) : tableData;
+    renderTable(filtered);
+  });
+}
+
+
+  function renderTable(data) {
+    if (!data.length) {
+      document.getElementById("issueContainer").innerHTML = `<p class="no-data">No issues in the past 12 months.</p>`;
+      return;
     }
 
-    let currentSort = { key: null, direction: 'asc' };
-
-    function renderTable(data, sortKey = null) {
-      if (!data.length) {
-        document.getElementById("issueContainer").innerHTML = `<p class="no-data">No issues in the past 12 months.</p>`;
-        return;
+    const getArrow = (key) => {
+      if (currentSort.key === key) {
+        return currentSort.direction === 'asc' ? '▲' : '▼';
       }
+      return '';
+    };
 
-      const getArrow = (key) => {
-        if (currentSort.key === key) {
-          return currentSort.direction === 'asc' ? '▲' : '▼';
-        }
-        return '';
-      };
-
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th class="sortable" onclick="sortTable('JO#')">JO# <span class="arrow">${getArrow('JO#')}</span></th>
-              <th class="sortable" onclick="sortTable('Comments')">Comments <span class="arrow">${getArrow('Comments')}</span></th>
-              <th class="sortable" onclick="sortTable('TimeStamp')">Timestamp <span class="arrow">${getArrow('TimeStamp')}</span></th>
-              <th class="sortable" onclick="sortTable('Resolution')">Resolution <span class="arrow">${getArrow('Resolution')}</span></th>
-              <th class="sortable" onclick="sortTable('CustomerName')">Customer Name <span class="arrow">${getArrow('CustomerName')}</span></th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-      data.forEach(row => {
-        html += `
+    let html = `
+      <table>
+        <thead>
           <tr>
-            <td>${row['JO#'] || ''}</td>
-            <td>${row['Comments'] || ''}</td>
-            <td>${formatDate(row['TimeStamp'])}</td>
-            <td>${row['Resolution'] || ''}</td>
-            <td>${row['CustomerName'] || ''}</td>
-          </tr>`;
-      });
+            <th class="sortable" onclick="sortTable('JO#')">JO# <span class="arrow">${getArrow('JO#')}</span></th>
+            <th class="sortable" onclick="sortTable('Comments')">Comments <span class="arrow">${getArrow('Comments')}</span></th>
+            <th class="sortable" onclick="sortTable('TimeStamp')">Timestamp <span class="arrow">${getArrow('TimeStamp')}</span></th>
+            <th class="sortable" onclick="sortTable('Resolution')">Resolution <span class="arrow">${getArrow('Resolution')}</span></th>
+            <th class="sortable" onclick="sortTable('CustomerName')">Customer Name <span class="arrow">${getArrow('CustomerName')}</span></th>
+          </tr>
+        </thead>
+        <tbody>`;
 
-      html += `</tbody></table>`;
-      document.getElementById("issueContainer").innerHTML = html;
-    }
+    data.forEach(row => {
+      html += `
+        <tr>
+          <td>${row['JO#'] || ''}</td>
+          <td>${row['Comments'] || ''}</td>
+          <td>${formatDate(row['TimeStamp'])}</td>
+          <td>${row['Resolution'] || ''}</td>
+          <td>${row['CustomerName'] || ''}</td>
+        </tr>`;
+    });
 
-    function formatDate(iso) {
-      const date = new Date(iso);
-      return isNaN(date) ? '' : date.toLocaleString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true
-      });
-    }
+    html += `</tbody></table>`;
+    document.getElementById("issueContainer").innerHTML = html;
+  }
 
-    function sortTable(key) {
-      const direction = currentSort.key === key && currentSort.direction === 'asc' ? 'desc' : 'asc';
-      currentSort = { key, direction };
+  function formatDate(iso) {
+    const date = new Date(iso);
+    return isNaN(date) ? '' : date.toLocaleString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  }
 
-      const sortedData = [...tableData].sort((a, b) => {
-        let valA = a[key] || '';
-        let valB = b[key] || '';
+  function sortTable(key) {
+    const direction = currentSort.key === key && currentSort.direction === 'asc' ? 'desc' : 'asc';
+    currentSort = { key, direction };
 
-        if (key === 'TimeStamp') {
-          valA = new Date(valA);
-          valB = new Date(valB);
-        } else {
-          valA = valA.toString().toLowerCase();
-          valB = valB.toString().toLowerCase();
-        }
+    const sortedData = [...tableData].sort((a, b) => {
+      let valA = a[key] || '';
+      let valB = b[key] || '';
 
-        if (valA < valB) return direction === 'asc' ? -1 : 1;
-        if (valA > valB) return direction === 'asc' ? 1 : -1;
-        return 0;
-      });
+      if (key === 'TimeStamp') {
+        valA = new Date(valA);
+        valB = new Date(valB);
+      } else {
+        valA = valA.toString().toLowerCase();
+        valB = valB.toString().toLowerCase();
+      }
 
-      renderTable(sortedData, key);
-    }
+      if (valA < valB) return direction === 'asc' ? -1 : 1;
+      if (valA > valB) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
 
-    fetchIssues();
-  </script>
+    renderTable(sortedData);
+  }
+
+  fetchIssues();
+
+// Add after tableData is loaded
+//let currentResolutionFilter = 'unresolved';
+
+document.querySelectorAll('input[name="resolutionFilter"]').forEach(radio => {
+  radio.addEventListener("change", (e) => {
+    currentResolutionFilter = e.target.value;
+    applyFilters();
+  });
+});
+
+document.getElementById("customerDropdown").addEventListener("change", applyFilters);
+
+function applyFilters() {
+  const selectedCustomer = document.getElementById("customerDropdown").value;
+  const resolutionFilter = document.querySelector('input[name="resolutionFilter"]:checked')?.value || 'all';
+
+  let filtered = [...tableData];
+
+  // ✅ Filter by customer name
+  if (selectedCustomer) {
+    filtered = filtered.filter(row => row['CustomerName'] === selectedCustomer);
+  }
+
+  // ✅ Filter by resolution status
+  if (resolutionFilter === 'resolved') {
+    filtered = filtered.filter(row =>
+      row['Resolution'] &&
+      row['Resolution'].toLowerCase().includes('resolved') &&
+      !row['Resolution'].toLowerCase().includes('unresolved')
+    );
+  } else if (resolutionFilter === 'unresolved') {
+    filtered = filtered.filter(row => {
+      const res = (row['Resolution'] || '').toLowerCase().trim();
+      return res === '' || res === 'unresolved' || res.includes('unresolved');
+    });
+  }
+
+  renderTable(filtered);
+}
+
+
+</script>
+
 </body>
 </html>
