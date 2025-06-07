@@ -245,7 +245,7 @@ data.result.forEach(item => {
   const pickupName = item.name?.trim().toLowerCase() || "";
 
   if (pickupName === currentCustomerName) {
-    const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.deliveryStaff}`;
+    const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} |`;
     const option = document.createElement("option");
     option.value = label;
     option.textContent = label;
