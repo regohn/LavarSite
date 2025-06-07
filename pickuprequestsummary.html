@@ -77,20 +77,34 @@
   table th:nth-child(9) {
   display: none;
 }
+table thead th {
+  position: sticky;
+  top: 0;
+  background-color: white; /* or your table's background */
+  z-index: 2;
+  box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
+}
   </style>
 </head>
 <body>
+
   <h1>Pickup/Delivery Request Summary</h1>
   <a href="pickuprequestsummary.html"> Requests Summary </a> | 
   <a href="pickuprequest.html"> Request Forms </a> | 
   <a href="pickup.html"> Pickup </a>  | 
   <a href="delivery.html"> Delivery </a> | 
   <a href="deliverysummary.html"> DVS </a> <br>
+<br>
+
 
   <div id="dateControls">
     <button id="prevDayBtn" title="Previous Day">←</button>
     <span id="currentDateDisplay"></span>
     <button id="nextDayBtn" title="Next Day">→</button>
+      <label style="margin-left: 1rem;">
+    <input type="checkbox" id="showAllCheckbox" />
+    Show all requests
+  </label>
   </div>
 
   <div id="typeFilter">
@@ -182,7 +196,7 @@
         return;
       }
 
-      let html = `<table><thead><tr>`;
+      let html = `<div style="max-height: 600px; overflow-y: auto;"><table><thead><tr>`;
       headers.forEach(h => {
         const isSorted = currentSort.column === h;
         const sortClass = isSorted ? `sorted-${currentSort.direction}` : '';
@@ -207,7 +221,7 @@
         html += `</tr>`;
       });
 
-      html += `</tbody></table>`;
+      html += `</tbody></table></div>`;
       document.getElementById('tableContainer').innerHTML = html;
 
       document.querySelectorAll('th.sortable').forEach(th => {
@@ -226,7 +240,11 @@
     function renderForCurrentDate() {
       updateDateDisplay();
       const selectedType = document.querySelector('input[name="type"]:checked').value;
-      let filtered = filterByDate(allData, currentDate);
+      
+      let filtered = document.getElementById('showAllCheckbox').checked
+        ? [...allData]
+        : filterByDate(allData, currentDate);
+
       if (selectedType !== 'All') {
         filtered = filtered.filter(row => row.request_type?.toLowerCase() === selectedType.toLowerCase());
       }
@@ -252,7 +270,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       loadSummary();
-
+      document.getElementById('showAllCheckbox').addEventListener('change', renderForCurrentDate);
       document.getElementById('prevDayBtn').addEventListener('click', () => {
         currentDate.setDate(currentDate.getDate() - 1);
         renderForCurrentDate();
@@ -267,7 +285,7 @@
         radio.addEventListener('change', () => {
           renderForCurrentDate();
         });
-      });
+      }); 
     });
   </script>
 </body>
