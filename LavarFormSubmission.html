@@ -273,11 +273,19 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
   const form = e.target;
   const formData = new FormData(form);
 
-  // Disable the submit button and show "Submitting..."
-  const submitButton = form.querySelector('button[type="submit"]');
-  submitButton.disabled = true;
-  const originalButtonText = submitButton.textContent;
-  submitButton.textContent = "Submitting...";
+  // Try to find submit button (button or input)
+  let submitButton = form.querySelector('button[type="submit"]') || form.querySelector('input[type="submit"]');
+  let originalButtonText;
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    originalButtonText = submitButton.textContent || submitButton.value;
+    if (submitButton.tagName === "BUTTON") {
+      submitButton.textContent = "Submitting...";
+    } else {
+      submitButton.value = "Submitting...";
+    }
+  }
 
   const data = {
     "JO NUMBER": formData.get("JO NUMBER"),
@@ -309,11 +317,17 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
     console.error("Submit error:", error);
     alert("Submission failed. Please try again.");
   } finally {
-    // Re-enable the button and reset its label
-    submitButton.disabled = false;
-    submitButton.textContent = originalButtonText;
+    if (submitButton) {
+      submitButton.disabled = false;
+      if (submitButton.tagName === "BUTTON") {
+        submitButton.textContent = originalButtonText;
+      } else {
+        submitButton.value = originalButtonText;
+      }
+    }
   }
 });
+
 
 </script>
 
