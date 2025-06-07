@@ -115,7 +115,7 @@
     }
   </style>
 </head>
-<body>
+<body onload="disableElements()">
   <div class="form-container shadow-sm">
     <h1 class="form-title">Pickup/Delivery Request and Drop-Off Form</h1>
     
@@ -131,20 +131,21 @@
         </label>
         &nbsp;&nbsp;
         <label>
-            <input type="radio" name="request_type" value="Drop-Off">
+            <input type="radio" name="request_type" value="Delivery">
+            Delivery
+        </label>        
+        <label>
+            <input type="radio" name="request_type" value="Drop-Off" onclick="document.getElementById('PickupLocation').value = 'Lavar Shop';document.getElementById('Comments').value = 'Drop-off in Lavar Shop'" >
             Drop-Off
         </label>        
         &nbsp;&nbsp;
         <label>
-            <input type="radio" name="request_type" value="Self-Service">
+            <input type="radio" name="request_type" value="Self-Service"  onclick="document.getElementById('PickupLocation').value = 'Lavar Shop';document.getElementById('Comments').value = 'Self-Service in Lavar Shop'" required>
             Self-Service
         </label>
 &nbsp;&nbsp;
 
-        <label>
-            <input type="radio" name="request_type" value="Delivery">
-            Delivery
-        </label>
+
          <br>   
         <div class="form-group" id="joDropdownContainer" style="display:none; margin-top: 15px;">
             <label for="joDropdown"><strong>Select Job Order (JO) for Delivery:</strong></label>
@@ -165,21 +166,23 @@
       <div id="customerTypeContainer" class="radio-group">
         <div class="form-check">
           <input class="form-check-input" type="radio" name="customerType" id="existingCustomer" value="existing" checked required />
-          <label class="form-check-label" for="existingCustomer">Existing Customer</label>
+          <label class="form-check-label" for="existingCustomer" id="existingcustomer">Existing Customer</label>
         </div>
         <div class="form-check">
           <input class="form-check-input" type="radio" name="customerType" id="newCustomer" value="new" />
-          <label class="form-check-label" for="newCustomer">New Customer</label>
+          <label class="form-check-label" for="newCustomer" id="newCustomertext" >New Customer</label>
+
         </div>
       </div>
       <div class="form-group">
-        <label for="name">Customer Name</label>
-        <input
+        <label for="name"  >Customer Name</label>
+        <input 
           type="text"
           id="name"
           name="name"
           class="form-control"
           placeholder="Enter customer name"
+
           required
         />
       </div>
@@ -231,7 +234,7 @@
           placeholder="Add any special instructions or notes here..."
         ></textarea>
       </div>
-<!--
+
       <div class="form-group file-group">
         <label for="media">Upload Laundry Pickup Picture (Optional)</label>
         <input
@@ -242,7 +245,7 @@
           accept="image/*"
         />
       </div>
-
+<!--
       <div class="form-group file-group">
         <label for="media2">Upload Second Picture (Optional)</label>
         <input
@@ -665,8 +668,14 @@ function displayFilteredNamesToday(data) {
   container.innerHTML = html;
 }
 
-
+  function disableElements() {
+    document.getElementById("name").readOnly = true;
+  }
 </script>
-<!--<div id="filtered-results" style="margin-top: 20px;"></div>-->
+
+
+
+
+
 </body>
 </html>
