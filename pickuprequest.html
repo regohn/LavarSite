@@ -126,12 +126,12 @@
       <div class="form-group">
         <label><strong>Request Type:</strong></label><br>
         <label>
-            <input type="radio" name="request_type" value="Pickup" required>
+            <input type="radio" name="request_type" value="Pickup"  onclick="document.getElementById('PickupLocation').value = '';document.getElementById('Comments').value = ''" required>
             Pickup
         </label>
         &nbsp;&nbsp;
         <label>
-            <input type="radio" name="request_type" value="Delivery">
+            <input type="radio" name="request_type" value="Delivery" onclick="document.getElementById('PickupLocation').value = '';document.getElementById('Comments').value = ''">
             Delivery
         </label>        
         <label>
