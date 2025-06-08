@@ -6,82 +6,162 @@
   <title>Lavar Tupi Form</title>
   <link rel="stylesheet" href="lavarcss.css">
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f8f9fa;
-      margin: 0;
-      padding: 0;
-    }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  background: #f2f2f7; /* iOS light gray */
+  margin: 0;
+  padding: 0;
+  color: #1c1c1e;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-    .container {
-      max-width: 600px;
-      margin: 2rem auto;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
+.container {
+  max-width: 600px;
+  margin: 2rem auto;
+  background: #fff;
+  padding: 2rem 1.5rem;
+  border-radius: 24px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
 
-    h4 {
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
-      color: #343a40;
-    }
+h4 {
+  margin-bottom: 1.5rem;
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: #000;
+  letter-spacing: -0.4px;
+}
 
-    label, p {
-      margin: 0.5rem 0 0.2rem;
-      font-weight: 500;
-      font-size: 14px;
-      color: #333;
-    }
+a {
+  color: #007aff;
+  text-decoration: none;
+  font-weight: 600;
+  margin-right: 1rem;
+  font-size: 1rem;
+}
 
-    input[type="text"],
-    input[type="date"],
-    select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 1rem;
-      border: 1px solid #ced4da;
-      border-radius: 5px;
-      font-size: 14px;
-    }
+a:hover {
+  text-decoration: underline;
+}
 
-    #submit {
-      width: 100%;
-      padding: 10px;
-      background: #007bff;
-      color: white;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+label, p {
+  display: block;
+  margin: 0 0 6px 0;
+  font-weight: 500;
+  font-size: 15px;
+  color: #3a3a3c;
+}
 
-    #submit:hover {
-      background: #0056b3;
-    }
+input[type="text"],
+input[type="date"],
+select {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 1.5rem;
+  font-size: 17px;
+  border: 1px solid #d1d1d6;
+  border-radius: 16px;
+  background: #f9f9f9;
+  transition: border-color 0.3s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
 
-    .btn {
-      padding: 10px 16px;
-      font-size: 14px;
-      border-radius: 5px;
-      border: none;
-      background-color: #6c757d;
-      color: white;
-      cursor: pointer;
-    }
+input[type="text"]:focus,
+input[type="date"]:focus,
+select:focus {
+  outline: none;
+  border-color: #007aff;
+  background: #fff;
+  box-shadow: 0 0 5px rgba(0, 122, 255, 0.3);
+}
 
-    .btn:hover {
-      background-color: #5a6268;
-    }
+#submit {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(180deg, #007aff, #005bb5);
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0,122,255,0.3);
+}
 
-    .mt-2 { margin-top: 0.5rem; }
-    .mt-3 { margin-top: 1rem; }
-    .text-danger { color: red; }
-    .bg-light { background-color: #f1f1f1; }
-    .border { border: 1px solid #ccc; }
-    .rounded { border-radius: 5px; }
-    .p-3 { padding: 1rem; }
+#submit:hover {
+  background: linear-gradient(180deg, #005bb5, #003f7f);
+}
+
+.btn {
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 24px;
+  border: none;
+  background-color: #efeff4;
+  color: #007aff;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: none;
+  transition: background-color 0.3s ease;
+  margin-top: 0.25rem;
+}
+
+.btn:hover {
+  background-color: #d1d1d6;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.mt-3 {
+  margin-top: 1rem;
+}
+
+.text-danger {
+  color: #ff3b30;
+  font-weight: 600;
+}
+
+.bg-light {
+  background-color: #f2f2f7;
+}
+
+.border {
+  border: 1px solid #d1d1d6;
+}
+
+.rounded {
+  border-radius: 16px;
+}
+
+.p-3 {
+  padding: 1rem;
+}
+
+.list-group {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list-group-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #d1d1d6;
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  color: #1c1c1e;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
   </style>
 </head>
 <body>
@@ -104,13 +184,13 @@
       <button type="button" class="btn mt-2" onclick="searchFoldJO()">Search</button>
     </div>
 
-<div id="foldJoResult" class="border rounded p-3 mt-3 bg-light" style="display:none;"></div>
+    <div id="foldJoResult" class="border rounded p-3 mt-3 bg-light" style="display:none;"><br></div>
       <!--<p id="customer-name">Customer Name:</p>
 
       <label for="jo-number">JO NUMBER (example: 04065... di kasama JO)</label>-->
-
+    <div >
     <label for="pickupDropdown">Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
-    <br> 
+   </div> 
     <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" />
     <label for="" style="font-size: 10px;">Customer Name || Date of Pickup/Drop-Off || Delivery Staff</label>
     <select id="pickupDropdown" name="Recent Pickup">
