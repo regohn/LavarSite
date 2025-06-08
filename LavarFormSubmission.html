@@ -111,6 +111,7 @@
 
     <label for="pickupDropdown">Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
     <br> 
+    <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" />
     <label for="" style="font-size: 10px;">Customer Name || Date of Pickup/Drop-Off || Delivery Staff</label>
     <select id="pickupDropdown" name="Recent Pickup">
       <option value="">-- Select Pickup --</option>
@@ -245,7 +246,7 @@ data.result.forEach(item => {
   const pickupName = item.name?.trim().toLowerCase() || "";
 
   if (pickupName === currentCustomerName) {
-    const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} |`;
+    const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID} `;
     const option = document.createElement("option");
     option.value = label;
     option.textContent = label;
@@ -283,6 +284,7 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
   let submitButton = form.querySelector('button[type="submit"]') || form.querySelector('input[type="submit"]');
   let originalButtonText;
 
+
   if (submitButton) {
     submitButton.disabled = true;
     originalButtonText = submitButton.textContent || submitButton.value;
@@ -299,7 +301,8 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
     "NAME OF FOLDER": formData.get("NAME OF FOLDER"),
     "Time of Folds": formData.get("Time of Folds"),
     "Comments": formData.get("Comments"),
-    "Date of Fold": formData.get("Date of Fold")
+    "Date of Fold": formData.get("Date of Fold"),
+    "PickupUID": formData.get("PickupUID") 
   };
 
   try {
@@ -340,6 +343,18 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
     const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
     document.getElementById("Date Of Fold").value = today;
   });
+document.getElementById("pickupDropdown").addEventListener("change", function () {
+  const selectedValue = this.value;
+  const uidMatch = selectedValue.match(/UID-[\w:-]+/); // Match UID- followed by any word, colon, or dash
+
+  if (uidMatch) {
+    document.getElementById("PickupUID").value = uidMatch[0]; // Set the UID in the input
+  } else {
+    document.getElementById("PickupUID").value = ""; // Clear if UID not found
+  }
+});
+
+
 </script>
 
 </body>
