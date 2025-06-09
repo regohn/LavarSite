@@ -211,6 +211,8 @@
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="G-Cash" value="G-Cash">
                     <label class="form-check-label" for="gcash">G-Cash</label>
+                    <!-- small textbox for G-Cash reference, hidden initially -->
+                    <input type="text" id="gcashInfo" name="gcashInfo"  placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />                    
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="Others" value="Other Online Payment">
@@ -568,14 +570,29 @@ function loadDeliveryData() {
       joDropdown.value = ""; // Optionally reset value if switching away
     }
   }
+function toggleGcashInput() {
+  const gcashRadio = document.getElementById("G-Cash");
+  const gcashInfo = document.getElementById("gcashInfo");
 
-  // Attach event listeners on DOM load
-  document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("deliveryOption").addEventListener("change", toggleJODropdown);
-    document.getElementById("pickupOption").addEventListener("change", toggleJODropdown);
+  if (gcashRadio.checked) {
+    gcashInfo.style.display = "inline-block";
+    gcashInfo.required = true;  // Make required when visible
+  } else {
+    gcashInfo.style.display = "none";
+    gcashInfo.value = "";
+    gcashInfo.required = false; // Remove required when hidden
+  }
 
-    toggleJODropdown(); // Initial check on load
-  });
+}
+
+// Attach event listeners to all PaymentType radios
+document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
+  radio.addEventListener('change', toggleGcashInput);
+});
+
+// Initialize visibility on page load
+document.addEventListener("DOMContentLoaded", toggleGcashInput);
+
 </script>
 
 
