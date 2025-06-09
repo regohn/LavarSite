@@ -151,8 +151,6 @@
             Self-Service
         </label>
 &nbsp;&nbsp;
-
-
          <br>   
         <div class="form-group" id="joDropdownContainer" style="display:none; margin-top: 15px;">
             <label for="joDropdown"><strong>Select Job Order (JO) for Delivery:</strong></label>
@@ -189,10 +187,17 @@
           name="name"
           class="form-control"
           placeholder="Enter customer name"
-
           required
         />
       </div>
+      
+
+        <div id="freebiepoints" style="font-size: 0.8rem;">Total Freebie Points: </div>
+        <div id="totalfreebieavailed"  style="font-size: 0.8rem;">Availed Freebie Points: </div>
+        <div id="remainingfreebiepoints" style="font-size: 0.8rem;">Remaining Freebie Points: </div>
+        <br>
+      
+
 
       <div class="form-group">
         <label for="PickupLocation">Location</label>
@@ -287,6 +292,7 @@
 
   <script>
   const scriptURL = "https://script.google.com/macros/s/AKfycbxSgSBzOLmORoSJ_YEK37zbFZDhu5nqv0QkEfGKyOk3sTlUUfUHpi1d0S5yJ53RO09h9g/exec";
+  //DeliveryRequestSearchFoldedJOs
   const JO_FETCH_URL = "https://script.google.com/macros/s/AKfycbygc_nrRs-_gcwMSw5ZIwvRC7O6KZ7x2rOQQo6DQTwBkRGvQXkG5o37BbF46J-bknAT1w/exec";
 
   const form = document.forms["submit-to-google-sheet"];
@@ -335,6 +341,7 @@
 
       window.tomSelectInstance.on("change", function (value) {
         document.getElementById("name").value = value;
+        updateFreebiePoints(value);
       });
     } catch (err) {
       console.error("Error loading names:", err);
@@ -413,6 +420,7 @@
       // Trigger change event manually to update JO details
       const event = new Event("change", { bubbles: true });
       document.getElementById("joDropdown").dispatchEvent(event);
+    
     });
 
   } catch (err) {
@@ -678,6 +686,44 @@ function displayFilteredNamesToday(data) {
   function disableElements() {
     document.getElementById("name").readOnly = true;
   }
+
+function formatDecimal(value, decimals = 2, fallback = 'Not found') {
+  if (typeof value === 'number') {
+    return value.toFixed(decimals);
+  }
+  return value ?? fallback;
+}
+
+
+const webAppURL = 'https://script.google.com/macros/s/AKfycbxQZ3Jf0es1N69riskJenX2B9PO3GbOjqgS07O5YNL6vbiHyJfVylP_XsfDCZM1TP4D1A/exec'; // Replace with your deployed Web App URL
+
+function updateFreebiePoints(name) {
+  if (!name) {
+    document.getElementById('freebiepoints').innerHTML = `Freebie Points: Not available`;
+    return;
+  }
+
+  fetch(`https://script.google.com/macros/s/AKfycbxQZ3Jf0es1N69riskJenX2B9PO3GbOjqgS07O5YNL6vbiHyJfVylP_XsfDCZM1TP4D1A/exec?name=${encodeURIComponent(name)}`)
+    .then(response => response.json())
+    .then(data => {
+      const totalFreebiePoints = formatDecimal(data.totalFreebiePoints) ?? 'Not found';
+      const totalFreebieAvailed = formatDecimal(data.totalFreebieAvailed) ?? 'Not found';
+      const remainingFreebie = formatDecimal(data.remainingFreebie) ?? 'Not found';
+      
+      document.getElementById('freebiepoints').innerHTML = `Total Freebie Points: ${totalFreebiePoints}`;
+      document.getElementById('totalfreebieavailed').innerHTML = `Total Availed Freebie Points: ${totalFreebieAvailed}`;
+      document.getElementById('remainingfreebiepoints').innerHTML = `Remaining Freebie Points: ${remainingFreebie}`;
+    })
+    .catch(err => {
+      console.error('Error fetching freebie points:', err);
+      document.getElementById('freebiepoints').innerHTML = `Freebie Points: Error`;
+      document.getElementById('totalfreebieavailed').innerHTML = `Availed Freebie Points: Error`;
+      document.getElementById('remainingfreebiepoints').innerHTML = `Remaining Freebie Points: Error`;
+      
+    });
+}
+
+ 
 </script>
 
 
