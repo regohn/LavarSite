@@ -171,13 +171,17 @@ select:focus {
 
     <form method="post" action="" name="contact-form">
     <h4>LAVAR FOLDS SUBMISSIONS</h4>
+<div>
     <a href="pickuprequestsummary.html"> Requests Summary </a> | 
     <a href="pickuprequest.html"> Request Forms </a> | 
     <a href="pickup.html"> Pickup </a>  | 
     <a href="delivery.html"> Delivery </a> | 
     <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold  </a> <br>  
-  <br>
+    <a href="LavarFormSubmission.html"> Fold  </a> 
+    <a href="FoldSite.html"> Fold Site </a> 
+    <br>  
+</div>
+
     <div class="form-group">
       <label for="joSearch">Search Fold JO/Mga di pa nalolog</label>
       <input type="text" id="joSearch" name="JO NUMBER" placeholder="Enter JO number (e.g. 04065)" />
@@ -189,9 +193,9 @@ select:focus {
 
       <label for="jo-number">JO NUMBER (example: 04065... di kasama JO)</label>-->
     <div >
-    <label for="pickupDropdown">Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
+    <label for="pickupDropdown" >Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
    </div> 
-    <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" />
+    <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" required />
     <label for="" style="font-size: 10px;">Customer Name || Date of Pickup/Drop-Off || Delivery Staff</label>
     <select id="pickupDropdown" name="Recent Pickup">
       <option value="">-- Select Pickup --</option>
@@ -269,6 +273,7 @@ async function searchFoldJO() {
 
         // *** CALL loadPickupDropdown HERE ***
         loadPickupDropdown();
+        
       }
       html += `
         <li class="list-group-item d-flex justify-content-between">
@@ -302,7 +307,7 @@ async function searchFoldJO() {
       };
       return new Intl.DateTimeFormat("en-US", options).format(date);
     }
-
+//FoldFormSearchPickups
 const pickupWebAppURL = "https://script.google.com/macros/s/AKfycbz_gvAtAjY3ecsNhm6fjBDli-Uu4Uq6OxKWDH5b3rZDLkUHGfWKrLB6FWDLE2N5HKoB/exec";
 
 function formatDate(input) {
@@ -324,7 +329,8 @@ async function loadPickupDropdown() {
 
 data.result.forEach(item => {
   const pickupName = item.name?.trim().toLowerCase() || "";
-
+  
+currentCustomerName = currentCustomerName.replace(/\s+/g, ' ').trim();
   if (pickupName === currentCustomerName) {
     const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID} `;
     const option = document.createElement("option");
@@ -332,7 +338,7 @@ data.result.forEach(item => {
     option.textContent = label;
     dropdown.appendChild(option);
 
-    matchCount++;  // <---- THIS WAS MISSING
+    matchCount++;  
   }
 });
 
@@ -435,7 +441,12 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
 });
 
 
+
+
+
 </script>
 
 </body>
 </html>
+
+
