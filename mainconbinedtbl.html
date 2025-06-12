@@ -133,10 +133,10 @@
   cursor: pointer;
 }    
 
-#tableContainer table tr td:nth-child(21){
+#tableContainer table tr td:nth-child(23){
   display: none;
 }
-#tableContainer table tr th:nth-child(21) {
+#tableContainer table tr th:nth-child(23) {
   display: none;
 }
 
@@ -149,14 +149,17 @@
     <span id="imageModalClose" style="position:absolute; top:20px; right:35px; color:white; font-size:40px; font-weight:bold; cursor:pointer;">&times;</span>
     <img id="imageModalContent" style="margin:auto; display:block; max-width:90%; max-height:90%; margin-top:5%;" />
   </div>
-      <a href="pickuprequestsummary.html"> Requests Summary </a> | 
+<div a>
+    <a href="pickuprequestsummary.html"> Requests Summary </a> | 
     <a href="pickuprequest.html"> Request Forms </a> | 
     <a href="pickup.html"> Pickup </a>  | 
     <a href="delivery.html"> Delivery </a> | 
     <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold  </a> <br>  
-  <br>
-
+    <a href="LavarFormSubmission.html"> Fold | </a> 
+    <a href="FoldSite.html"> Fold Site </a> 
+    <br>  
+<br>
+</div>
   <br>  
    <br>  
   <button onclick="loadData()">Load Data</button>
@@ -250,11 +253,11 @@
       rowData.forEach((cell, index) => {
       const td = document.createElement("td");
 
-      if (index === 0 || index === 4 || index === 13) {
+      if (index === 0 || index === 4 || index === 13 || index === 18) {
         td.textContent = formatDateTime(cell);
-      } else if (index === 10) {
+      } else if (index === 12) {
         td.textContent = formatDateOnly(cell);
-      } else if ([16, 17, 18].includes(index)) {
+      } else if ([8,19, 20, 21].includes(index)) {
         if (typeof cell === "string" && cell.includes("drive.google.com")) {
           const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
           if (match && match[1]) {
@@ -552,10 +555,10 @@ async function markJOIssuesInTable() {
 
 
 
-
+//FreebieCalcSheet
 function triggerCSVImport() {
   if (confirm("Are you sure you want to import the latest CSV? This may overwrite existing data.")) {
-    fetch('https://script.google.com/macros/s/AKfycbyLoVXjWg9_qrFtdeW8CTjc-QuKWxRGRP0-08LcOPfU61T0tWn4NLJKaYeLMEyK11vM7w/exec?importCSV=true')
+    fetch('https://script.google.com/macros/s/AKfycbwDtZ-VC549G9V9K9PD3i8qSFFUL2KUJnXjGFkM_gmspfLXMczyyD4ikNXKbpBtRLOzqA/exec?importCSV=true')
       .then(response => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
