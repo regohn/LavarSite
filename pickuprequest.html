@@ -119,13 +119,17 @@
   <div class="form-container shadow-sm">
     <h1 class="form-title">Pickup/Delivery Request and Drop-Off Form</h1>
     
+
     <a href="pickuprequestsummary.html"> Requests Summary </a> | 
     <a href="pickuprequest.html"> Request Forms </a> | 
     <a href="pickup.html"> Pickup </a>  | 
     <a href="delivery.html"> Delivery </a> | 
     <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold  </a> <br>  
-  <br>
+    <a href="LavarFormSubmission.html"> Fold | </a> 
+    <a href="FoldSite.html"> Fold Site </a> 
+    <br>  
+<br>
+
 
     <form id="submit-to-google-sheet" >
 
@@ -248,11 +252,11 @@
       </div>
 
       <div class="form-group file-group">
-        <label for="media">Upload Laundry Pickup Picture (Optional)</label>
+        <label for="dropoffrequestmedia">Upload Laundry Pickup Picture (Optional)</label>
         <input
           type="file"
-          id="media"
-          name="media"
+          id="dropoffrequestmedia"
+          name="dropoffrequestmedia"
           class="form-control-file"
           accept="image/*"
         />
@@ -429,145 +433,166 @@
 }
 
 
-  document.addEventListener("DOMContentLoaded", () => {
-    setDefaultDateAndTime();
-    loadNames();
-    loadJOs();
+ document.addEventListener("DOMContentLoaded", () => {
+  setDefaultDateAndTime();
+  loadNames();
+  loadJOs();
 
-    joDetailsContainer = document.getElementById("joDetailsContainer");
-    joDropdown = document.getElementById("joDropdown");
+  joDetailsContainer = document.getElementById("joDetailsContainer");
+  joDropdown = document.getElementById("joDropdown");
+  const dropoffMediaInput = document.getElementById("dropoffrequestmedia");
 
-    // JO change listener
-joDropdown.addEventListener("change", function () {
-  const selectedJO = this.value.trim();
-  console.log("Selected JO:", selectedJO);
+  // Disable dropoff media input by default
+  dropoffMediaInput.disabled = true;
 
-  const selectedData = allJOs.find(item => {
-    if (!item.jo) return false;
-    // Normalize both sides to string, strip leading #, trim
-    const itemJO = String(item.jo).replace(/^#/, "").trim();
-    return itemJO === selectedJO;
+  // JO change listener
+  joDropdown.addEventListener("change", function () {
+    const selectedJO = this.value.trim();
+    console.log("Selected JO:", selectedJO);
+
+    const selectedData = allJOs.find(item => {
+      if (!item.jo) return false;
+      const itemJO = String(item.jo).replace(/^#/, "").trim();
+      return itemJO === selectedJO;
+    });
+
+    console.log("Found JO data:", selectedData);
+
+    if (selectedData) {
+      joDetailsContainer.style.display = "block";
+      document.getElementById("name").value = selectedData.foundInRAW || "N/A";
+      joDetailsContainer.innerHTML = `
+        <h4>JO Details</h4>
+        <p>Customer Name: ${selectedData.foundInRAW || "N/A"}</p>
+        <p>JO Date Created: ${formatDateTime2(selectedData.joDateCreated) || "N/A"}</p>
+        <p>Amount: ${selectedData.amount || "N/A"}</p>
+        <p>Folder Name: ${selectedData.nameOfFolder || "N/A"}</p>
+        <p>Fold Time: ${selectedData.timeOfFolds || "N/A"}</p>
+        <p>Fold Date: ${formatDateTime(selectedData.dateOfFold) || "N/A"}</p>
+      `;
+    } else {
+      console.warn("No JO data found for selected value.");
+      joDetailsContainer.style.display = "none";
+      joDetailsContainer.innerHTML = "";
+    }
   });
 
-  console.log("Found JO data:", selectedData);
+  // Toggle JO section
+  const requestTypeRadios = document.querySelectorAll('input[name="request_type"]');
+  const customerTypeRadios = document.querySelectorAll('input[name="customerType"]');
+  const joDropdownContainer = document.getElementById("joDropdownContainer");
 
-  if (selectedData) {
-    joDetailsContainer.style.display = "block";
-    document.getElementById("name").value = selectedData.foundInRAW || "N/A";
-    joDetailsContainer.innerHTML = `
-      <h4>JO Details</h4>
-      <p>Customer Name: ${selectedData.foundInRAW || "N/A"}</p>
-      <p>JO Date Created: ${formatDateTime2(selectedData.joDateCreated) || "N/A"}</p>
-      <p>Amount: ${selectedData.amount || "N/A"}</p>
-      <p>Folder Name: ${selectedData.nameOfFolder || "N/A"}</p>
-      <p>Fold Time: ${selectedData.timeOfFolds || "N/A"}</p>
-      <p>Fold Date: ${formatDateTime(selectedData.dateOfFold) || "N/A"}</p>
-      
-      
-      
-    `;
-  } else {
-    console.warn("No JO data found for selected value.");
-    joDetailsContainer.style.display = "none";
-    joDetailsContainer.innerHTML = "";
-  }
-});
+  function toggleJODropdown() {
+    const isDelivery = document.querySelector('input[name="request_type"]:checked')?.value === "Delivery";
 
-    // Toggle JO section
-    const requestTypeRadios = document.querySelectorAll('input[name="request_type"]');
-    const customerTypeRadios = document.querySelectorAll('input[name="customerType"]');
-    const joDropdownContainer = document.getElementById("joDropdownContainer");
+    joDropdownContainer.style.display = isDelivery ? "block" : "none";
 
-function toggleJODropdown() {
-  const isDelivery = document.querySelector('input[name="request_type"]:checked')?.value === "Delivery";
+    if (!isDelivery) {
+      joDetailsContainer.style.display = "none";
+      joDetailsContainer.innerHTML = "";
+      document.getElementById("joDropdown").value = "";
+    }
 
-  // show/hide JO dropdown container
-  joDropdownContainer.style.display = isDelivery ? "block" : "none";
-  
-  // hide JO details container if not Delivery
-  if (!isDelivery) {
-    joDetailsContainer.style.display = "none";
-    joDetailsContainer.innerHTML = "";
+    if (window.tomSelectInstance) {
+      isDelivery ? window.tomSelectInstance.disable() : window.tomSelectInstance.enable();
+    }
+
+    customerTypeRadios.forEach(r => r.disabled = isDelivery);
   }
 
-  if (!isDelivery) {
-    document.getElementById("joDropdown").value = "";
+  // Toggle dropoff media based on radio selection
+  function toggleDropoffMedia() {
+    const selectedType = document.querySelector('input[name="request_type"]:checked')?.value;
+    dropoffMediaInput.disabled = selectedType !== "Drop-Off";
   }
 
-  // disable/enable the TomSelect on nameDropdown
-  if (window.tomSelectInstance) {
-    isDelivery
-      ? window.tomSelectInstance.disable()
-      : window.tomSelectInstance.enable();
-  }
+  requestTypeRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      toggleJODropdown();
+      toggleDropoffMedia();
+    });
+  });
 
-  // disable/enable customerType radios
-  customerTypeRadios.forEach(r => r.disabled = isDelivery);
-}
+  customerTypeRadios.forEach(radio => radio.addEventListener("change", updateFormState));
 
+  // Initial toggle setup
+  toggleJODropdown();
+  toggleDropoffMedia();
 
-    requestTypeRadios.forEach(radio => radio.addEventListener("change", toggleJODropdown));
-    customerTypeRadios.forEach(radio => radio.addEventListener("change", updateFormState));
-    toggleJODropdown();
-
-    // Submit handler
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+  // Submit handler
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
     const submitButton = document.querySelector(".btn-submit");
     submitButton.disabled = true;
     submitButton.textContent = "Sending...";
 
-      const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
-      let customerName;
+    const isExisting = document.querySelector('input[name="customerType"]:checked').value === "existing";
+    let customerName;
 
-      if (isExisting) {
-        customerName = document.getElementById("name").value;
-        if (!customerName) {
-          alert("Please select a customer from the dropdown.");
-          return;
-        }
-      } else {
-        customerName = document.getElementById("name").value.trim();
-        if (!customerName) {
-          alert("Please enter the new customer name.");
-          return;
-        }
+    if (isExisting) {
+      customerName = document.getElementById("name").value;
+      if (!customerName) {
+        alert("Please select a customer from the dropdown.");
+        return;
       }
+    } else {
+      customerName = document.getElementById("name").value.trim();
+      if (!customerName) {
+        alert("Please enter the new customer name.");
+        return;
+      }
+    }
 
-const formData = new FormData(form);
+    const formData = new FormData(form);
+    const file = dropoffMediaInput.files[0];
 
-// If request type is Delivery, include the selected JO
-const requestType = document.querySelector('input[name="request_type"]:checked')?.value;
-if (requestType === "Delivery") {
-  const selectedJO = document.getElementById("joDropdown")?.value;
-  if (!selectedJO) {
-    alert("Please select a Job Order (JO) for Delivery.");
-    return;
-  }
-  formData.append("DeliveryJONumber", selectedJO); // You can change the key name to match your expected server param
-}
-      formData.set("name", customerName);
+    if (file) {
       try {
-        const response = await fetch(scriptURL, {
-          method: "POST",
-          body: formData,
-        });
-        if (response.ok) {
-          alert("Form submitted successfully!");
-          location.reload(); // <- This reloads the page to reset everything
-          setDefaultDateAndTime();
-          updateFormState();
-          if (window.tomSelectInstance) window.tomSelectInstance.clear();
-        } else {
-          alert("Failed to submit the form. Please try again.");
-        }
+        const base64 = await toBase64(file);
+        formData.set("dropoffrequestmedia", base64);
+        console.log("Base64 payload (first 50 chars):", formData.get("dropoffrequestmedia")?.slice(0, 50));
       } catch (error) {
-        console.error("Error submitting form:", error);
-        alert("Error submitting form. Please try again.");
+        alert("Failed to process image. Please try again.");
+        console.error(error);
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit";
+        return;
       }
-    });
+    }
+
+    const requestType = document.querySelector('input[name="request_type"]:checked')?.value;
+    if (requestType === "Delivery") {
+      const selectedJO = document.getElementById("joDropdown")?.value;
+      if (!selectedJO) {
+        alert("Please select a Job Order (JO) for Delivery.");
+        return;
+      }
+      formData.append("DeliveryJONumber", selectedJO);
+    }
+
+    formData.set("name", customerName);
+    try {
+      const response = await fetch(scriptURL, {
+        method: "POST",
+        body: formData,
+      });
+      if (response.ok) {
+        alert("Form submitted successfully!");
+        location.reload();
+        setDefaultDateAndTime();
+        updateFormState();
+        if (window.tomSelectInstance) window.tomSelectInstance.clear();
+      } else {
+        alert("Failed to submit the form. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Error submitting form. Please try again.");
+    }
   });
+});
+
 
   // Optional helper
   function toBase64(file) {
@@ -698,6 +723,10 @@ function formatDecimal(value, decimals = 2, fallback = 'Not found') {
 const webAppURL = 'https://script.google.com/macros/s/AKfycbxQZ3Jf0es1N69riskJenX2B9PO3GbOjqgS07O5YNL6vbiHyJfVylP_XsfDCZM1TP4D1A/exec'; // Replace with your deployed Web App URL
 
 function updateFreebiePoints(name) {
+      document.getElementById('freebiepoints').innerHTML = ``;
+      document.getElementById('totalfreebieavailed').innerHTML = ``;
+      document.getElementById('remainingfreebiepoints').innerHTML = ``;
+
   if (!name) {
     document.getElementById('freebiepoints').innerHTML = `Freebie Points: Not available`;
     return;

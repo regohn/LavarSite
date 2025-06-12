@@ -5,7 +5,6 @@
   <meta charset="UTF-8" />
   <title>LAVAR FOLDS</title>
   <style>
-    /* Base Reset & Font */
     @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Text:wght@400;600&display=swap');
 
     body {
@@ -14,8 +13,6 @@
       background: #f2f5f7;
       padding: 30px 20px;
       color: #1c1c1e;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
       margin: 0;
       min-height: 100vh;
       display: flex;
@@ -27,7 +24,6 @@
       font-weight: 600;
       font-size: 28px;
       margin-bottom: 25px;
-      letter-spacing: -0.02em;
     }
 
     #controls {
@@ -49,8 +45,6 @@
       height: 52px;
       cursor: pointer;
       box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
-      transition: background-color 0.3s ease;
-      user-select: none;
     }
 
     button:hover {
@@ -70,7 +64,6 @@
       color: #8e8e93;
       margin-bottom: 15px;
       display: none;
-      font-weight: 500;
     }
 
     #folderFilter {
@@ -81,28 +74,16 @@
       border: 1.5px solid #c7c7cc;
       background-color: white;
       width: 220px;
-      font-weight: 500;
-      color: #1c1c1e;
-      box-shadow: 0 1px 3px rgba(60, 60, 67, 0.15);
-      transition: border-color 0.3s ease;
-      cursor: pointer;
     }
 
-    #folderFilter:hover,
-    #folderFilter:focus {
-      border-color: #007aff;
-      outline: none;
-      box-shadow: 0 0 8px rgba(0, 122, 255, 0.3);
+    table {
+      border-collapse: separate;
+      border-spacing: 0 12px;
+      width: 100%;
+      max-width: 1200px;
+      background-color: transparent;
+      font-size: 10px;
     }
-
-table {
-  border-collapse: separate;
-  border-spacing: 0 12px;
-  width: 100%;
-  max-width: 1200px; /* Increased width */
-  background-color: transparent;
-  font-size: 10px; /* Reduced font size */
-}
 
     thead tr {
       background: transparent;
@@ -112,33 +93,30 @@ table {
       text-align: left;
       padding: 12px 18px;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 10px;
       color: #6e6e73;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
-      user-select: none;
     }
+
+    td {
+      padding: 14px 18px;
+      color: #1c1c1e;
+      font-size: 10px;
+    }    
 
     tbody tr {
       background: white;
       border-radius: 14px;
       box-shadow: 0 1px 4px rgb(60 60 67 / 0.1);
       transition: box-shadow 0.3s ease;
-      cursor: default;
     }
 
     tbody tr:hover {
       box-shadow: 0 4px 14px rgb(0 122 255 / 0.3);
     }
 
-    td {
-      padding: 14px 18px;
-      color: #1c1c1e;
-      font-size: 15px;
-      border: none;
-    }
 
-    /* Responsive */
+
     @media (max-width: 600px) {
       body {
         padding: 20px 10px;
@@ -156,31 +134,70 @@ table {
         font-size: 13px;
       }
     }
+.wide-button {
+  width: auto;
+  height: auto;
+  padding: 8px 8px;
+  font-size: 10px;
+  border-radius: 8px;
+}
+button {
+  background: #007aff;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  font-size: 16px; /* smaller font size */
+  padding: 8px 14px; /* smaller padding for more compact height */
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
+  height: auto; /* allow height to adjust */
+  min-width: 40px;
+}
+
+button:hover {
+  background: #005fcc;
+}
+.nav-button {
+  font-size: 16px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  min-width: 36px;
+  height: auto;
+}
+
   </style>
 </head>
 
 <body>
   <h2>LAVAR LAUNDRY FOLDS</h2>
-<div>
-    <a href="pickuprequestsummary.html"> Requests Summary </a> | 
-    <a href="pickuprequest.html"> Request Forms </a> | 
-    <a href="pickup.html"> Pickup </a>  | 
-    <a href="delivery.html"> Delivery </a> | 
-    <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold | </a> 
-    <a href="FoldSite.html"> Fold Site </a> 
-    <br>  
-<br>
 
-  <div id="controls">
-    <button onclick="changeDay(-1)">←</button>
-    <span id="dateDisplay"></span>
-    <button id="btnNext" onclick="changeDay(1)">→</button>
+  <div>
+    <a href="pickuprequestsummary.html">Requests Summary</a> |
+    <a href="pickuprequest.html">Request Forms</a> |
+    <a href="pickup.html">Pickup</a> |
+    <a href="delivery.html">Delivery</a> |
+    <a href="deliverysummary.html">DVS</a> |
+    <a href="LavarFormSubmission.html">Fold</a> |
+    <a href="FoldSite.html">Fold Site</a>
   </div>
 
-  <!-- Folder Name Filter Dropdown -->
+
+
+
+
+<br>
+  <div id="controls">
+    <button class="nav-button" onclick="changeDay(-1)">←</button>
+    <span id="dateDisplay"></span>
+    <button class="nav-button" id="btnNext" onclick="changeDay(1)">→</button>
+  </div>
+<button class="wide-button" onclick="switchToWalangLog()">Show WALANG MGA LOG</button>
+<br>
   <div style="text-align:center;">
-    <label for="folderFilter" style="font-weight:600; color:#3a3a3c; margin-right: 8px;">Filter by Folder Name:</label>
+    <label for="folderFilter" style="font-weight:600; color:#3a3a3c; margin-right: 8px;">
+      Filter by Folder Name:
+    </label>
     <select id="folderFilter" onchange="filterTable()">
       <option value="All">All</option>
     </select>
@@ -194,197 +211,186 @@ table {
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
-</body>
 
-</html>
+  <script>
+    //FoldsScripts2
+    const webAppURL = "https://script.google.com/macros/s/AKfycbwOMGeTs-rjoPTZoEzzeXWnlHGfOL1lbzAxnTYyj_SRDSR7n8w0OyLmTc0x1oY15gpd/exec";
+    let offsetDays = 0;
+    let currentDataRows = [];
+    let headers = [];
+    const folderColumnIndex = 3;
+    let loadingWalangLog = false; 
 
-<script>
-  const webAppURL =
-    "https://script.google.com/macros/s/AKfycbwOMGeTs-rjoPTZoEzzeXWnlHGfOL1lbzAxnTYyj_SRDSR7n8w0OyLmTc0x1oY15gpd/exec";
-  let offsetDays = 0;
-  let currentDataRows = [];
-  let headers = [];
-  const folderColumnIndex = 3; // zero-based index of "NAME OF FOLDER" column
-
-  function formatDate(date) {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    return `${mm}/${dd}/${yyyy}`;
-  }
-
-function changeDay(direction) {
-  offsetDays += direction;
-  // Clamp offsetDays so it can't go beyond today
-  if (offsetDays > 0) offsetDays = 0;
-  loadData();
-  updateButtons();
-}
-  function loadData() {
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + offsetDays);
-    const formattedDate = formatDate(targetDate);
-    document.getElementById("dateDisplay").textContent = formattedDate;
-
-    document.getElementById("loading").style.display = "block";
-
-    fetch(`${webAppURL}?date=${encodeURIComponent(formattedDate)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        document.getElementById("loading").style.display = "none";
-
-        headers = data.headers;
-        currentDataRows = data.rows;
-
-        renderTable(data);
-        populateFolderDropdown(currentDataRows);
-      })
-      .catch((error) => {
-        document.getElementById("loading").textContent = "Failed to load data.";
-        console.error("Error:", error);
-      });
-  }
-
-  function renderTable(data) {
-    const headerRow = document.getElementById("tableHeader");
-    const tableBody = document.getElementById("tableBody");
-    headerRow.innerHTML = "";
-    tableBody.innerHTML = "";
-
-    // Render headers
-    headers.forEach((header) => {
-      const th = document.createElement("th");
-      th.textContent = header;
-      headerRow.appendChild(th);
-    });
-
-    if (data.rows.length === 0) {
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-      td.colSpan = headers.length;
-      td.textContent = "No data for this date.";
-      tr.appendChild(td);
-      tableBody.appendChild(tr);
-      return;
+    function formatDate(date) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      return `${mm}/${dd}/${yyyy}`;
     }
 
-    // Show all rows by default
-    data.rows.forEach((row) => {
-      const tr = document.createElement("tr");
-      row.forEach((cell, index) => {
-        const td = document.createElement("td");
+    function changeDay(direction) {
+      offsetDays += direction;
+      if (offsetDays > 0) offsetDays = 0;
+      loadData();
+      updateButtons();
+    }
 
-        if (index === 0) {
-          // Column A: date-time format
-          td.textContent = formatDateTime(cell);
-        } else if (index === 6) {
-  
-          td.textContent = formatDateOnly(cell);
-        } else {
-          td.textContent = cell;
-        }
+    function updateButtons() {
+      document.getElementById("btnNext").disabled = offsetDays >= 0;
+    }
 
-        tr.appendChild(td);
+function loadData() {
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() + offsetDays);
+  const formattedDate = formatDate(targetDate);
+  document.getElementById("dateDisplay").textContent = formattedDate;
+  document.getElementById("loading").style.display = "block";
+
+  const url = loadingWalangLog
+    ? `${webAppURL}?customLog=true`
+    : `${webAppURL}?date=${encodeURIComponent(formattedDate)}`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("loading").style.display = "none";
+      headers = data.headers || ["JO NUMBER", "NUMBER OF BAGS", "NAME OF FOLDER", "DATE"]; // fallback headers
+      currentDataRows = data.rows;
+      renderTable(data);
+      populateFolderDropdown(currentDataRows);
+    })
+    .catch(error => {
+      document.getElementById("loading").textContent = "Failed to load data.";
+      console.error("Error:", error);
+    });
+}
+
+
+    function renderTable(data) {
+      const headerRow = document.getElementById("tableHeader");
+      const tableBody = document.getElementById("tableBody");
+      headerRow.innerHTML = "";
+      tableBody.innerHTML = "";
+
+      headers.forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        headerRow.appendChild(th);
       });
-      tableBody.appendChild(tr);
-    });
-  }
 
-  function populateFolderDropdown(rows) {
-    const folderFilter = document.getElementById("folderFilter");
-
-    // Reset dropdown but keep "All"
-    folderFilter.innerHTML = '<option value="All">All</option>';
-
-    const folderNames = new Set();
-
-    rows.forEach((row) => {
-      const folderName = row[folderColumnIndex];
-      if (folderName && folderName.trim() !== "") {
-        folderNames.add(folderName.trim());
+      if (data.rows.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = headers.length;
+        td.textContent = "No data for this date.";
+        tr.appendChild(td);
+        tableBody.appendChild(tr);
+        return;
       }
-    });
 
-    // Sort names alphabetically
-    Array.from(folderNames)
-      .sort()
-      .forEach((name) => {
+      data.rows.forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach((cell, index) => {
+          const td = document.createElement("td");
+          if (index === 0) {
+            td.textContent = formatDateTime(cell);
+          } else if (index === 6) {
+            td.textContent = formatDateOnly(cell);
+          } else {
+            td.textContent = cell;
+          }
+          tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function populateFolderDropdown(rows) {
+      const folderFilter = document.getElementById("folderFilter");
+      folderFilter.innerHTML = '<option value="All">All</option>';
+      const folderNames = new Set();
+
+      rows.forEach(row => {
+        const folderName = row[folderColumnIndex];
+        if (folderName && folderName.trim() !== "") {
+          folderNames.add(folderName.trim());
+        }
+      });
+
+      Array.from(folderNames).sort().forEach(name => {
         const option = document.createElement("option");
         option.value = name;
         option.textContent = name;
         folderFilter.appendChild(option);
       });
-  }
-
-  function filterTable() {
-    const filterValue = document.getElementById("folderFilter").value;
-    const tableBody = document.getElementById("tableBody");
-    tableBody.innerHTML = "";
-
-    const filteredRows =
-      filterValue === "All"
-        ? currentDataRows
-        : currentDataRows.filter((row) => row[folderColumnIndex] === filterValue);
-
-    if (filteredRows.length === 0) {
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-      td.colSpan = headers.length;
-      td.textContent = "No matching data.";
-      tr.appendChild(td);
-      tableBody.appendChild(tr);
-      return;
     }
 
-    filteredRows.forEach((row) => {
-      const tr = document.createElement("tr");
-      row.forEach((cell, index) => {
+    function filterTable() {
+      const filterValue = document.getElementById("folderFilter").value;
+      const tableBody = document.getElementById("tableBody");
+      tableBody.innerHTML = "";
+
+      const filteredRows = filterValue === "All"
+        ? currentDataRows
+        : currentDataRows.filter(row => row[folderColumnIndex] === filterValue);
+
+      if (filteredRows.length === 0) {
+        const tr = document.createElement("tr");
         const td = document.createElement("td");
-
-        if (index === 0) {
-          td.textContent = formatDateTime(cell);
-        } else if (index === 5) {
-          td.textContent = formatDateOnly(cell);
-        } else {
-          td.textContent = cell;
-        }
-
+        td.colSpan = headers.length;
+        td.textContent = "No matching data.";
         tr.appendChild(td);
+        tableBody.appendChild(tr);
+        return;
+      }
+
+      filteredRows.forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach((cell, index) => {
+          const td = document.createElement("td");
+          if (index === 0) {
+            td.textContent = formatDateTime(cell);
+          } else if (index === 6) {
+            td.textContent = formatDateOnly(cell);
+          } else {
+            td.textContent = cell;
+          }
+          tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
       });
-      tableBody.appendChild(tr);
-    });
-  }
+    }
 
-  function formatDateTime(dateString) {
-    const d = new Date(dateString);
-    if (isNaN(d)) return dateString;
-    return d.toLocaleString("en-US", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    });
-  }
+    function formatDateTime(dateString) {
+      const d = new Date(dateString);
+      return isNaN(d) ? dateString : d.toLocaleString("en-US", {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+        hour12: true
+      });
+    }
 
-  function formatDateOnly(dateString) {
-    const d = new Date(dateString);
-    if (isNaN(d)) return dateString;
-    return d.toLocaleDateString("en-US");
-  }
+    function formatDateOnly(dateString) {
+      const d = new Date(dateString);
+      return isNaN(d) ? dateString : d.toLocaleDateString("en-US");
+    }
 
-  // Initial load
+    // Load table initially
+    loadData();
+
+function switchToWalangLog() {
+  loadingWalangLog = true;
+  offsetDays = 0;
   loadData();
-function updateButtons() {
-  const btnNext = document.getElementById("btnNext");
-  // Disable right button if offsetDays >= 0 (today or future)
-  btnNext.disabled = offsetDays >= 0;
 }
 
-</script>
+function switchToFormResponses() {
+  loadingWalangLog = false;
+  offsetDays = 0;
+  loadData();
+}
 
- 
+  </script>
 </body>
+
 </html>
