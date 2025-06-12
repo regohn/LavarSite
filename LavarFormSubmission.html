@@ -327,34 +327,35 @@ async function loadPickupDropdown() {
 
     let matchCount = 0;
 
-data.result.forEach(item => {
-  const pickupName = item.name?.trim().toLowerCase() || "";
-  
-currentCustomerName = currentCustomerName.replace(/\s+/g, ' ').trim();
-  if (pickupName === currentCustomerName) {
-    const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID} `;
-    const option = document.createElement("option");
-    option.value = label;
-    option.textContent = label;
-    dropdown.appendChild(option);
-
-    matchCount++;  
-  }
-});
-
-
-    if (matchCount === 0) {
-      const option = document.createElement("option");
-      option.disabled = true;
-      option.textContent = "No matching pickups found";
-      dropdown.appendChild(option);
+    // Normalize function: lowercases + trims + collapses multiple spaces
+    function normalizeName(name) {
+      return name?.replace(/\s+/g, ' ').trim().toLowerCase() || "";
     }
 
+    const customerNameNormalized = normalizeName(currentCustomerName);
+
+    data.result.forEach(item => {
+      const pickupName = normalizeName(item.name);
+
+      if (pickupName === customerNameNormalized) {
+        const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID}`;
+        const option = document.createElement("option");
+        option.value = label;
+        option.textContent = label;
+        dropdown.appendChild(option);
+
+        matchCount++;
+      }
+    });
+
+    if (matchCount === 0) {
+      console.warn("No matching pickups found for:", currentCustomerName);
+    }
   } catch (error) {
-    console.error("Failed to load pickup data:", error);
+    console.error("Error loading pickup dropdown:", error);
   }
-  console.log("currentCustomerName =", currentCustomerName);
 }
+
 
 
 //NewFormFoldsSubmit - web app
