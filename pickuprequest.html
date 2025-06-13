@@ -774,8 +774,15 @@ function updateFreebiePoints(name) {
 const customer = document.getElementById('name').value.trim();
 function fetchLocationsFor(customer) {
   if (!customer) return;
-  //last3pickuploc
-  fetch(`https://script.google.com/macros/s/AKfycbxMizywJHekWvUhIcgyVD7yWTPB06Rj_Ua8JgklLQP2IU7AtN-kchOxrRvCRc2kQ4mc/exec?name=${encodeURIComponent(customer)}`)
+
+  // Get selected request type from radio button
+  const requestType = document.querySelector('input[name="request_type"]:checked')?.value;
+  if (!requestType) return; // no type selected
+
+  // Send both name and type to server
+  const url = `https://script.google.com/macros/s/AKfycbxMizywJHekWvUhIcgyVD7yWTPB06Rj_Ua8JgklLQP2IU7AtN-kchOxrRvCRc2kQ4mc/exec?name=${encodeURIComponent(customer)}&type=${encodeURIComponent(requestType)}`;
+
+  fetch(url)
     .then(res => res.json())
     .then(locations => {
       const container = document.getElementById('previousLocations');
@@ -785,27 +792,24 @@ function fetchLocationsFor(customer) {
         return;
       }
 
-      // Trim each location and remove blanks
+      // Clean and deduplicate
       const clean = locations
         .map(loc => loc?.toString().trim())
-        .filter(loc => loc); // remove empty/null
-
-      // Remove duplicates (optional)
+        .filter(loc => loc);
       const unique = [...new Set(clean)];
-
-      // Limit to 3
       const lastThree = unique.slice(0, 3);
 
-    const links = lastThree.map(location =>
-      `<button type="button" class="loc-button" onclick="document.getElementById('PickupLocation').value='${location.replace(/'/g, "\\'")}'">${location}</button>`
-    );
-    container.innerHTML = "Last 3 locations(click 1): " + links.join(' ');
+      const links = lastThree.map(location =>
+        `<button type="button" class="loc-button" onclick="document.getElementById('PickupLocation').value='${location.replace(/'/g, "\\'")}'">${location}</button>`
+      );
+      container.innerHTML = "Last 3 locations (click 1): " + links.join(' ');
     })
     .catch(err => {
       console.error("Error fetching pickup locations:", err);
       document.getElementById('previousLocations').textContent = "Error loading recent locations.";
     });
 }
+
 
 </script>
 
