@@ -113,6 +113,20 @@
       border-radius: 8px;
       border: 1px solid #dee2e6;
     }
+    .loc-button {
+      font-size: 10px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+      padding: 2px 6px;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .loc-button:hover {
+      background-color: #e0e0e0;
+    }    
   </style>
 </head>
 <body onload="disableElements()">
@@ -782,11 +796,10 @@ function fetchLocationsFor(customer) {
       // Limit to 3
       const lastThree = unique.slice(0, 3);
 
-      const links = lastThree.map(location =>
-        `<a href="#" onclick="document.getElementById('PickupLocation').value='${location.replace(/'/g, "\\'")}'">${location}</a>`
-      );
-
-      container.innerHTML = "Last 3 locations(click 1): " + links.join(' | ');
+    const links = lastThree.map(location =>
+      `<button type="button" class="loc-button" onclick="document.getElementById('PickupLocation').value='${location.replace(/'/g, "\\'")}'">${location}</button>`
+    );
+    container.innerHTML = "Last 3 locations(click 1): " + links.join(' ');
     })
     .catch(err => {
       console.error("Error fetching pickup locations:", err);
@@ -794,10 +807,6 @@ function fetchLocationsFor(customer) {
     });
 }
 
-
-
-
- 
 </script>
 
 
