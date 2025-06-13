@@ -264,6 +264,7 @@
     </div>
 
 <script>
+  //LavarSite2Appscript
   const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
   
   const form = document.getElementById("submit-to-google-sheet");
@@ -498,6 +499,7 @@ async function loadJODropdown(passedDate) {
   dropdown.innerHTML = '<option value="">Select Requested JO# for Delivery</option>';
 
   try {
+     //JODeliveryRequest 
     const url = `https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec?date=${encodeURIComponent(passedDate)}`;
     const response = await fetch(url);
 
@@ -511,10 +513,10 @@ async function loadJODropdown(passedDate) {
     }
 
     data.forEach(item => {
-      if (item.DeliveryJONumber) {
+      if (item["Del JO#"]) {
         const option = document.createElement("option");
-        option.value = item.DeliveryJONumber;
-        option.textContent = `${item.DeliveryJONumber} || ${item.name}`;
+        option.value = item["Del JO#"];
+        option.textContent = `${item["Del JO#"]} || ${item.name}`;
         dropdown.appendChild(option);
       }
     });
