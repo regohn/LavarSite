@@ -155,6 +155,7 @@
             document.getElementById('Comments').value = ''
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').setAttribute('required', false);
+            document.getElementById('dropoffrequestmedia1').removeAttribute('required');
             "required>
             Pickup
         </label>
@@ -165,6 +166,7 @@
             document.getElementById('Comments').value = ''
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').setAttribute('required', false);
+            document.getElementById('dropoffrequestmedia1').removeAttribute('required');
             ">
             Delivery
         </label>        
@@ -175,6 +177,8 @@
             document.getElementById('Comments').value = 'Drop-off in Lavar Shop';
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').setAttribute('required', true);
+            document.getElementById('dropoffrequestmedia1').removeAttribute('required');
+            
             " >
             Drop-Off
         </label>        
@@ -184,8 +188,10 @@
             document.getElementById('PickupLocation').value = 'Lavar Shop';
             document.getElementById('Comments').value = 'Self-Service in Lavar Shop'
             document.getElementById('previousLocations').style.display = 'none';
-            document.getElementById('dropoffrequestmedia').setAttribute('required', false);            
-            " required>
+            document.getElementById('dropoffrequestmedia').removeAttribute('required');
+            document.getElementById('dropoffrequestmedia1').removeAttribute('required');
+
+            ">
             Self-Service
         </label>
 &nbsp;&nbsp;
@@ -198,13 +204,34 @@
             </select>
         </div>  
         
-        <div id="joDetailsContainer" style="font-size: 12px; font-weight: bold;"></div>
+      <!-- Nested table with 1 row and 2 columns -->
+
+
+        
         
         <div id="nameDropdownContainer">
             <label for="nameDropdown">Select Existing Customer</label>
             <select id="nameDropdown" class="form-control" placeholder="Search name..."></select>
         </div>
       </div>
+
+<table id="foldandfreebiecontainer" style="display: table; width: 100%;">
+  <tr>
+    <td style="vertical-align: top;">
+      <div id="joDetailsContainer" style="font-size: 12px; font-weight: bold;"></div>
+    </td>
+    <td style="vertical-align: top;">
+      <div id="freebiecontainertext">
+        <div id="freebiepoints" style="font-size: 0.8rem;">Total Freebie Points: </div>
+        <div id="totalfreebieavailed" style="font-size: 0.8rem;">Availed Freebie Points: </div>
+        <div id="remainingfreebiepoints" style="font-size: 0.8rem;">Remaining Freebie Points: </div>
+      </div>
+    </td>
+  </tr>
+</table>
+
+
+
 
       <div id="customerTypeContainer" class="radio-group">
         <div class="form-check">
@@ -228,12 +255,7 @@
           required
         />
       </div>
-      
-        <label id ="freebiecontainertext">
-        <div id="freebiepoints" style="font-size: 0.8rem;">Total Freebie Points: </div>
-        <div id="totalfreebieavailed"  style="font-size: 0.8rem;">Availed Freebie Points: </div>
-        <div id="remainingfreebiepoints" style="font-size: 0.8rem;">Remaining Freebie Points: </div>
-    </label>
+
         <br>
       
 
@@ -288,6 +310,8 @@
         ></textarea>
       </div>
 
+
+      
       <div class="form-group file-group">
         <label for="dropoffrequestmedia">Upload Drop-Off Picture (Required)</label>
         <input
@@ -298,18 +322,18 @@
           accept="image/*"
         />
       </div>
-<!--
+
       <div class="form-group file-group">
-        <label for="media2">Upload Second Picture (Optional)</label>
+        <label for="dropoffrequestmedia1">Upload Second Picture (Optional)</label>
         <input
           type="file"
-          id="media2"
-          name="media2"
+          id="dropoffrequestmedia1"
+          name="dropoffrequestmedia1"
           class="form-control-file"
           accept="image/*"
         />
       </div>
-
+<!--
       <div class="form-group file-group">
         <label for="media3">Upload Third Picture (Optional)</label>
         <input
@@ -382,10 +406,16 @@
       });
 
       window.tomSelectInstance.on("change", function (value) {
+         console.log("Selected value:", value);
         document.getElementById("name").value = value;
-        
         updateFreebiePoints(value);
         fetchLocationsFor(value);
+        const table = document.getElementById("foldandfreebiecontainer");
+        if (table) {
+          table.style.display = "table"; // ✅ Use "table" not "block"
+        } else {
+          console.error("foldandfreebiecontainer not found");
+        }     
       });
     } catch (err) {
       console.error("Error loading names:", err);
@@ -477,13 +507,15 @@
   setDefaultDateAndTime();
   loadNames();
   loadJOs();
-
+  //document.getElementById("foldandfreebiecontainer").style.display = "none";
   joDetailsContainer = document.getElementById("joDetailsContainer");
   joDropdown = document.getElementById("joDropdown");
   const dropoffMediaInput = document.getElementById("dropoffrequestmedia");
+  const dropoffMediaInput1 = document.getElementById("dropoffrequestmedia1");
 
   // Disable dropoff media input by default
   dropoffMediaInput.disabled = true;
+  dropoffMediaInput1.disabled = true;
 
   // JO change listener
   joDropdown.addEventListener("change", function () {
@@ -546,7 +578,10 @@
   // Toggle dropoff media based on radio selection
   function toggleDropoffMedia() {
     const selectedType = document.querySelector('input[name="request_type"]:checked')?.value;
-    dropoffMediaInput.disabled = selectedType !== "Drop-Off";
+    const shouldEnable = selectedType === "Drop-Off" || selectedType === "Self-Service";
+
+    document.getElementById("dropoffrequestmedia").disabled = !shouldEnable;
+    document.getElementById("dropoffrequestmedia1").disabled = !shouldEnable;
   }
 
   requestTypeRadios.forEach(radio => {
@@ -587,22 +622,38 @@
       }
     }
 
-    const formData = new FormData(form);
-    const file = dropoffMediaInput.files[0];
+        const formData = new FormData(form);
+        const file = dropoffMediaInput.files[0];
 
-    if (file) {
-      try {
-        const base64 = await toBase64(file);
-        formData.set("dropoffrequestmedia", base64);
-        console.log("Base64 payload (first 50 chars):", formData.get("dropoffrequestmedia")?.slice(0, 50));
-      } catch (error) {
-        alert("Failed to process image. Please try again.");
-        console.error(error);
-        submitButton.disabled = false;
-        submitButton.textContent = "Submit";
-        return;
-      }
-    }
+        if (file) {
+          try {
+            const base64 = await toBase64(file);
+            formData.set("dropoffrequestmedia", base64);
+            console.log("Base64 payload (first 50 chars):", formData.get("dropoffrequestmedia")?.slice(0, 50));
+          } catch (error) {
+            alert("Failed to process image. Please try again.");
+            console.error(error);
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit";
+            return;
+          }
+        }
+
+        // ✅ Handle dropoffrequestmedia1 (second image)
+        const file2 = dropoffMediaInput1.files[0];
+        if (file2) {
+          try {
+            const base64_2 = await toBase64(file2);
+            formData.set("dropoffrequestmedia1", base64_2); // name matches what server expects
+            console.log("Base64 for media2 (first 50):", base64_2.slice(0, 50));
+          } catch (error) {
+            alert("Failed to process image 2. Please try again.");
+            console.error(error);
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit";
+            return;
+          }
+        }    
 
     const requestType = document.querySelector('input[name="request_type"]:checked')?.value;
     if (requestType === "Delivery") {
@@ -830,7 +881,7 @@ function fetchLocationsFor(customer) {
       const links = lastThree.map(location =>
         `<button type="button" class="loc-button" onclick="document.getElementById('PickupLocation').value='${location.replace(/'/g, "\\'")}'">${location}</button>`
       );
-      container.innerHTML = "Last 3 locations (click 1): " + links.join(' ');
+      container.innerHTML = "Last locations (click 1): " + links.join(' ');
     })
     .catch(err => {
       console.error("Error fetching pickup locations:", err);
