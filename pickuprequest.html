@@ -150,22 +150,42 @@
       <div class="form-group">
         <label><strong>Request Type:</strong></label><br>
         <label>
-            <input type="radio" name="request_type" value="Pickup"  onclick="document.getElementById('PickupLocation').value = '';document.getElementById('Comments').value = ''" required>
+            <input type="radio" name="request_type" value="Pickup"  onclick="
+            document.getElementById('PickupLocation').value = '';
+            document.getElementById('Comments').value = ''
+            document.getElementById('previousLocations').style.display = 'none';
+            document.getElementById('dropoffrequestmedia').setAttribute('required', false);
+            "required>
             Pickup
         </label>
         &nbsp;&nbsp;
         <label>
-            <input type="radio" name="request_type" value="Delivery" onclick="document.getElementById('PickupLocation').value = '';document.getElementById('Comments').value = ''">
+            <input type="radio" name="request_type" value="Delivery" onclick="
+            document.getElementById('PickupLocation').value = '';
+            document.getElementById('Comments').value = ''
+            document.getElementById('previousLocations').style.display = 'none';
+            document.getElementById('dropoffrequestmedia').setAttribute('required', false);
+            ">
             Delivery
         </label>        
         &nbsp;&nbsp;
         <label>
-            <input type="radio" name="request_type" value="Drop-Off" onclick="document.getElementById('PickupLocation').value = 'Lavar Shop';document.getElementById('Comments').value = 'Drop-off in Lavar Shop'" >
+            <input type="radio" name="request_type" value="Drop-Off" onclick="
+            document.getElementById('PickupLocation').value = 'Lavar Shop';
+            document.getElementById('Comments').value = 'Drop-off in Lavar Shop';
+            document.getElementById('previousLocations').style.display = 'none';
+            document.getElementById('dropoffrequestmedia').setAttribute('required', true);
+            " >
             Drop-Off
         </label>        
         &nbsp;&nbsp;
         <label>
-            <input type="radio" name="request_type" value="Self-Service"  onclick="document.getElementById('PickupLocation').value = 'Lavar Shop';document.getElementById('Comments').value = 'Self-Service in Lavar Shop'" required>
+            <input type="radio" name="request_type" value="Self-Service"  onclick="
+            document.getElementById('PickupLocation').value = 'Lavar Shop';
+            document.getElementById('Comments').value = 'Self-Service in Lavar Shop'
+            document.getElementById('previousLocations').style.display = 'none';
+            document.getElementById('dropoffrequestmedia').setAttribute('required', false);            
+            " required>
             Self-Service
         </label>
 &nbsp;&nbsp;
@@ -178,7 +198,7 @@
             </select>
         </div>  
         
-        <div id="joDetailsContainer" style="margin-top: 3px; display: none; padding: 1em; border: 1px solid #ccc; border-radius:2px; background-color: #f9f9f9;"></div>
+        <div id="joDetailsContainer" style="font-size: 12px; font-weight: bold;"></div>
         
         <div id="nameDropdownContainer">
             <label for="nameDropdown">Select Existing Customer</label>
@@ -209,18 +229,19 @@
         />
       </div>
       
-
+        <label id ="freebiecontainertext">
         <div id="freebiepoints" style="font-size: 0.8rem;">Total Freebie Points: </div>
         <div id="totalfreebieavailed"  style="font-size: 0.8rem;">Availed Freebie Points: </div>
         <div id="remainingfreebiepoints" style="font-size: 0.8rem;">Remaining Freebie Points: </div>
+    </label>
         <br>
       
 
 
       <div class="form-group">
 
-        <label for="PickupLocation">Location</label>
-        <div id="previousLocations" style="font-size:10px;">last 3 loc</div>      
+        <label id="previousLocations" for="PickupLocation">Location</label>  
+        
         <input
           type="text"
           id="PickupLocation"
@@ -362,6 +383,7 @@
 
       window.tomSelectInstance.on("change", function (value) {
         document.getElementById("name").value = value;
+        
         updateFreebiePoints(value);
         fetchLocationsFor(value);
       });
@@ -477,17 +499,19 @@
     console.log("Found JO data:", selectedData);
 
     if (selectedData) {
-      joDetailsContainer.style.display = "block";
+      joDetailsContainer.style.display = "inline";
       document.getElementById("name").value = selectedData.foundInRAW || "N/A";
       fetchLocationsFor(selectedData.foundInRAW || "N/A");
+      updateFreebiePoints(selectedData.foundInRAW || "N/A");
       joDetailsContainer.innerHTML = `
-        <h4>JO Details</h4>
-        <p>Customer Name: ${selectedData.foundInRAW || "N/A"}</p>
-        <p>JO Date Created: ${formatDateTime2(selectedData.joDateCreated) || "N/A"}</p>
-        <p>Amount: ${selectedData.amount || "N/A"}</p>
-        <p>Folder Name: ${selectedData.nameOfFolder || "N/A"}</p>
-        <p>Fold Time: ${selectedData.timeOfFolds || "N/A"}</p>
-        <p>Fold Date: ${formatDateTime(selectedData.dateOfFold) || "N/A"}</p>
+        <div>JO Details</div>
+        <div>Customer Name: ${selectedData.foundInRAW || "N/A"}</div>
+        <div>JO Date Created: ${formatDateTime2(selectedData.joDateCreated) || "N/A"}</div>
+        <div>Amount: ${selectedData.amount || "N/A"}</div>
+        <div># of bags: ${selectedData.numberofbags || "N/A"}</div>
+        <div>Folder Name: ${selectedData.nameOfFolder || "N/A"}</div>
+        <div>Fold Time: ${selectedData.timeOfFolds || "N/A"}</div>
+        <div>Fold Date: ${formatDateTime(selectedData.dateOfFold) || "N/A"}</div><br>
       `;
     } else {
       console.warn("No JO data found for selected value.");
@@ -772,7 +796,12 @@ function updateFreebiePoints(name) {
 }
 
 const customer = document.getElementById('name').value.trim();
+//alert(`Customer: ${customer}`); // Debugging line to check customer value
+//fetchLocationsFor(customer);
+
+
 function fetchLocationsFor(customer) {
+  document.getElementById('previousLocations').style.display = 'inline';
   if (!customer) return;
 
   // Get selected request type from radio button
@@ -786,12 +815,11 @@ function fetchLocationsFor(customer) {
     .then(res => res.json())
     .then(locations => {
       const container = document.getElementById('previousLocations');
-
-      if (!Array.isArray(locations) || locations.length === 0) {
-        container.textContent = "No recent locations found.";
-        return;
-      }
-
+  
+    if (!Array.isArray(locations) || locations.length === 0) {
+      container.textContent = "No recent locations found.";
+      return;
+    }
       // Clean and deduplicate
       const clean = locations
         .map(loc => loc?.toString().trim())
