@@ -119,6 +119,7 @@ table thead th {
   <div id="tableContainer">Loading...</div>
 
   <script>
+      //pickuprequestsummary
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJs9Dtwd-YDpLV6vkf7fLsysXc4GBjgzXmWFshxDLdk205PTzk4hqPfGHa6y81KDK7/exec?action=getPickupSummary";
     let allData = [];
     let currentDate = new Date();
@@ -126,7 +127,7 @@ table thead th {
 
     const headers = [
       "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
-      "request_type", "Comments", "timestamp", "unique_id", "media", "media2", "media3", "Pickup Pic", "DeliveryJONumber"
+      "request_type", "Comments", "timestamp", "unique_id", "media", "media2", "media3", "Pickup Pic", "DeliveryJONumber", "dropoffrequestmedia",	"dropoffrequestmedia1", "InshopPickupPic"
     ];
 
     function formatDate(date) {
@@ -208,7 +209,7 @@ table thead th {
       data.forEach(row => {
         html += `<tr>`;
         headers.forEach(key => {
-          if (["media", "media2", "media3","Pickup Pic"].includes(key)) {
+          if (["media", "media2", "media3","Pickup Pic", "dropoffrequestmedia",	"dropoffrequestmedia1", "InshopPickupPic"].includes(key)) {
             html += `<td>${createImageCell(row[key])}</td>`;
           } else if (key === "timestamp" ) {
             html += `<td>${formatDateTime(row[key])}</td>`;
