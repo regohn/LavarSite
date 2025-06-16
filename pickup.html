@@ -3,90 +3,129 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pickup Form Lavar Laundry </title>
-    <link
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
+    <title>Pickup Form - Lavar Laundry</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@7.12.15/dist/sweetalert2.all.min.js"></script>
     <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f8f9fa;
+        padding-bottom: 50px;
+      }
+
       .form-container {
         max-width: 500px;
-        margin: auto;
-        margin-top: 50px;
-        padding: 20px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 40px auto;
         background-color: #fff;
+        padding: 24px;
+        border-radius: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      }
+
+      h4 {
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 24px;
+      }
+
+      .nav-links {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+
+      .nav-links a {
+        padding: 6px 12px;
+        border-radius: 20px;
+        background-color: #e9ecef;
+        text-decoration: none;
+        font-size: 14px;
+        color: #007bff;
+        margin: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .nav-links a:hover {
+        background-color: #d0d4d8;
+      }
+
+      .form-group label {
+        font-weight: 500;
+        margin-top: 10px;
+      }
+
+      .form-control,
+      .form-control-file,
+      select {
+        border-radius: 12px;
+        font-size: 15px;
+      }
+
+      button[type="submit"] {
+        margin-top: 20px;
+        border-radius: 12px;
+        padding: 10px;
+        font-size: 17px;
+        font-weight: 600;
+        background-color: #007bff;
+        border: none;
+        transition: background-color 0.2s;
+      }
+
+      button[type="submit"]:hover {
+        background-color: #0056b3;
       }
     </style>
   </head>
-  <body class="bg-light">
+  <body>
     <div class="container">
       <div class="form-container">
-        <h4 class="text-center mb-4">Lavar Laundry Pickup Form</h4>
-        <a href="pickuprequestsummary.html"> Requests Summary </a> | <a href="pickuprequest.html"> Request Forms </a> | <a href="pickup.html"> Pickup </a>  | <a href="delivery.html"> Delivery </a> | <a href="deliverysummary.html"> DVS </a> <br>
-        <form id="submit-to-google-sheet">
-          <div class="form-group">
+        <h4>Lavar Pickup Form</h4>
 
-            <label for="nameDropdown" id="selectcustomer">Select Customer</label>
-            <input type="hidden" id="pickuprequestid" name="pickuprequestid" value="">
-            
+        <div class="nav-links">
+          <a href="pickuprequestsummary.html">Summary</a>
+          <a href="pickuprequest.html">Request</a>
+          <a href="pickup.html">Pickup</a>
+          <a href="delivery.html">Delivery</a>
+          <a href="deliverysummary.html">DVS</a>
+        </div>
+
+        <form id="submit-to-google-sheet">
+          <input type="hidden" id="pickuprequestid" name="pickuprequestid" value="">
+
+          <div class="form-group">
+            <label for="nameDropdown">Select Customer</label>
             <select class="form-control" id="nameDropdown">
               <option value="">-- Select Customer --</option>
             </select>
-
-
-            <label for="name">Customer Name</label>
-            <input
-              class="form-control"
-              type="text"
-              name="name"
-              id="name"
-              placeholder="Customer Name"
-              readonly 
-              required
-            />
           </div>
+
+          <div class="form-group">
+            <label for="name">Customer Name</label>
+            <input class="form-control" type="text" name="name" id="name" placeholder="Customer Name" readonly required />
+          </div>
+
           <div class="form-group">
             <label for="PickupLocation">Pickup Location</label>
-            <input
-              class="form-control"
-              type="text"
-              name="PickupLocation"
-              id="PickupLocation"
-              placeholder="Pickup Location"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="slip">Date of Pickup</label>
-            <input
-              class="form-control"
-              type="date"
-              name="dateofpickup"
-              id="dateofpickup"
-              placeholder="Date of Pickup"
-              required
-            />
+            <input class="form-control" type="text" name="PickupLocation" id="PickupLocation" required />
           </div>
 
           <div class="form-group">
-            <label for="slip">Time of Pickup</label>
-            <input
-              class="form-control"
-              type="text"
-              name="timeofpickup"
-              id="timeofpickup"
-              placeholder="Time of Pickup"
-              required
-            />
+            <label for="dateofpickup">Date of Pickup</label>
+            <input class="form-control" type="date" name="dateofpickup" id="dateofpickup" required />
           </div>
 
           <div class="form-group">
-            <label for="loc">DeliveryStaff</label>
+            <label for="timeofpickup">Time of Pickup</label>
+            <input class="form-control" type="text" name="timeofpickup" id="timeofpickup" placeholder="e.g. 2:30 PM" required />
+          </div>
+
+          <div class="form-group">
+            <label for="DeliveryStaff">Delivery Staff</label>
             <select class="form-control" name="DeliveryStaff" id="DeliveryStaff" required>
               <option value="" disabled selected hidden>Choose...</option>
               <option value="Joshua">Joshua</option>
@@ -97,8 +136,9 @@
               <option value="Nida">NIDA</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label for="loc">Did the Customer Pay During Pickup?</label>
+            <label for="PickupPayMethod">Did the Customer Pay During Pickup?</label>
             <select class="form-control" name="PickupPayMethod" id="PickupPayMethod" required>
               <option value="" disabled selected hidden>Choose...</option>
               <option value="Cash">No</option>
@@ -106,76 +146,67 @@
               <option value="G-Cash">G-Cash</option>
               <option value="Bank Transfer">Bank Transfer</option>
             </select>
-          </div>          
+          </div>
+
           <div class="form-group">
-            <label for="loc">Comments/Notes:</label>-=-            <textarea
-              class="form-control"0
-              name="Comments"
-              id="Comments"
-              placeholder="Message"
-              required
-            ></textarea>
+            <label for="Comments">Comments / Notes</label>
+            <textarea class="form-control" name="Comments" id="Comments" rows="3" placeholder="Message" required></textarea>
+          </div>
 
-            <div class="form-group mt-2">
-                <label for="media" class="form-check-label">Upload Laundry Pickup Picture</label>
-                <input class="form-control-file" type="file" name="media" id="media"  required/>
-            </div>
+          <div class="form-group">
+            <label for="media">Upload Laundry Pickup Picture</label>
+            <input class="form-control-file" type="file" name="media" id="media" required />
+          </div>
 
-            <div class="form-group mt-2">
-              <label for="media2" class="form-check-label">Upload Second Picture</label>
-              <input class="form-control-file" type="file" name="media2" id="media2" />
-            </div>
-            
-            <div class="form-group mt-2">
-              <label for="media3" class="form-check-label">Upload Third Picture</label>
-              <input class="form-control-file" type="file" name="media3" id="media3" />
-            </div>            
+          <div class="form-group">
+            <label for="media2">Upload Second Picture</label>
+            <input class="form-control-file" type="file" name="media2" id="media2" />
+          </div>
 
- 
-          <button type="submit" class="btn btn-primary btn-block">
-            Submit
-          </button>
+          <div class="form-group">
+            <label for="media3">Upload Third Picture</label>
+            <input class="form-control-file" type="file" name="media3" id="media3" />
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Submit</button>
         </form>
       </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script>
-        const scriptURL = "https://script.google.com/macros/s/AKfycby0oqQjqKO4ti3yHeT1f30FvkiLW0YkSO9QJ6EO_zYP9J9wtk7CvyIgqpr9xV9F7b9e/exec";
-        
-        const form = document.forms["submit-to-google-sheet"];
-        const fileInput = document.getElementById("media");
+      const scriptURL = "https://script.google.com/macros/s/AKfycby0oqQjqKO4ti3yHeT1f30FvkiLW0YkSO9QJ6EO_zYP9J9wtk7CvyIgqpr9xV9F7b9e/exec";
+      const form = document.forms["submit-to-google-sheet"];
 
-        form.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const formData = new FormData(form);
-          const fileInputs = ["media", "media2", "media3"];
-        
-          for (const id of fileInputs) {
-            const input = document.getElementById(id);
-            if (input.files.length > 0) {
-              const file = input.files[0];
-        
-              if (file.size > 5 * 1024 * 1024) {
-                swal("Error", `${id} must be less than 5MB.`, "error");
-                return;
-              }
-        
-              const base64 = await readFileAsBase64(file);
-              formData.set(id, base64);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const fileInputs = ["media", "media2", "media3"];
+
+        for (const id of fileInputs) {
+          const input = document.getElementById(id);
+          if (input.files.length > 0) {
+            const file = input.files[0];
+            if (file.size > 5 * 1024 * 1024) {
+              swal("Error", `${id} must be less than 5MB.`, "error");
+              return;
             }
+            const base64 = await readFileAsBase64(file);
+            formData.set(id, base64);
           }
-        
-          await submitForm(formData);
-        });
-        
-        function readFileAsBase64(file) {
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(",")[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
         }
+
+        await submitForm(formData);
+      });
+
+      function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
 
       async function submitForm(formData) {
         const submitButton = document.querySelector("button[type='submit']");
@@ -183,15 +214,14 @@
         submitButton.innerText = "Loading...";
 
         fetch(scriptURL, { method: "POST", body: formData })
-          .then((response) => {
+          .then(() => {
             swal("Done", "Submitted Successfully.", "success");
-
             setTimeout(() => {
               form.reset();
               resetDropdown();
-            }, 2000); // Wait 2 seconds before resetting the form and dropdown
+            }, 2000);
           })
-          .catch((error) => {
+          .catch(() => {
             swal("Error", "Something went wrong. Please try again!", "error");
           })
           .finally(() => {
@@ -200,68 +230,43 @@
           });
       }
 
+      const fetchDataURL = "https://script.google.com/macros/s/AKfycbzJPNrpWLE9LzGOHbmTBSWHdww4ZOlbkpbKhT_C2hwoYotB7daysgDRN9nrfkrbJ-R1ow/exec";
+      let pickupsData = [];
 
-        document.getElementById("nameDropdown").addEventListener("change", function () {
-          document.getElementById("name").value = this.value;
-        });
-
-        const fetchDataURL =  "https://script.google.com/macros/s/AKfycbzJPNrpWLE9LzGOHbmTBSWHdww4ZOlbkpbKhT_C2hwoYotB7daysgDRN9nrfkrbJ-R1ow/exec"; 
-        //PickupHTMLSearchPickupRequest
-        
-        window.addEventListener("DOMContentLoaded", () => {
-          fetch(fetchDataURL)
-            .then(res => res.json())
-            .then(data => {
-              pickupsData = data.pickups;
-              const dropdown = document.getElementById("nameDropdown");
-              pickupsData.forEach(pickup => {
-                const option = document.createElement("option");
-                option.value = pickup.name;
-                option.textContent = pickup.name;
-                dropdown.appendChild(option);
-              });
-            })
-            .catch(err => {
-              console.error("Failed to load pickups data", err);
+      window.addEventListener("DOMContentLoaded", () => {
+        fetch(fetchDataURL)
+          .then(res => res.json())
+          .then(data => {
+            pickupsData = data.pickups;
+            const dropdown = document.getElementById("nameDropdown");
+            pickupsData.forEach(pickup => {
+              const option = document.createElement("option");
+              option.value = pickup.name;
+              option.textContent = pickup.name;
+              dropdown.appendChild(option);
             });
-        });
-        
-        document.getElementById("nameDropdown").addEventListener("change", function () {
-          const selectedName = this.value;
-            // Clear all form fields
-            document.getElementById("name").value = "";
-            document.getElementById("PickupLocation").value = "";
-            document.getElementById("dateofpickup").value = "";
-            document.getElementById("timeofpickup").value = "";
-            document.getElementById("DeliveryStaff").value = "";
-            document.getElementById("PickupPayMethod").value = "";
-            document.getElementById("Comments").value = "";
-            document.getElementById("pickuprequestid").value = "";
+          })
+          .catch(err => {
+            console.error("Failed to load pickups data", err);
+          });
+      });
 
-            // Also clear file inputs
-            document.getElementById("media").value = "";
-            document.getElementById("media2").value = "";
-            document.getElementById("media3").value = "";
+      document.getElementById("nameDropdown").addEventListener("change", function () {
+        const selectedName = this.value;
+        const pickup = pickupsData.find(p => p.name === selectedName);
+        if (pickup) {
+          document.getElementById("name").value = pickup.name || "";
+          document.getElementById("PickupLocation").value = pickup.PickupLocation || "";
+          document.getElementById("dateofpickup").value = pickup.dateofpickup || "";
+          document.getElementById("timeofpickup").value = pickup.timeofpickup || "";
+          document.getElementById("Comments").value = pickup.Comments || "";
+          document.getElementById("pickuprequestid").value = pickup.uniqueID;
+        }
+      });
 
-          const pickup = pickupsData.find(p => p.name === selectedName);
-          if (pickup) {
-            document.getElementById("name").value = pickup.name || "";
-            document.getElementById("PickupLocation").value = pickup.PickupLocation || "";
-            document.getElementById("dateofpickup").value = pickup.dateofpickup || "";
-            document.getElementById("timeofpickup").value = pickup.timeofpickup || "";
-            document.getElementById("Comments").value = pickup.Comments || "";
-            document.getElementById("pickuprequestid").value =  pickup.uniqueID;
-          } else {
-            // Clear if no data found
-            document.getElementById("name").value = "";
-            document.getElementById("PickupLocation").value = "";
-            document.getElementById("dateofpickup").value = "";
-            document.getElementById("timeofpickup").value = "";
-            document.getElementById("Comments").value = "";
-          }
-        });
-
-
+      function resetDropdown() {
+        document.getElementById("nameDropdown").selectedIndex = 0;
+      }
     </script>
   </body>
 </html>
