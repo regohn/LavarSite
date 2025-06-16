@@ -7,10 +7,33 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 1rem; }
     h1 { text-align: center; }
+    #dateControls button {
+        background-color: #f1f1f1;
+        border: 1px solid #ccc;
+        color: #333;
+        font-size: 16px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        margin: 0 6px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+    #dateControls button:hover {
+        background-color: #e2e2e2;
+    }
     #dateControls { text-align: center; margin-top: 1rem; }
-    #dateControls button { margin: 0 1rem; padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer; }
     #currentDateDisplay { font-weight: bold; font-size: 1.1rem; }
-    #typeFilter { text-align: center; margin-top: 1rem; }
+    #typeFilter {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 12px; /* 👈 Adjust as needed (e.g. 16px, 12px) */
+    }
+    #staffFilters {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 12px; /* 👈 Adjust as needed (e.g. 16px, 12px) */
+    }
     #tableContainer { margin-top: 1rem; overflow-x: auto; }
 
     table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -78,11 +101,82 @@
   display: none;
 }
 table thead th {
+  background-color: #f9f9f9;
+  color: #1c1c1e;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid #e5e5ea;
   position: sticky;
   top: 0;
-  background-color: white; /* or your table's background */
   z-index: 2;
-  box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+table thead th.sortable:hover {
+  background-color: #ececec;
+  cursor: pointer;
+}
+
+table thead th.sorted-asc::after {
+  content: " ▲";
+  font-size: 12px;
+  color: #007aff;
+}
+
+table thead th.sorted-desc::after {
+  content: " ▼";
+  font-size: 12px;
+  color: #007aff;
+}
+
+/* iOS-style segmented controls */
+#typeFilter {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  font-size: 14px;
+}
+
+#typeFilter label {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+
+#typeFilter input[type="radio"] {
+  display: none;
+}
+
+#typeFilter label span {
+  display: inline-block;
+  padding: 8px 14px;
+  margin: 0 -1px;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 0;
+  transition: all 0.2s ease;
+}
+
+#typeFilter label:first-child span {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+#typeFilter label:last-child span {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+#typeFilter input[type="radio"]:checked + span {
+  background-color: #007aff;
+  color: white;
+  border-color: #007aff;
 }
   </style>
 </head>
@@ -109,12 +203,23 @@ table thead th {
   </div>
 
   <div id="typeFilter">
-    <label><input type="radio" name="type" value="All" checked> All</label>
-    <label><input type="radio" name="type" value="Pickup"> Pickup</label>
-    <label><input type="radio" name="type" value="Drop-Off"> Drop-Off</label>
-    <label><input type="radio" name="type" value="Self-Service"> Self-Service</label>
-    <label><input type="radio" name="type" value="Delivery"> Delivery</label>
+  
+  <label><input type="radio" name="type" value="All" checked><span>All</span></label>
+  <label><input type="radio" name="type" value="Pickup"><span>Pickup</span></label>
+  <label><input type="radio" name="type" value="Drop-Off"><span>Drop-Off</span></label>
+  <label><input type="radio" name="type" value="Self-Service"><span>Self-Service</span></label>
+  <label><input type="radio" name="type" value="Delivery"><span>Delivery</span></label>
   </div>
+<div id="staffFilters">
+  
+  <label><input type="radio" name="staff" value="" checked>All</label>
+  <label><input type="radio" name="staff" value="joshua">Joshua</label>
+  <label><input type="radio" name="staff" value="marvin">Marvin</label>
+  <label><input type="radio" name="staff" value="lowi">Lowi</label>
+  <label><input type="radio" name="staff" value="lavar">Lavar</label>
+  <label><input type="radio" name="staff" value="edward lowi">Edward</label>
+</div>
+
 
   <div id="tableContainer">Loading...</div>
 
@@ -215,7 +320,6 @@ table thead th {
             html += `<td>${formatDateTime(row[key])}</td>`;
           } else if ( key === "dateofpickup") {
             html += `<td>${formatDate(row[key])}</td>`;
-            
           } else {
             html += `<td>${row[key] || ''}</td>`;
           }
@@ -235,26 +339,58 @@ table thead th {
           }
           currentSort = { column: col, direction: dir };
           renderForCurrentDate();
+          
         });
       });
-    }
-
-    function renderForCurrentDate() {
-      updateDateDisplay();
-      const selectedType = document.querySelector('input[name="type"]:checked').value;
       
-      let filtered = document.getElementById('showAllCheckbox').checked
-        ? [...allData]
-        : filterByDate(allData, currentDate);
-
-      if (selectedType !== 'All') {
-        filtered = filtered.filter(row => row.request_type?.toLowerCase() === selectedType.toLowerCase());
-      }
-      if (currentSort.column) {
-        filtered = sortData(filtered, currentSort.column, currentSort.direction);
-      }
-      renderTable(filtered);
     }
+
+    function renderStaffFilters(data) {
+  const staffSet = new Set();
+  data.forEach(row => {
+    const staff = (row.DeliveryStaff || '').trim();
+    if (staff) staffSet.add(staff);
+  });
+
+  const container = document.getElementById('staffFilter');
+  container.innerHTML = '<strong>Filter by Delivery Staff:</strong><br>';
+  container.innerHTML += `<label><input type="radio" name="staff" value="" checked> All</label> `;
+
+  [...staffSet].sort().forEach(staff => {
+    const id = `staff-${staff.replace(/\s+/g, '-')}`;
+    container.innerHTML += `<label><input type="radio" name="staff" value="${staff}"> ${staff}</label> `;
+  });
+
+  document.querySelectorAll('input[name="staff"]').forEach(radio => {
+    radio.addEventListener('change', renderForCurrentDate);
+  });
+}
+
+
+function renderForCurrentDate() {
+  updateDateDisplay();
+  const selectedType = document.querySelector('input[name="type"]:checked').value;
+  const selectedStaff = document.querySelector('input[name="staff"]:checked')?.value.toLowerCase() || '';
+
+  let filtered = document.getElementById('showAllCheckbox').checked
+    ? [...allData]
+    : filterByDate(allData, currentDate);
+
+  if (selectedType !== 'All') {
+    filtered = filtered.filter(row => row.request_type?.toLowerCase() === selectedType.toLowerCase());
+  }
+
+  if (selectedStaff) {
+    filtered = filtered.filter(row => (row.DeliveryStaff || '').toLowerCase().trim() === selectedStaff);
+  }
+
+  if (currentSort.column) {
+    filtered = sortData(filtered, currentSort.column, currentSort.direction);
+  }
+
+  renderTable(filtered);
+}
+
 
     async function loadSummary() {
       document.getElementById('tableContainer').innerHTML = '<p>Loading...</p>';
@@ -263,32 +399,41 @@ table thead th {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         allData = data;
-        renderForCurrentDate();
+        //renderStaffFilters(allData);  // ✅ Render all staff radio buttons ONCE
+        renderForCurrentDate();       // ✅ Then render filtered table
       } catch (err) {
         console.error("Error fetching data:", err);
         document.getElementById('tableContainer').innerHTML = '<p style="color:red;">Error loading data.</p>';
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadSummary();
-      document.getElementById('showAllCheckbox').addEventListener('change', renderForCurrentDate);
-      document.getElementById('prevDayBtn').addEventListener('click', () => {
-        currentDate.setDate(currentDate.getDate() - 1);
-        renderForCurrentDate();
-      });
+      document.addEventListener('DOMContentLoaded', () => {
+        loadSummary();
 
-      document.getElementById('nextDayBtn').addEventListener('click', () => {
-        currentDate.setDate(currentDate.getDate() + 1);
-        renderForCurrentDate();
-      });
+        document.getElementById('showAllCheckbox').addEventListener('change', renderForCurrentDate);
 
-      document.querySelectorAll('input[name="type"]').forEach(radio => {
-        radio.addEventListener('change', () => {
+        document.getElementById('prevDayBtn').addEventListener('click', () => {
+          currentDate.setDate(currentDate.getDate() - 1);
           renderForCurrentDate();
         });
-      }); 
-    });
+
+        document.getElementById('nextDayBtn').addEventListener('click', () => {
+          currentDate.setDate(currentDate.getDate() + 1);
+          renderForCurrentDate();
+        });
+
+        document.querySelectorAll('input[name="type"]').forEach(radio => {
+          radio.addEventListener('change', renderForCurrentDate);
+        });
+
+        document.querySelectorAll('input[name="staff"]').forEach(radio => {
+          radio.addEventListener('change', () => {
+            document.querySelector('input[name="type"][value="All"]').checked = true; // ⬅ Force "All"
+            renderForCurrentDate();
+          });
+        });
+      });
+
   </script>
 </body>
 </html>
