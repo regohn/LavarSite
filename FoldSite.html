@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>LAVAR FOLDS</title>
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Text:wght@400;600&display=swap');
 
@@ -165,6 +168,43 @@ button:hover {
   min-width: 36px;
   height: auto;
 }
+.ts-control {
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1.5px solid #c7c7cc;
+  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  padding: 10px 14px;
+  box-shadow: none;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.ts-control.focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+.ts-dropdown {
+  border-radius: 12px;
+  border: 1px solid #c7c7cc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  font-size: 16px;
+}
+
+.ts-dropdown .option {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.ts-dropdown .option:hover {
+  background-color: #f0f0f5;
+}
+
+.ts-dropdown .active {
+  background-color: #007aff;
+  color: white;
+}
 
   </style>
 </head>
@@ -192,7 +232,10 @@ button:hover {
     <span id="dateDisplay"></span>
     <button class="nav-button" id="btnNext" onclick="changeDay(1)">→</button>
   </div>
-<button class="wide-button" onclick="switchToWalangLog()">Show WALANG MGA LOG</button>
+<div class="d-flex justify-content-end mb-2">
+  <button class="wide-button mr-2" onclick="switchToWalangLog()">Show WALANG MGA LOG</button>
+  <button id="refreshButton" class="wide-button">🔄 Refresh Page</button>
+</div>
 <br>
   <div style="text-align:center;">
     <label for="folderFilter" style="font-weight:600; color:#3a3a3c; margin-right: 8px;">
@@ -201,6 +244,10 @@ button:hover {
     <select id="folderFilter" onchange="filterTable()">
       <option value="All">All</option>
     </select>
+    <br>
+    <label for="freebieNames">Select Name:</label>
+    <select id="freebieNames" placeholder="Select a name..."></select>
+
   </div>
 
   <div id="loading">Loading...</div>
@@ -254,9 +301,37 @@ function loadData() {
     .then(res => res.json())
     .then(data => {
       document.getElementById("loading").style.display = "none";
-      headers = data.headers || ["JO NUMBER", "NUMBER OF BAGS", "NAME OF FOLDER", "DATE"]; // fallback headers
+      headers = data.headers || ["JO NUMBER", "NUMBER OF BAGS", "NAME OF FOLDER", "DATE"];
       currentDataRows = data.rows;
+
       renderTable(data);
+      loadFreebieNamesDropdown(); // this renders the Tom Select
+
+      // ✅ Attach onchange event AFTER dropdown is populated
+      const dropdown = document.getElementById("freebieNamesDropdown");
+      dropdown.addEventListener("change", function () {
+        const name = this.value?.trim();
+        if (!name) return;
+
+        const table = document.getElementById("sheetTable");
+        const tbody = table.querySelector("tbody") || table.appendChild(document.createElement("tbody"));
+        tbody.innerHTML = `<tr><td colspan="100%" style="text-align:center; font-weight:bold;">Loading for ${name}...</td></tr>`;
+
+        fetch(`https://script.google.com/macros/s/AKfycbynULfpZmNTzXPj-JRIcYx1zZXVsr4S5KGTb-lbctHcQ_MilbYvZ2L9NlQNx3zcgDm3/exec?name=${encodeURIComponent(name)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (!data.rows || data.rows.length === 0) {
+              tbody.innerHTML = `<tr><td colspan="100%" style="text-align:center;">No records found for ${name}.</td></tr>`;
+            } else {
+              renderTable(data); // reuse your own render function
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            tbody.innerHTML = `<tr><td colspan="100%" style="text-align:center; color:red;">Error loading data for ${name}.</td></tr>`;
+          });
+      });
+
       populateFolderDropdown(currentDataRows);
     })
     .catch(error => {
@@ -264,6 +339,7 @@ function loadData() {
       console.error("Error:", error);
     });
 }
+
 
 
     function renderTable(data) {
@@ -389,8 +465,128 @@ function switchToFormResponses() {
   offsetDays = 0;
   loadData();
 }
+//FoldsScripts3
+const freebieNamesURL = "https://script.google.com/macros/s/AKfycbxBTi_BouN3VOcXZsfuNAFKXw9exwrugW7rONFrnLGrdevMu6NTRaarOkpGAkykDH59/exec?action=getFreebieNames";
+
+function loadFreebieNamesDropdown() {
+  fetch(freebieNamesURL)
+    .then(res => res.json())
+    .then(names => {
+      const select = document.getElementById("freebieNames");
+      select.innerHTML = "";
+
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.textContent = "-- Select a name --";
+      select.appendChild(defaultOption);
+
+      names.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+
+      const tom = new TomSelect(select, {
+        create: false,
+        sortField: { field: "text", direction: "asc" },
+        onChange: value => {
+          if (!value) return;
+
+          const table = document.getElementById("sheetTable");
+          const tbody = table.querySelector("tbody") || table.appendChild(document.createElement("tbody"));
+          tbody.innerHTML = `<tr><td colspan="100%" style="text-align:center;">Loading data for <strong>${value}</strong>...</td></tr>`;
+
+          const url = `https://script.google.com/macros/s/AKfycbynULfpZmNTzXPj-JRIcYx1zZXVsr4S5KGTb-lbctHcQ_MilbYvZ2L9NlQNx3zcgDm3/exec?name=${encodeURIComponent(value)}`;
+
+          fetch(url)
+            .then(res => res.json())
+            .then(data => {
+              if (!data || !data.rows || data.rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="100%" style="text-align:center;">No records found for ${value}.</td></tr>`;
+                return;
+              }
+
+              const formatted = {
+                headers: data.headers,
+                rows: data.rows
+              };
+
+              renderTable(formatted);
+            })
+            .catch(error => {
+              console.error("Error fetching name data:", error);
+              tbody.innerHTML = `<tr><td colspan="100%" style="text-align:center; color:red;">Error loading data.</td></tr>`;
+            });
+        }
+      });
+    })
+    .catch(error => {
+      console.error("Error loading freebie names:", error);
+    });
+}
+
+function fetchTableForName(name) {
+  //FoldScriptSearchName
+  //https://script.google.com/macros/s/AKfycbynULfpZmNTzXPj-JRIcYx1zZXVsr4S5KGTb-lbctHcQ_MilbYvZ2L9NlQNx3zcgDm3/exec
+  const url = `https://script.google.com/macros/s/AKfycbynULfpZmNTzXPj-JRIcYx1zZXVsr4S5KGTb-lbctHcQ_MilbYvZ2L9NlQNx3zcgDm3/exec?name=${encodeURIComponent(name)}`;
+  
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("tableBody").innerHTML = "";
+  document.getElementById("tableHeader").innerHTML = "";
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("loading").style.display = "none";
+
+      if (!data || data.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 10;
+        td.textContent = "No records found for this name.";
+        tr.appendChild(td);
+        document.getElementById("tableBody").appendChild(tr);
+        return;
+      }
+
+      // headers
+      const headers = Object.keys(data[0]);
+      const headerRow = document.getElementById("tableHeader");
+      headerRow.innerHTML = "";
+      headers.forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        headerRow.appendChild(th);
+      });
+
+      // rows
+      const tableBody = document.getElementById("tableBody");
+      tableBody.innerHTML = "";
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        headers.forEach(key => {
+          const td = document.createElement("td");
+          td.textContent = row[key] ?? "";
+          tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+      });
+    })
+    .catch(error => {
+      console.error("Error fetching data for name:", error);
+      document.getElementById("loading").textContent = "Failed to load data.";
+    });
+}
+
+
+
+
+
 
   </script>
+
+
 </body>
 
 </html>
