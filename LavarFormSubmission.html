@@ -171,17 +171,13 @@ select:focus {
 
     <form method="post" action="" name="contact-form">
     <h4>LAVAR FOLDS SUBMISSIONS</h4>
-<div>
     <a href="pickuprequestsummary.html"> Requests Summary </a> | 
     <a href="pickuprequest.html"> Request Forms </a> | 
     <a href="pickup.html"> Pickup </a>  | 
     <a href="delivery.html"> Delivery </a> | 
     <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold  </a> 
-    <a href="FoldSite.html"> Fold Site </a> 
-    <br>  
-</div>
-
+    <a href="LavarFormSubmission.html"> Fold  </a> <br>  
+  <br>
     <div class="form-group">
       <label for="joSearch">Search Fold JO/Mga di pa nalolog</label>
       <input type="text" id="joSearch" name="JO NUMBER" placeholder="Enter JO number (e.g. 04065)" />
@@ -193,11 +189,11 @@ select:focus {
 
       <label for="jo-number">JO NUMBER (example: 04065... di kasama JO)</label>-->
     <div >
-    <label for="pickupDropdown" >Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
+    <label for="pickupDropdown">Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
    </div> 
-    <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" required />
+    <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" />
     <label for="" style="font-size: 10px;">Customer Name || Date of Pickup/Drop-Off || Delivery Staff</label>
-    <select id="pickupDropdown" name="Recent Pickup">
+    <select id="pickupDropdown" name="Recent Pickup" class="form-control" required>
       <option value="">-- Select Pickup --</option>
     </select>      
       <input type="text" id="jo-number" name="JO NUMBER" placeholder="JO NUMBER" hidden>
@@ -273,7 +269,6 @@ async function searchFoldJO() {
 
         // *** CALL loadPickupDropdown HERE ***
         loadPickupDropdown();
-        
       }
       html += `
         <li class="list-group-item d-flex justify-content-between">
@@ -307,7 +302,7 @@ async function searchFoldJO() {
       };
       return new Intl.DateTimeFormat("en-US", options).format(date);
     }
-//FoldFormSearchPickups
+
 const pickupWebAppURL = "https://script.google.com/macros/s/AKfycbz_gvAtAjY3ecsNhm6fjBDli-Uu4Uq6OxKWDH5b3rZDLkUHGfWKrLB6FWDLE2N5HKoB/exec";
 
 function formatDate(input) {
@@ -327,35 +322,33 @@ async function loadPickupDropdown() {
 
     let matchCount = 0;
 
-    // Normalize function: lowercases + trims + collapses multiple spaces
-    function normalizeName(name) {
-      return name?.replace(/\s+/g, ' ').trim().toLowerCase() || "";
-    }
+data.result.forEach(item => {
+  const pickupName = item.name?.trim().toLowerCase() || "";
 
-    const customerNameNormalized = normalizeName(currentCustomerName);
+  if (pickupName === currentCustomerName) {
+    const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID} `;
+    const option = document.createElement("option");
+    option.value = label;
+    option.textContent = label;
+    dropdown.appendChild(option);
 
-    data.result.forEach(item => {
-      const pickupName = normalizeName(item.name);
+    matchCount++;  // <---- THIS WAS MISSING
+  }
+});
 
-      if (pickupName === customerNameNormalized) {
-        const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID}`;
-        const option = document.createElement("option");
-        option.value = label;
-        option.textContent = label;
-        dropdown.appendChild(option);
-
-        matchCount++;
-      }
-    });
 
     if (matchCount === 0) {
-      console.warn("No matching pickups found for:", currentCustomerName);
+      const option = document.createElement("option");
+      option.disabled = true;
+      option.textContent = "No matching pickups found";
+      dropdown.appendChild(option);
     }
-  } catch (error) {
-    console.error("Error loading pickup dropdown:", error);
-  }
-}
 
+  } catch (error) {
+    console.error("Failed to load pickup data:", error);
+  }
+  console.log("currentCustomerName =", currentCustomerName);
+}
 
 
 //NewFormFoldsSubmit - web app
@@ -442,12 +435,7 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
 });
 
 
-
-
-
 </script>
 
 </body>
 </html>
-
-
