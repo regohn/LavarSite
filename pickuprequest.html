@@ -306,21 +306,32 @@
           />
         </div>
       </div>
-      <div id="shopPaymentContainer"  style="display: none;">
-        <label id="shopPaymentLabel"></label><br>
-        
-        <input type="radio" id="nopayment" name="shop_payment" value="No Payment" onclick="hideShopPayment()">
-        <label for="online">No Payment</label><br>
 
-        <input type="radio" id="cash" name="shop_payment" value="Cash" onclick="hideShopPayment()">
-        <label for="cash">Cash</label><br>
-        
-        <input type="radio" id="gcash" name="shop_payment" value="G-cash" onclick="hideShopPayment()">
-        <label for="gcash">G-cash</label><br>
-        
-        <input type="radio" id="online" name="shop_payment" value="Other Online Payment" onclick="hideShopPayment()">
-        <label for="online">Other Online Payment</label>
-      </div>
+      <div id="shopPaymentContainer" style="display: none;">
+      <label id="shopPaymentLabel"></label><br>
+
+      <input type="radio" id="nopayment" name="shop_payment" value="No Payment"
+            onclick="document.getElementById('gcashInputContainer').style.display='none'; document.getElementById('6DigitGcash').required=false;">
+      <label for="nopayment">No Payment</label><br>
+
+      <input type="radio" id="cash" name="shop_payment" value="Cash"
+            onclick="document.getElementById('gcashInputContainer').style.display='none'; document.getElementById('6DigitGcash').required=false;">
+      <label for="cash">Cash</label><br>
+
+      <input type="radio" id="gcash" name="shop_payment" value="G-cash"
+            onclick="document.getElementById('gcashInputContainer').style.display='inline-block'; document.getElementById('6DigitGcash').required=true;">
+      <label for="gcash">G-cash</label>
+      <span id="gcashInputContainer" style="display: none; margin-left: 8px;">
+        <input type="text" id="6DigitGcash" placeholder="Enter last 6 digits" name="6DigitGcash">
+      </span><br>
+
+      <input type="radio" id="online" name="shop_payment" value="Other Online Payment"
+            onclick="document.getElementById('gcashInputContainer').style.display='none'; document.getElementById('6DigitGcash').required=false;">
+      <label for="online">Other Online Payment</label>
+    </div>
+
+
+
 
 
       <div class="form-group">
