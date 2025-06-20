@@ -224,22 +224,35 @@
         </div>
       </div>
 
-<table id="foldandfreebiecontainer" style="display: table; width: 100%;">
-  <tr>
-    <td style="vertical-align: top;">
-      <div id="joDetailsContainer" style="font-size: 12px; font-weight: bold;"></div>
-    </td>
-    <td style="vertical-align: top;">
-      <div id="freebiecontainertext">
-        <div id="freebiepoints" style="font-size: 0.8rem;">Total Freebie Points: </div>
-        <div id="totalfreebieavailed" style="font-size: 0.8rem;">Availed Freebie Points: </div>
-        <div id="remainingfreebiepoints" style="font-size: 0.8rem;">Remaining Freebie Points: </div>
-      </div>
-    </td>
-  </tr>
-</table>
-
-
+    <table id="foldandfreebiecontainer" style="display: none; width: 100%;">
+      <tr>
+        <td style="vertical-align: top;">
+          <div id="joDetailsContainer" style="font-size: 12px; font-weight: bold;"></div>
+        </td>
+        <td style="vertical-align: top;">
+          <div id="freebiecontainertext">
+            <div id="freebiepoints" style="font-size: 0.8rem;">Total Freebie Points: </div>
+            <div id="totalfreebieavailed" style="font-size: 0.8rem;">Availed Freebie Points: </div>
+            <div id="remainingfreebiepoints" style="font-size: 0.8rem;">Remaining Freebie Points: </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table id="unpaidTable" style="width: 100%; font-size: 12px; border-collapse: collapse; display: none;">
+      <thead>
+        <tr>
+          <th style="background-color: transparent; color: black; border: none;">JO#</th>
+          <th style="background-color: transparent; color: black; border: none;">Date Created</th>
+          <th style="background-color: transparent; color: black; border: none;">Customer Name</th>
+          <th style="background-color: transparent; color: black; border: none;">Status</th>
+        </tr>
+      </thead>
+      <tbody id="unpaidTableBody">
+        <!-- JS will populate rows here -->
+      </tbody>
+    </table>
+    <br>
 
 
       <div id="customerTypeContainer" class="radio-group">
@@ -311,22 +324,35 @@
       <label id="shopPaymentLabel"></label><br>
 
       <input type="radio" id="nopayment" name="shop_payment" value="No Payment"
-            onclick="document.getElementById('gcashInputContainer').style.display='none'; document.getElementById('6DigitGcash').required=false;">
+            onclick="document.getElementById('gcashInputContainer').style.display='none'; 
+            document.getElementById('6DigitGcash').required=false;
+            document.getElementById('dropoffrequestmedia').removeAttribute('required');
+            ">
       <label for="nopayment">No Payment</label><br>
 
       <input type="radio" id="cash" name="shop_payment" value="Cash"
-            onclick="document.getElementById('gcashInputContainer').style.display='none'; document.getElementById('6DigitGcash').required=false;">
+            onclick="document.getElementById('gcashInputContainer').style.display='none'; 
+            document.getElementById('6DigitGcash').required=false;
+            document.getElementById('dropoffrequestmedia').removeAttribute('required');
+            ">
       <label for="cash">Cash</label><br>
 
       <input type="radio" id="gcash" name="shop_payment" value="G-cash"
-            onclick="document.getElementById('gcashInputContainer').style.display='inline-block'; document.getElementById('6DigitGcash').required=true;">
+            onclick="document.getElementById('gcashInputContainer').style.display='inline-block'; 
+            document.getElementById('6DigitGcash').required=true;
+            document.getElementById('6DigitGcash').required=true;
+            document.getElementById('dropoffrequestmedia').setAttribute('required', true);
+            ">
       <label for="gcash">G-cash</label>
       <span id="gcashInputContainer" style="display: none; margin-left: 8px;">
         <input type="text" id="6DigitGcash" placeholder="Enter last 6 digits" name="6DigitGcash">
       </span><br>
 
       <input type="radio" id="online" name="shop_payment" value="Other Online Payment"
-            onclick="document.getElementById('gcashInputContainer').style.display='none'; document.getElementById('6DigitGcash').required=false;">
+            onclick="document.getElementById('gcashInputContainer').style.display='none'; 
+            document.getElementById('6DigitGcash').required=false;
+            document.getElementById('dropoffrequestmedia').setAttribute('required', true);
+            ">
       <label for="online">Other Online Payment</label>
     </div>
 
@@ -446,6 +472,7 @@
         document.getElementById("name").value = value;
         updateFreebiePoints(value);
         fetchLocationsFor(value);
+        loadUnpaidRows(value);
         const table = document.getElementById("foldandfreebiecontainer");
         if (table) {
           table.style.display = "table"; // ✅ Use "table" not "block"
@@ -924,6 +951,42 @@ function fetchLocationsFor(customer) {
       document.getElementById('previousLocations').textContent = "Error loading recent locations.";
     });
 }
+
+
+const unpaidURL = "https://script.google.com/macros/s/AKfycbyBaGdsTmrMFFGp00jiLkhbO1atZ3gLQ2D8Q516ZhQRWZ8qHTG630EWDgRcggFbBnkrLg/exec";
+
+async function loadUnpaidRows(name) {
+  document.getElementById("unpaidTable").style.display = "table";
+  const tbody = document.getElementById("unpaidTableBody");
+  tbody.innerHTML = ""; // Clear previous rows
+
+  try {
+    const response = await fetch(`${unpaidURL}?name=${encodeURIComponent(name)}`);
+    const data = await response.json();
+
+    if (!data.result || data.result.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 10px;">No unpaid records found for <strong>${name}</strong>.</td></tr>`;
+      return;
+    }
+
+    data.result.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="border: 1px  padding: 8px;">${row.JOR}</td>
+        <td style="border: 1px  padding: 8px;">${formatDateTime2(row.DATECreatedR)}</td>
+        <td style="border: 1px  padding: 8px;">${row.CustomerNameR}</td>
+        <td style="border: 1px  padding: 8px;">[UNPAID]</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (error) {
+    console.error("Error loading unpaid rows:", error);
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 10px;">Error loading data.</td></tr>`;
+  }
+}
+
+// Example usage
 
 
 </script>
