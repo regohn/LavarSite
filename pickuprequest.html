@@ -155,7 +155,8 @@
             document.getElementById('Comments').value = ''
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').setAttribute('required', false);
-            document.getElementById('dropoffrequestmedia1').removeAttribute('required');
+            document.getElementById('shopPaymentContainer').style.display = 'none';
+            document.getElementById('cash').removeAttribute('required');
             "required>
             Pickup
         </label>
@@ -167,6 +168,9 @@
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').setAttribute('required', false);
             document.getElementById('dropoffrequestmedia1').removeAttribute('required');
+            document.getElementById('shopPaymentContainer').style.display = 'none';
+            document.getElementById('cash').removeAttribute('required');
+
             ">
             Delivery
         </label>        
@@ -178,6 +182,9 @@
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').setAttribute('required', true);
             document.getElementById('dropoffrequestmedia1').removeAttribute('required');
+            document.getElementById('shopPaymentContainer').style.display = 'inline-block';
+            document.getElementById('shopPaymentLabel').innerText ='Did the customer pay during Drop-off?';
+            document.getElementById('cash').setAttribute('required', true);
             
             " >
             Drop-Off
@@ -190,7 +197,9 @@
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').removeAttribute('required');
             document.getElementById('dropoffrequestmedia1').removeAttribute('required');
-
+            document.getElementById('shopPaymentContainer').style.display = 'inline-block';
+            document.getElementById('shopPaymentLabel').innerText ='Did the customer pay during during Self-Service?';
+            document.getElementById('cash').setAttribute('required', true);
             ">
             Self-Service
         </label>
@@ -297,6 +306,19 @@
           />
         </div>
       </div>
+      <div id="shopPaymentContainer"  style="display: none;">
+        <label id="shopPaymentLabel"></label><br>
+        
+        <input type="radio" id="cash" name="shop_payment" value="Cash" onclick="hideShopPayment()">
+        <label for="cash">Cash</label><br>
+        
+        <input type="radio" id="gcash" name="shop_payment" value="G-cash" onclick="hideShopPayment()">
+        <label for="gcash">G-cash</label><br>
+        
+        <input type="radio" id="online" name="shop_payment" value="Other Online Payment" onclick="hideShopPayment()">
+        <label for="online">Other Online Payment</label>
+      </div>
+
 
       <div class="form-group">
         <label for="Comments">Comments / Notes / Instructions</label>
