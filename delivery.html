@@ -12,6 +12,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@7.12.15/dist/sweetalert2.all.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
     <style>
       .form-container {
         max-width: 500px;
@@ -56,12 +59,12 @@
     <a href="delivery.html"> Delivery </a> | 
     <a href="deliverysummary.html"> DVS </a> |
     <a href="LavarFormSubmission.html"> Fold  </a> <br>  
-  <br>
+  
 
         </div>
         <form id="submit-to-google-sheet">
           <div class="form-group">
-            <label for="JOR">(Only Folded Laundry JOs will appear in search)<br> (Use Delivery form also for In-shop Pickup of laundry by customer)</label>
+            <label for="JOR">(Only Folded Laundry JOs will appear in search)</label>
             <input
                 class="form-control"
                 type="text"
@@ -83,17 +86,50 @@
                 hidden
             />            
 
-            <div class="form-group text-center">
-              <label class="mb-2 d-block">Delivery/In-Shop:</label>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="serviceType" id="deliveryOption" value="Delivery" checked>
-                <label class="form-check-label" for="deliveryOption">Delivery</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="serviceType" id="pickupOption" value="In-Shop Pickup">
-                <label class="form-check-label" for="pickupOption">In-Shop Pickup</label>
-              </div>
-            </div>
+                <div class="form-group text-center">
+                  <label class="mb-2 d-block">Delivery/In-Shop:</label>
+
+                  <div class="form-check form-check-inline">
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="serviceType" id="deliveryOption" value="Delivery"
+                    onclick="
+                      
+                      document.getElementById('joDropdown').disabled = false;
+                      document.getElementById('JOsearch').readOnly = false;
+                      document.getElementById('JOsearch').style.display = 'none';
+                      document.getElementById('customersearch').style.display = 'none';
+                      document.getElementById('JOresult').innerHTML = ''; 
+                      
+                      
+                      document.getElementById('customerJOContainer').style.display = 'none';
+                      document.getElementById('customerJO').value = '';
+                      document.getElementById('customerJO').style.display = 'none';
+                      document.getElementById('joDropdown').value = '';
+                      document.querySelector('.ts-wrapper.single').style.display = 'none';
+                    " required>
+                  <label class="form-check-label" for="deliveryOption">Delivery</label>
+                </div>
+
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="serviceType" id="pickupOption" value="In-Shop Pickup"
+                    onclick="
+                      
+                      document.getElementById('joDropdown').disabled = true;
+                      document.getElementById('JOsearch').style.display = 'inline';
+                      document.getElementById('JOsearch').value = '';
+                      document.getElementById('JOsearch').readOnly = true;
+                      document.getElementById('customerDropdown').style.display = 'inline';
+                      document.getElementById('customerJO').style.display = 'inline';
+                      var tsWrapper = document.querySelector('#customerDropdown-ts-control')?.closest('.ts-wrapper');
+                      if (tsWrapper) tsWrapper.style.display = 'block';
+                      document.getElementById('joDropdown').value = '';
+                    ">
+                  <label class="form-check-label" for="pickupOption">In-Shop Pickup</label>
+                </div>
+
+                  </div>
+                </div>
+
 
           <div class="d-flex justify-content-center align-items-center mb-3" style="gap: 1rem;">
             <img
@@ -116,15 +152,32 @@
               <option value="">Select Requested JO# for Delivery</option>
             </select>   
             <!-- Delivery Info Display -->
-            <div id="deliveryInfoBox" class="mt-3"></div>         
+            <div id="deliveryInfoBox" class="mt-3"></div>      
+            <input
+                class="form-control mt-2"
+                type="text"
+                id="customersearch"
+                placeholder="Search for customer...."
+                
+            />     
+            
+          <select id="customerDropdown" placeholder="Select a customer..."></select>            
+          <div id="customerJOContainer" style="display: none;" class="form-group mt-2">
+            <label for="customerJO">Select Job Order</label>
+            <select id="customerJO" class="form-control">
+              <option value="">Select JO...</option>
+            </select>
+          </div>
+
             <input
                 class="form-control mt-2"
                 type="text"
                 id="JOsearch"
-                placeholder="Search for JO..."
+                placeholder="Search for JO... Drop-Off or Pickup"
                 oninput="searchJO()"
             />
-            
+        
+
             </div>
             <div>
             <button id="searchButton" type="button">Search</button>
@@ -245,7 +298,7 @@
 
           <div class="form-group mt-2">
             <label for="media">Upload First Picture</label>
-            <input class="form-control-file" type="file" name="media" id="media" />
+            <input class="form-control-file" type="file" name="media" id="media" required/>
           </div>
 
           <div class="form-group mt-2">
@@ -418,31 +471,60 @@ function changeDate(offsetDays) {
   loadJODropdown(formatted);
 }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    updateDisplayedDate();
-    
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const fileInputs = ["media", "media2", "media3"];
-      for (const id of fileInputs) {
-        const input = document.getElementById(id);
-        if (input?.files.length > 0) {
-          const file = input.files[0];
-          if (file.size > 5 * 1024 * 1024) {
-            swal("Error", `${id} must be less than 5MB.`, "error");
-            return;
-          }
-          const base64 = await readFileAsBase64(file);
-          formData.set(id, base64);
-        }
-      }
-      await submitForm(formData);
-      
-    });
+ document.addEventListener("DOMContentLoaded", async () => {
+  updateDisplayedDate();
+  document.getElementById("customerDropdown").style.display = "none"; 
+  document.getElementById("customersearch").style.display = "none"; 
+  document.getElementById("JOsearch").style.display = "none";   
 
-    window.location.reload
+  toggleGcashInput();
+
+  // ✅ Initialize Tom Select for customer dropdown
+  const customerDropdown = document.getElementById("customerDropdown");
+  const url = 'https://script.google.com/macros/s/AKfycbxSC5TyCCWJB13BENuIwtCJimOb7X6jF6WRDKTKRe3sG2yXs4Q8r2cdtHc0VmL4dum1Iw/exec'; // Replace with your deployed Web App URL
+
+  try {
+    const response = await fetch(url);
+    const options = await response.json();
+
+    new TomSelect("#customerDropdown", {
+      maxItems: 1,
+      options: options,
+      placeholder: "Select a customer...",
+      onChange: (value) => {
+        
+        console.log("Selected customer:", value);
+        fetchJOsForCustomer(value);
+      }
+    });
+  } catch (err) {
+    console.error("Failed to load customer names:", err);
+  }
+
+document.getElementById("customerDropdown").display = "none"; // Show the dropdown after initialization  
+  // ✅ Form submission with base64 encoding
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const fileInputs = ["media", "media2", "media3"];
+
+    for (const id of fileInputs) {
+      const input = document.getElementById(id);
+      if (input?.files.length > 0) {
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+          swal("Error", `${id} must be less than 5MB.`, "error");
+          return;
+        }
+        const base64 = await readFileAsBase64(file);
+        formData.set(id, base64);
+      }
+    }
+
+    await submitForm(formData);
   });
+});
+
 
   function readFileAsBase64(file) {
     return new Promise((resolve, reject) => {
@@ -494,6 +576,7 @@ let deliveryData = [];
 async function loadJODropdown(passedDate) {
   
   const dropdown = document.getElementById("joDropdown");
+  
   //const currentDate = document.getElementById("currentDate").innerText.trim(); // get date from span
 
   dropdown.innerHTML = '<option value="">Select Requested JO# for Delivery</option>';
@@ -519,11 +602,15 @@ async function loadJODropdown(passedDate) {
         option.textContent = `${item["Del JO#"]} || ${item.name}`;
         dropdown.appendChild(option);
       }
+
+
+
     });
   } catch (err) {
     console.error(err);
     dropdown.innerHTML += '<option value="">Error loading JOs</option>';
   }
+
 }
 
 const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
@@ -587,13 +674,114 @@ function toggleGcashInput() {
 
 }
 
+// Function to search for JO based on input
+const input = document.getElementById("customersearch");
+
+function triggerCustomerSearch() {
+  const customer = input.value.trim();
+  if (customer) {
+    fetchJOsForCustomer(customer);
+      if (document.getElementById("deliveryOption").value === "Delivery") {
+        
+        document.getElementById("customerDropdown").style.display = "none"; // Hide customer dropdown if Delivery is selected
+      } else {  
+        document.getElementById("customerDropdown").style.display = "inline"; // Show customer dropdown if In-Shop Pickup is selected
+      }      
+  }
+}
+
+// When Enter key is pressed
+input.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault(); // Prevent form submission if inside a form
+    triggerCustomerSearch();
+  }
+});
+
+// When the input loses focus (clicked/tapped outside)
+input.addEventListener("blur", function () {
+  triggerCustomerSearch();
+});
+
+
+
+
+async function fetchJOsForCustomer(customerName) {
+  if (!customerName) return;
+
+  const dropdown = document.getElementById("customerJO");
+  const container = document.getElementById("customerJOContainer");
+
+  dropdown.innerHTML = '<option value="">Loading...</option>';
+  container.style.display = "block";
+
+  try {
+    //InShopPickupCustSearch
+    //https://script.google.com/macros/s/AKfycbx7dxz36JBhEjup4ijKlRj0S7y2mZp9LTr5qZc1ekyz1FfOU704rBqh2UYelkTQvvx9gA/exec?customer=Jean%20Patricia - url tester
+    const url = `https://script.google.com/macros/s/AKfycbx7dxz36JBhEjup4ijKlRj0S7y2mZp9LTr5qZc1ekyz1FfOU704rBqh2UYelkTQvvx9gA/exec?customer=${encodeURIComponent(customerName)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      dropdown.innerHTML = '<option value="">No JOs found</option>';
+      return;
+    }
+
+      dropdown.innerHTML = '<option value="">Select JO...</option>';
+
+      data.forEach(item => {
+        const option = document.createElement("option");
+
+        // Format the date if it's valid
+        let formattedDate = "";
+        if (item.datePickupDropoff) {
+          const parsedDate = new Date(item.datePickupDropoff);
+          if (!isNaN(parsedDate)) {
+            formattedDate = formatDate(parsedDate);
+          } else {
+            formattedDate = item.datePickupDropoff; // fallback to original string if invalid
+          }
+        }
+          
+        const label = `${item.name} || ${item.joNumber} || ${formattedDate} || ${item.requesttype}`;
+        option.value = item.joNumber;
+        option.textContent = label;
+        dropdown.appendChild(option);
+      });
+
+  } catch (error) {
+    console.error("Error fetching JOs:", error);
+    dropdown.innerHTML = '<option value="">Error loading JOs</option>';
+  }
+}
+
 // Attach event listeners to all PaymentType radios
 document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
   radio.addEventListener('change', toggleGcashInput);
 });
 
-// Initialize visibility on page load
-document.addEventListener("DOMContentLoaded", toggleGcashInput);
+document.getElementById("customerJO").addEventListener("change", function () {
+  const selectedJO = this.value; // Selected JO number
+  const joSearchField = document.getElementById("JOsearch");
+  const searchButton = document.getElementById("searchButton");
+
+  joSearchField.value = selectedJO;       // Set value in JOsearch input
+  searchButton.click();                   // Trigger the existing click handler
+});
+
+document.getElementById("customerDropdown-ts-control").addEventListener("change", function () {
+  const selectedJO = this.value; // Selected JO number
+
+  const joSearchField = document.getElementById("JOsearch");
+  const searchButton = document.getElementById("searchButton");
+
+  joSearchField.value = selectedJO;       // Set value in JOsearch input
+  searchButton.click();                   // Trigger the existing click handler
+
+  
+});
+
+
 
 </script>
 
