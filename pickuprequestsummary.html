@@ -220,220 +220,186 @@ table thead th.sorted-desc::after {
   <label><input type="radio" name="staff" value="edward lowi">Edward</label>
 </div>
 
-
+<div id="customerFilterContainer">
+  <label for="customerFilter"><strong>Filter by Customer:</strong></label>
+  <select id="customerFilter">
+    <option value="">All</option>
+  </select>
+</div>
   <div id="tableContainer">Loading...</div>
 
-  <script>
-      //pickuprequestsummary
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJs9Dtwd-YDpLV6vkf7fLsysXc4GBjgzXmWFshxDLdk205PTzk4hqPfGHa6y81KDK7/exec?action=getPickupSummary";
-    let allData = [];
-    let currentDate = new Date();
-    let currentSort = { column: 'timestamp', direction: 'desc' };
+ <script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJs9Dtwd-YDpLV6vkf7fLsysXc4GBjgzXmWFshxDLdk205PTzk4hqPfGHa6y81KDK7/exec?action=getPickupSummary";
 
-    const headers = [
-      "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
-      "request_type", "Comments", "timestamp", "unique_id", "media", "media2", "media3", "Pickup Pic", "Del JO#", "dropoffrequestmedia",	"dropoffrequestmedia1", "InshopPickupPic", "shop_payment", "6DigitGcash",	"paidamount"
-    ];
+let allData = [];
+let currentDate = new Date();
+let currentSort = { column: 'timestamp', direction: 'desc' };
 
-    function formatDate(date) {
-      if (!date) return '';
-      const d = new Date(date);
-      return d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    }
+const headers = [
+  "name", "PickupLocation", "dateofpickup", "timeofpickup", "DeliveryStaff",
+  "request_type", "Comments", "timestamp", "unique_id", "media", "media2", "media3",
+  "Pickup Pic", "Del JO#", "FoldedJO", "dropoffrequestmedia", "dropoffrequestmedia1", "InshopPickupPic",
+  "shop_payment", "6DigitGcash", "paidamount"
+];
 
-    function formatDateTime(isoDate) {
-      if (!isoDate) return '';
-      const date = new Date(isoDate);
-      return date.toLocaleString('en-US', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit',
-        hour12: true,
-      }).replace(',', '');
-    }
+function formatDate(date) {
+  const d = new Date(date);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
 
-    function createImageCell(url) {
-      if (!url) return '';
-      const match = url.match(/\/d\/([^/]+)\//);
-      const fileId = match ? match[1] : null;
-      if (!fileId) return '';
-      const thumb = `https://drive.google.com/thumbnail?id=${fileId}`;
-      const link = `https://drive.google.com/file/d/${fileId}/view`;
-      return `<a href="${link}" target="_blank"><img class="thumbnail" src="${thumb}" onerror="this.style.display='none'" /></a>`;
-    }
+function formatDateTime(isoDate) {
+  if (!isoDate) return '';
+  const date = new Date(isoDate);
+  return date.toLocaleString('en-US', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+    hour12: true,
+  }).replace(',', '');
+}
 
-    function datesEqual(d1, d2) {
-      return d1.getFullYear() === d2.getFullYear() &&
-             d1.getMonth() === d2.getMonth() &&
-             d1.getDate() === d2.getDate();
-    }
+function createImageCell(url) {
+  if (!url) return '';
+  const match = url.match(/\/d\/([^/]+)\//);
+  const fileId = match ? match[1] : null;
+  if (!fileId) return '';
+  const thumb = `https://drive.google.com/thumbnail?id=${fileId}`;
+  const link = `https://drive.google.com/file/d/${fileId}/view`;
+  return `<a href="${link}" target="_blank"><img class="thumbnail" src="${thumb}" onerror="this.style.display='none'" /></a>`;
+}
 
-    function filterByDate(data, date) {
-      return data.filter(row => {
-        if (!row.dateofpickup) return false;
-        const rowDate = new Date(row.dateofpickup);
-        return datesEqual(rowDate, date);
-      });
-    }
+function datesEqual(d1, d2) {
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+}
 
-    function sortData(data, column, direction) {
-      if (!column || !direction) return data;
-      return [...data].sort((a, b) => {
-        let valA = a[column] || '';
-        let valB = b[column] || '';
+function renderTable(data) {
+  if (data.length === 0) {
+    document.getElementById('tableContainer').innerHTML = "<p>No pickup requests for this date.</p>";
+    return;
+  }
 
-        // Convert to Date if applicable
-        if (column.includes('date') || column.includes('time') || column.includes('timestamp')) {
-          valA = new Date(valA);
-          valB = new Date(valB);
-        }
+  let html = `<div style="max-height: 600px; overflow-y: auto;"><table><thead><tr>`;
+  headers.forEach(h => {
+    const isSorted = currentSort.column === h;
+    const sortClass = isSorted ? `sorted-${currentSort.direction}` : '';
+    html += `<th class="sortable ${sortClass}" data-column="${h}">${h.toUpperCase()}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
 
-        if (valA < valB) return direction === 'asc' ? -1 : 1;
-        if (valA > valB) return direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    function updateDateDisplay() {
-      document.getElementById('currentDateDisplay').textContent = formatDate(currentDate);
-    }
-
-    function renderTable(data) {
-      if (data.length === 0) {
-        document.getElementById('tableContainer').innerHTML = "<p>No pickup requests for this date.</p>";
-        return;
-      }
-
-      let html = `<div style="max-height: 600px; overflow-y: auto;"><table><thead><tr>`;
-      headers.forEach(h => {
-        const isSorted = currentSort.column === h;
-        const sortClass = isSorted ? `sorted-${currentSort.direction}` : '';
-        html += `<th class="sortable ${sortClass}" data-column="${h}">${h.toUpperCase()}</th>`;
-      });
-      html += `</tr></thead><tbody>`;
-
-      data.forEach(row => {
-        html += `<tr>`;
-        headers.forEach(key => {
-          if (["media", "media2", "media3","Pickup Pic", "dropoffrequestmedia",	"dropoffrequestmedia1", "InshopPickupPic"].includes(key)) {
-            html += `<td>${createImageCell(row[key])}</td>`;
-          } else if (key === "timestamp" ) {
-            html += `<td>${formatDateTime(row[key])}</td>`;
-          } else if ( key === "dateofpickup") {
-            html += `<td>${formatDate(row[key])}</td>`;
-          } else {
-            html += `<td>${row[key] || ''}</td>`;
-          }
-        });
-        html += `</tr>`;
-      });
-
-      html += `</tbody></table></div>`;
-      document.getElementById('tableContainer').innerHTML = html;
-
-      document.querySelectorAll('th.sortable').forEach(th => {
-        th.addEventListener('click', () => {
-          const col = th.getAttribute('data-column');
-          let dir = 'asc';
-          if (currentSort.column === col && currentSort.direction === 'asc') {
-            dir = 'desc';
-          }
-          currentSort = { column: col, direction: dir };
-          renderForCurrentDate();
-          
-        });
-      });
-      
-    }
-
-    function renderStaffFilters(data) {
-  const staffSet = new Set();
   data.forEach(row => {
-    const staff = (row.DeliveryStaff || '').trim();
-    if (staff) staffSet.add(staff);
+    html += `<tr>`;
+    headers.forEach(key => {
+      if (["media", "media2", "media3", "Pickup Pic", "dropoffrequestmedia", "dropoffrequestmedia1", "InshopPickupPic"].includes(key)) {
+        html += `<td>${createImageCell(row[key])}</td>`;
+      } else if (key === "timestamp") {
+        html += `<td>${formatDateTime(row[key])}</td>`;
+      } else if (key === "dateofpickup") {
+        html += `<td>${formatDate(row[key])}</td>`;
+      } else {
+        html += `<td>${row[key] || ''}</td>`;
+      }
+    });
+    html += `</tr>`;
   });
 
-  const container = document.getElementById('staffFilter');
-  container.innerHTML = '<strong>Filter by Delivery Staff:</strong><br>';
-  container.innerHTML += `<label><input type="radio" name="staff" value="" checked> All</label> `;
+  html += `</tbody></table></div>`;
+  document.getElementById('tableContainer').innerHTML = html;
 
-  [...staffSet].sort().forEach(staff => {
-    const id = `staff-${staff.replace(/\s+/g, '-')}`;
-    container.innerHTML += `<label><input type="radio" name="staff" value="${staff}"> ${staff}</label> `;
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.getAttribute('data-column');
+      let dir = 'asc';
+      if (currentSort.column === col && currentSort.direction === 'asc') dir = 'desc';
+      currentSort = { column: col, direction: dir };
+      renderForCurrentDate();
+    });
   });
+}
+
+function renderCustomerFilter(data) {
+  const customerSet = new Set();
+  data.forEach(row => {
+    const customer = (row[headers[0]] || '').trim();
+    if (customer) customerSet.add(customer);
+  });
+
+  const dropdown = document.getElementById('customerFilter');
+  dropdown.innerHTML = '<option value="">All</option>';
+  [...customerSet].sort().forEach(customer => {
+    const option = document.createElement('option');
+    option.value = customer;
+    option.textContent = customer;
+    dropdown.appendChild(option);
+  });
+
+  dropdown.addEventListener('change', renderForCurrentDate);
+}
+
+function renderForCurrentDate() {
+  let filteredData = allData;
+
+  // Show all checkbox (optional)
+  if (!document.getElementById('showAllCheckbox').checked) {
+    filteredData = filteredData.filter(row => {
+      if (!row.dateofpickup) return false;
+      return datesEqual(new Date(row.dateofpickup), currentDate);
+    });
+  }
+
+  // Staff filter
+  const selectedStaff = document.querySelector('input[name="staff"]:checked')?.value || '';
+  if (selectedStaff) {
+    filteredData = filteredData.filter(row => (row.DeliveryStaff || '').toLowerCase() === selectedStaff.toLowerCase());
+  }
+
+  // Customer filter
+  const selectedCustomer = document.getElementById('customerFilter')?.value || '';
+  if (selectedCustomer) {
+    filteredData = filteredData.filter(row => (row[headers[0]] || '').trim() === selectedCustomer);
+  }
+
+  renderTable(filteredData);
+  document.getElementById('currentDateDisplay').textContent = formatDate(currentDate);
+}
+
+async function loadSummary() {
+  document.getElementById('tableContainer').innerHTML = '<p>Loading...</p>';
+  try {
+    const res = await fetch(WEB_APP_URL);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    allData = data;
+    renderCustomerFilter(allData);  // ✅ Only customer filter is dynamic
+    renderForCurrentDate();
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    document.getElementById('tableContainer').innerHTML = '<p style="color:red;">Error loading data.</p>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadSummary();
+
+  document.getElementById('prevDayBtn').addEventListener('click', () => {
+    currentDate.setDate(currentDate.getDate() - 1);
+    renderForCurrentDate();
+  });
+
+  document.getElementById('nextDayBtn').addEventListener('click', () => {
+    currentDate.setDate(currentDate.getDate() + 1);
+    renderForCurrentDate();
+  });
+
+  document.getElementById('showAllCheckbox').addEventListener('change', renderForCurrentDate);
 
   document.querySelectorAll('input[name="staff"]').forEach(radio => {
     radio.addEventListener('change', renderForCurrentDate);
   });
-}
 
+  document.getElementById('customerFilter').addEventListener('change', renderForCurrentDate);
+});
+</script>
 
-function renderForCurrentDate() {
-  updateDateDisplay();
-  const selectedType = document.querySelector('input[name="type"]:checked').value;
-  const selectedStaff = document.querySelector('input[name="staff"]:checked')?.value.toLowerCase() || '';
-
-  let filtered = document.getElementById('showAllCheckbox').checked
-    ? [...allData]
-    : filterByDate(allData, currentDate);
-
-  if (selectedType !== 'All') {
-    filtered = filtered.filter(row => row.request_type?.toLowerCase() === selectedType.toLowerCase());
-  }
-
-  if (selectedStaff) {
-    filtered = filtered.filter(row => (row.DeliveryStaff || '').toLowerCase().trim() === selectedStaff);
-  }
-
-  if (currentSort.column) {
-    filtered = sortData(filtered, currentSort.column, currentSort.direction);
-  }
-
-  renderTable(filtered);
-}
-
-
-    async function loadSummary() {
-      document.getElementById('tableContainer').innerHTML = '<p>Loading...</p>';
-      try {
-        const res = await fetch(WEB_APP_URL);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const data = await res.json();
-        allData = data;
-        //renderStaffFilters(allData);  // ✅ Render all staff radio buttons ONCE
-        renderForCurrentDate();       // ✅ Then render filtered table
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        document.getElementById('tableContainer').innerHTML = '<p style="color:red;">Error loading data.</p>';
-      }
-    }
-
-      document.addEventListener('DOMContentLoaded', () => {
-        loadSummary();
-
-        document.getElementById('showAllCheckbox').addEventListener('change', renderForCurrentDate);
-
-        document.getElementById('prevDayBtn').addEventListener('click', () => {
-          currentDate.setDate(currentDate.getDate() - 1);
-          renderForCurrentDate();
-        });
-
-        document.getElementById('nextDayBtn').addEventListener('click', () => {
-          currentDate.setDate(currentDate.getDate() + 1);
-          renderForCurrentDate();
-        });
-
-        document.querySelectorAll('input[name="type"]').forEach(radio => {
-          radio.addEventListener('change', renderForCurrentDate);
-        });
-
-        document.querySelectorAll('input[name="staff"]').forEach(radio => {
-          radio.addEventListener('change', () => {
-            document.querySelector('input[name="type"][value="All"]').checked = true; // ⬅ Force "All"
-            renderForCurrentDate();
-          });
-        });
-      });
-
-  </script>
 </body>
 </html>
