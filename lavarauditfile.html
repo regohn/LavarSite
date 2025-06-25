@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Col A</th><th>Col B</th><th>Col C</th>
+          <th>Col D</th><th>Col E</th><th>Col F</th><th>Col G</th>
+        </tr>
+      </thead>
+      <tbody>
+        <script>
+          for (let i = 1; i <= 50; i++) {
+            document.write("<tr>");
+            for (let j = 1; j <= 7; j++) {
+              document.write(`<td>Row ${i} Col ${j}</td>`);
+            }
+            document.write("</tr>");
+          }
+        </script>
+      </tbody>
+    </table>
+    <button onclick="sendTable()">Save to Google Sheet</button>
+
+    <script>
+      function sendTable() {
+        const table = document.getElementById("dataTable");
+        const data = [];
+        for (let row of table.rows) {
+          const rowData = [];
+          for (let cell of row.cells) {
+            rowData.push(cell.innerText);
+          }
+          data.push(rowData);
+        }
+        google.script.run.withSuccessHandler(alert).saveToSheet(data);
+      }
+    </script>
+  </body>
+</html>
