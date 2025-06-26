@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickup/Delivery Request Summary</title>
+  <!-- Tom Select CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
+
+  <!-- Tom Select JS -->
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
   <style>
     body { font-family: Arial, sans-serif; margin: 1rem; }
     h1 { text-align: center; }
@@ -178,6 +184,13 @@ table thead th.sorted-desc::after {
   color: white;
   border-color: #007aff;
 }
+
+
+  #customerFilterContainer {
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+
   </style>
 </head>
 <body>
@@ -335,6 +348,36 @@ function renderCustomerFilter(data) {
 
   dropdown.addEventListener('change', renderForCurrentDate);
 }
+
+function renderCustomerFilter(data) {
+  const customerSet = new Set();
+  data.forEach(row => {
+    const customer = (row[headers[0]] || '').trim();
+    if (customer) customerSet.add(customer);
+  });
+
+  const dropdown = document.getElementById('customerFilter');
+  dropdown.innerHTML = '<option value="">All</option>';
+  [...customerSet].sort().forEach(customer => {
+    const option = document.createElement('option');
+    option.value = customer;
+    option.textContent = customer;
+    dropdown.appendChild(option);
+  });
+
+  // ✅ Make dropdown searchable
+  new TomSelect('#customerFilter', {
+    allowEmptyOption: true,
+    create: false,
+    sortField: {
+      field: 'text',
+      direction: 'asc'
+    }
+  });
+
+  dropdown.addEventListener('change', renderForCurrentDate);
+}
+
 
 function renderForCurrentDate() {
   let filteredData = [...allData]; // Clone to avoid mutation
