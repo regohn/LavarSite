@@ -93,6 +93,11 @@
           <a href="delivery.html">Delivery</a>
           <a href="deliverysummary.html">DVS</a>
         </div>
+<div id="dateControls" class="d-flex justify-content-center align-items-center mb-3">
+  <button id="prevDayBtn" class="btn btn-outline-secondary btn-sm mr-2">←</button>
+  <span id="currentDateDisplay" style="font-weight: bold; min-width: 120px; text-align: center;"></span>
+  <button id="nextDayBtn" class="btn btn-outline-secondary btn-sm ml-2">→</button>
+</div>
 
         <form id="submit-to-google-sheet">
           <input type="hidden" id="pickuprequestid" name="pickuprequestid" value="">
@@ -141,7 +146,7 @@
             <label for="PickupPayMethod">Did the Customer Pay During Pickup?</label>
             <select class="form-control" name="PickupPayMethod" id="PickupPayMethod" required>
               <option value="" disabled selected hidden>Choose...</option>
-              <option value="Cash">No</option>
+              <option value="No ">No</option>
               <option value="Cash">Cash</option>
               <option value="G-Cash">G-Cash</option>
               <option value="Bank Transfer">Bank Transfer</option>
@@ -187,7 +192,7 @@
           const input = document.getElementById(id);
           if (input.files.length > 0) {
             const file = input.files[0];
-            if (file.size > 5 * 1024 * 1024) {
+            if (file.size > 6 * 1024 * 1024) {
               swal("Error", `${id} must be less than 5MB.`, "error");
               return;
             }
@@ -211,7 +216,7 @@
       async function submitForm(formData) {
         const submitButton = document.querySelector("button[type='submit']");
         submitButton.disabled = true;
-        submitButton.innerText = "Loading...";
+        submitButton.textContent = "Loading...";
 
         fetch(scriptURL, { method: "POST", body: formData })
           .then(() => {
@@ -229,7 +234,7 @@
             submitButton.innerText = "Submit";
           });
       }
-
+      //PickupHTMLSearchPickupRequest
       const fetchDataURL = "https://script.google.com/macros/s/AKfycbzJPNrpWLE9LzGOHbmTBSWHdww4ZOlbkpbKhT_C2hwoYotB7daysgDRN9nrfkrbJ-R1ow/exec";
       let pickupsData = [];
 
@@ -267,6 +272,64 @@
       function resetDropdown() {
         document.getElementById("nameDropdown").selectedIndex = 0;
       }
+
+
+  let currentDate = new Date();
+
+  function formatDate(date) {
+    return date.toISOString().split("T")[0]; // "YYYY-MM-DD"
+  }
+
+  function updateDateDisplay() {
+    const display = document.getElementById("currentDateDisplay");
+    display.textContent = formatDate(currentDate);
+    filterDropdownByDate(formatDate(currentDate));
+  }
+
+  function filterDropdownByDate(dateStr) {
+    const dropdown = document.getElementById("nameDropdown");
+    dropdown.innerHTML = `<option value="">-- Select Customer --</option>`;
+
+    const filtered = pickupsData.filter(p => p.dateofpickup === dateStr);
+    if (filtered.length === 0) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "No pickups for this date";
+      opt.disabled = true;
+      dropdown.appendChild(opt);
+    } else {
+      filtered.forEach(pickup => {
+        const opt = document.createElement("option");
+        opt.value = pickup.name;
+        opt.textContent = pickup.name;
+        dropdown.appendChild(opt);
+      });
+    }
+  }
+
+  document.getElementById("prevDayBtn").addEventListener("click", () => {
+    currentDate.setDate(currentDate.getDate() - 1);
+    updateDateDisplay();
+  });
+
+  document.getElementById("nextDayBtn").addEventListener("click", () => {
+    currentDate.setDate(currentDate.getDate() + 1);
+    updateDateDisplay();
+  });
+
+  window.addEventListener("DOMContentLoaded", () => {
+    fetch(fetchDataURL)
+      .then(res => res.json())
+      .then(data => {
+        pickupsData = data.pickups || [];
+        updateDateDisplay(); // initial load for today
+      })
+      .catch(err => {
+        console.error("Failed to load pickups data", err);
+      });
+  });
+
+
     </script>
   </body>
 </html>
