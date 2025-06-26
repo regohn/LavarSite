@@ -337,9 +337,9 @@ function renderCustomerFilter(data) {
 }
 
 function renderForCurrentDate() {
-  let filteredData = allData;
+  let filteredData = [...allData]; // Clone to avoid mutation
 
-  // Show all checkbox (optional)
+  // Date filtering
   if (!document.getElementById('showAllCheckbox').checked) {
     filteredData = filteredData.filter(row => {
       if (!row.dateofpickup) return false;
@@ -350,7 +350,7 @@ function renderForCurrentDate() {
   // Staff filter
   const selectedStaff = document.querySelector('input[name="staff"]:checked')?.value || '';
   if (selectedStaff) {
-    filteredData = filteredData.filter(row => (row.DeliveryStaff || '').toLowerCase() === selectedStaff.toLowerCase());
+    filteredData = filteredData.filter(row => (row.DeliveryStaff || '').trim() === selectedStaff);
   }
 
   // Customer filter
@@ -359,9 +359,24 @@ function renderForCurrentDate() {
     filteredData = filteredData.filter(row => (row[headers[0]] || '').trim() === selectedCustomer);
   }
 
+  // ✅ Request Type filter (you were missing this!)
+  const selectedType = document.querySelector('input[name="type"]:checked')?.value || 'All';
+  if (selectedType !== 'All') {
+    filteredData = filteredData.filter(row => (row.request_type || '').trim() === selectedType);
+  }
+
+  // ✅ Sort by timestamp descending (optional)
+  filteredData.sort((a, b) => {
+    const timeA = new Date(a.timestamp || 0);
+    const timeB = new Date(b.timestamp || 0);
+    return timeB - timeA;
+  });
+
   renderTable(filteredData);
   document.getElementById('currentDateDisplay').textContent = formatDate(currentDate);
 }
+
+
 
 async function loadSummary() {
   document.getElementById('tableContainer').innerHTML = '<p>Loading...</p>';
