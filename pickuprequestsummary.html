@@ -413,7 +413,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('customerFilter').addEventListener('change', renderForCurrentDate);
+
+  // ✅ ADD THIS FOR request_type RADIO BUTTONS
+  document.querySelectorAll('input[name="type"]').forEach(radio => {
+    radio.addEventListener('change', renderForCurrentDate);
+  });
 });
+
 </script>
 
 </body>
