@@ -1,6 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script>
+      document.addEventListener("DOMContentLoaded", function () {
+    const table = document.querySelector("#tableContainer #dataTable");
+    if (!table) return;
+
+    const rows = table.querySelectorAll("tbody tr");
+
+    // Get the index of the "Date Paid" column (case-insensitive)
+    const headers = Array.from(table.querySelectorAll("thead th"));
+    const datePaidIndex = headers.findIndex(
+      th => th.textContent.trim().toLowerCase() === "DATE PAID".toLowerCase()
+    );
+    alert(datePaidIndex)
+    if (datePaidIndex === -1) return; // Stop if "Date Paid" column isn't found
+
+    rows.forEach(row => {
+      const cell = row.cells[datePaidIndex];
+      if (cell && cell.textContent.trim().toLowerCase() === "[UNPAID]") {
+        row.style.backgroundColor = "#ffcccc"; // light red highlight
+      }
+    });
+  });
+
+  </script>
   <title>JO Data Viewer - LAVAR LAUnDRY</title>
   <style>
     body {
@@ -167,6 +191,8 @@
 <button type="button" onclick="window.open('customer_issues.html', 'CustomerIssues', 'width='+ (window.innerWidth * 0.8) + ',height=' + (window.innerHeight * 0.8) + ',left=' + (window.innerWidth * 0.1) + ',top=' + (window.innerHeight * 0.1))">
   View Customer Issues
 </button>
+
+<button id="filterUnpaidNoDeliveryType">Unpaid Undelivered</button>
   <div id="controls">
     Max Rows: <input type="number" id="maxDaysInput" value="90" min="1" max="10000">
   </div>
@@ -310,17 +336,20 @@
           a.onclick = (e) => {
             e.preventDefault();
             const joNumber = cell; // e.g., "#12669"
+            const customerName = rowData[2] || ""; // CUSTOMER is column index 2
             const encodedJO = encodeURIComponent(joNumber);
+            const encodedCustomer = encodeURIComponent(customerName);
             const width = 600;
             const height = 400;
             const left = (window.screen.width / 2) - (width / 2);
             const top = (window.screen.height / 2) - (height / 2);
 
             window.open(
-              `JOpopup.html?joNumber=${encodedJO}`,
+              `JOpopup.html?joNumber=${encodedJO}&customer=${encodedCustomer}`,
               "JOpopupWindow",
               `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
             );
+
           };
 
           td.appendChild(a);
@@ -555,7 +584,7 @@ async function markJOIssuesInTable() {
 
 
 
-//FreebieCalcSheet
+//ImportCSVRaw
 function triggerCSVImport() {
   if (confirm("Are you sure you want to import the latest CSV? This may overwrite existing data.")) {
     fetch('https://script.google.com/macros/s/AKfycbwDtZ-VC549G9V9K9PD3i8qSFFUL2KUJnXjGFkM_gmspfLXMczyyD4ikNXKbpBtRLOzqA/exec?importCSV=true')
@@ -603,7 +632,52 @@ function addUnresolvedWarnings() {
       loadData();
     };
 
-</script>  
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const table = document.querySelector("#tableContainer #dataTable");
+    if (!table) return;
+
+    const rows = table.querySelectorAll("tbody tr");
+
+    // Get the index of the "Date Paid" column (case-insensitive)
+    const headers = Array.from(table.querySelectorAll("thead th"));
+    const datePaidIndex = headers.findIndex(
+      th => th.textContent.trim().toLowerCase() === "DATE PAID".toLowerCase()
+    );
+    alert(datePaidIndex)
+    if (datePaidIndex === -1) return; // Stop if "Date Paid" column isn't found
+
+    rows.forEach(row => {
+      const cell = row.cells[datePaidIndex];
+      if (cell && cell.textContent.trim().toLowerCase() === "[UNPAID]") {
+        row.style.backgroundColor = "#ffcccc"; // light red highlight
+      }
+    });
+  });
+  document.getElementById("filterUnpaidNoDeliveryType").addEventListener("click", function () {
+    const table = document.getElementById("dataTable");
+    const tbody = table.querySelector("tbody");
+    const rows = tbody.querySelectorAll("tr");
+
+    rows.forEach(row => {
+      const cells = row.querySelectorAll("td");
+
+      const datePaid = (cells[4]?.textContent || "").trim();                 // Column 4
+      const deliveryType = (cells[15]?.textContent || "").trim();     // Column 16
+
+      const isUnpaid = datePaid === "[UNPAID]";
+      const isDeliveryTypeBlank = deliveryType === "";
+
+      if (isUnpaid && isDeliveryTypeBlank) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  });
+
+</script>
+
   <div id="imageModal" onclick="closeImageModal()">
   <span id="imageModalClose">&times;</span>
   <img id="imageModalContent" src="" alt="Full Image">
