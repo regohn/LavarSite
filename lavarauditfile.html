@@ -1,7 +1,20 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <title>Audit Table</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 5px;
+    }
+  </style>
+</head>
 <body>
-  <table id="dataTable" border="1">
+  <h3>Audit Table</h3>
+  <table id="dataTable">
     <thead>
       <tr>
         <th>Col A</th><th>Col B</th><th>Col C</th>
@@ -20,42 +33,39 @@
       </script>
     </tbody>
   </table>
-
-  <button onclick="sendTable()">Save to Sheet</button>
+  <br>
+  <button onclick="saveToCSV()">Save Table to CSV (Drive)</button>
 
   <script>
-function sendTable() {
-  const table = document.getElementById("dataTable");
-  const data = [];
+    function saveToCSV() {
+      const table = document.getElementById("dataTable");
+      const data = [];
 
-  for (let row of table.rows) {
-    const rowData = [];
-    for (let cell of row.cells) {
-      rowData.push(cell.innerText);
+      for (let row of table.rows) {
+        const rowData = [];
+        for (let cell of row.cells) {
+          rowData.push(cell.innerText);
+        }
+        data.push(rowData);
+      }
+      //auditfilescript
+      fetch("https://script.google.com/macros/s/AKfycbxkrlndEM-F8t5pjK-YjsQLHiQrFuxeKjA-Q43kuNJ2-DVpfO3GYiKKHoEi-RWhh7_L/execL", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ tableData: data })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === "success") {
+          alert("CSV saved! You can now IMPORTDATA into another sheet.");
+        } else {
+          alert("Error saving: " + res.error);
+        }
+      })
+      .catch(err => alert("Fetch error: " + err));
     }
-    data.push(rowData);
-  }
-
-  fetch("https://script.google.com/macros/s/AKfycbxkrlndEM-F8t5pjK-YjsQLHiQrFuxeKjA-Q43kuNJ2-DVpfO3GYiKKHoEi-RWhh7_L/exec", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ tableData: data })
-  })
-  .then(res => res.json())
-  .then(result => {
-    if (result.status === "success") {
-      alert("✅ Data saved to Google Sheet!");
-    } else {
-      alert("❌ Server error: " + result.error);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alert("❌ Network error: " + err.message);
-  });
-}
   </script>
 </body>
 </html>
