@@ -24,29 +24,38 @@
   <button onclick="sendTable()">Save to Sheet</button>
 
   <script>
-    function sendTable() {
-      const table = document.getElementById("dataTable");
-      const data = [];
+function sendTable() {
+  const table = document.getElementById("dataTable");
+  const data = [];
 
-      for (let row of table.rows) {
-        const rowData = [];
-        for (let cell of row.cells) {
-          rowData.push(cell.innerText);
-        }
-        data.push(rowData);
-      }
-
-      fetch("https://script.google.com/macros/s/AKfycbxkrlndEM-F8t5pjK-YjsQLHiQrFuxeKjA-Q43kuNJ2-DVpfO3GYiKKHoEi-RWhh7_L/exec", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ tableData: data })
-      })
-      .then(res => res.text())
-      .then(msg => alert("Success: " + msg))
-      .catch(err => alert("Error: " + err));
+  for (let row of table.rows) {
+    const rowData = [];
+    for (let cell of row.cells) {
+      rowData.push(cell.innerText);
     }
+    data.push(rowData);
+  }
+
+  fetch("https://script.google.com/macros/s/AKfycbxkrlndEM-F8t5pjK-YjsQLHiQrFuxeKjA-Q43kuNJ2-DVpfO3GYiKKHoEi-RWhh7_L/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ tableData: data })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.status === "success") {
+      alert("✅ Data saved to Google Sheet!");
+    } else {
+      alert("❌ Server error: " + result.error);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("❌ Network error: " + err.message);
+  });
+}
   </script>
 </body>
 </html>
