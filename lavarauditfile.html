@@ -1,40 +1,52 @@
 <!DOCTYPE html>
 <html>
-  <body>
-    <table id="dataTable">
-      <thead>
-        <tr>
-          <th>Col A</th><th>Col B</th><th>Col C</th>
-          <th>Col D</th><th>Col E</th><th>Col F</th><th>Col G</th>
-        </tr>
-      </thead>
-      <tbody>
-        <script>
-          for (let i = 1; i <= 50; i++) {
-            document.write("<tr>");
-            for (let j = 1; j <= 7; j++) {
-              document.write(`<td>Row ${i} Col ${j}</td>`);
-            }
-            document.write("</tr>");
+<body>
+  <table id="dataTable" border="1">
+    <thead>
+      <tr>
+        <th>Col A</th><th>Col B</th><th>Col C</th>
+        <th>Col D</th><th>Col E</th><th>Col F</th><th>Col G</th>
+      </tr>
+    </thead>
+    <tbody>
+      <script>
+        for (let i = 1; i <= 50; i++) {
+          document.write("<tr>");
+          for (let j = 1; j <= 7; j++) {
+            document.write(`<td>Row ${i} Col ${j}</td>`);
           }
-        </script>
-      </tbody>
-    </table>
-    <button onclick="sendTable()">Save to Google Sheet</button>
-
-    <script>
-      function sendTable() {
-        const table = document.getElementById("dataTable");
-        const data = [];
-        for (let row of table.rows) {
-          const rowData = [];
-          for (let cell of row.cells) {
-            rowData.push(cell.innerText);
-          }
-          data.push(rowData);
+          document.write("</tr>");
         }
-        google.script.run.withSuccessHandler(alert).saveToSheet(data);
+      </script>
+    </tbody>
+  </table>
+
+  <button onclick="sendTable()">Save to Sheet</button>
+
+  <script>
+    function sendTable() {
+      const table = document.getElementById("dataTable");
+      const data = [];
+
+      for (let row of table.rows) {
+        const rowData = [];
+        for (let cell of row.cells) {
+          rowData.push(cell.innerText);
+        }
+        data.push(rowData);
       }
-    </script>
-  </body>
+
+      fetch("https://script.google.com/macros/s/AKfycbxkrlndEM-F8t5pjK-YjsQLHiQrFuxeKjA-Q43kuNJ2-DVpfO3GYiKKHoEi-RWhh7_L/exec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ tableData: data })
+      })
+      .then(res => res.text())
+      .then(msg => alert("Success: " + msg))
+      .catch(err => alert("Error: " + err));
+    }
+  </script>
+</body>
 </html>
