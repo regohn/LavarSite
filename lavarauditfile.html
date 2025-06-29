@@ -44,12 +44,12 @@
       for (let row of table.rows) {
         const rowData = [];
         for (let cell of row.cells) {
-          rowData.push(cell.innerText);
+          rowData.push(cell.innerText.trim());
         }
         data.push(rowData);
       }
-      //auditfilescript
-      fetch("https://script.google.com/macros/s/AKfycbxkrlndEM-F8t5pjK-YjsQLHiQrFuxeKjA-Q43kuNJ2-DVpfO3GYiKKHoEi-RWhh7_L/exec", {
+
+      fetch("YOUR_WEB_APP_URL", { // replace with actual deployed web app URL
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -59,12 +59,14 @@
       .then(res => res.json())
       .then(res => {
         if (res.status === "success") {
-          alert("CSV saved! You can now IMPORTDATA into another sheet.");
+          alert("CSV saved successfully.");
         } else {
-          alert("Error saving: " + res.error);
+          alert("Error: " + res.error);
         }
       })
-      .catch(err => alert("Fetch error: " + err));
+      .catch(err => {
+        alert("Fetch error: " + err.message);
+      });
     }
   </script>
 </body>
