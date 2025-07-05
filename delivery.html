@@ -460,6 +460,19 @@ function changeDate(offsetDays) {
       return;
     }
 
+          // New validation for gcashInfo
+          const paymentType = formData.get("PaymentType");
+          const gcashInfo = document.getElementById("gcashInfo");
+
+          if (paymentType === "G-Cash" && gcashInfo.style.display !== "none") {
+            const gcashValue = gcashInfo.value.trim();
+            if (!/^\d{6}$/.test(gcashValue)) { // Regex to check for exactly 6 digits
+              swal("Invalid G-Cash Reference", "G-Cash Reference # must be exactly 6 digits and all numeric.", "warning");
+              return; // Stop form submission
+            }
+          }
+          // End of new validation
+
     const submitButton = document.querySelector("button[type='submit']");
     submitButton.disabled = true;
     submitButton.innerText = "Loading...";
