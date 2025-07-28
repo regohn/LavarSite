@@ -162,6 +162,54 @@ select:focus {
   border-bottom: none;
 }
 
+/* Custom styles for the modal */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Base hidden class for button */
+#reportButton {
+  display: none; /* Hidden by default */
+}
+
   </style>
 </head>
 <body>
@@ -171,17 +219,17 @@ select:focus {
 
     <form method="post" action="" name="contact-form">
     <h4>LAVAR FOLDS SUBMISSIONS</h4>
-    <a href="pickuprequestsummary.html"> Requests Summary </a> | 
-    <a href="pickuprequest.html"> Request Forms </a> | 
-    <a href="pickup.html"> Pickup </a>  | 
-    <a href="delivery.html"> Delivery </a> | 
+    <a href="pickuprequestsummary.html"> Requests Summary </a> |
+    <a href="pickuprequest.html"> Request Forms </a> |
+    <a href="pickup.html"> Pickup </a>  |
+    <a href="delivery.html"> Delivery </a> |
     <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold  </a> <br>  
+    <a href="LavarFormSubmission.html"> Fold  </a> <br>
   <br>
 <div class="form-group">
   <label for="joSearch">Search Fold JO/Mga di pa nalolog</label>
   <input type="text" id="joSearch" name="JO NUMBER" placeholder="Enter JO number (e.g. 04065)" />
-  <button type="button" class="btn mt-2" onclick="searchFoldJO(); fetchJOInfoFolder(document.getElementById('joSearch').value);">Search</button>
+  <button type="button" class="btn mt-2" onclick="searchFoldJO();">Search</button>
 </div>
 
 
@@ -192,12 +240,18 @@ select:focus {
       <label for="jo-number">JO NUMBER (example: 04065... di kasama JO)</label>-->
     <div >
     <label for="pickupDropdown">Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
-   </div> 
+   </div>
     <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" />
     <label for="" style="font-size: 10px;">Customer Name || Date of Pickup/Drop-Off || Delivery Staff</label>
+    
+    <!-- New Report Button - Moved outside form -->
+    <button id="reportButton" class="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105" style="display: none;">
+        Report Missing Pickup - send email to Sir Will
+    </button>
+
     <select id="pickupDropdown" name="Recent Pickup" class="form-control" >
       <option value="">-- Select Pickup --</option>
-    </select>      
+    </select>
 
       <input type="text" id="customername" name="customername" placeholder="" >
       <label for="folder">Name of Folder</label>
@@ -206,10 +260,10 @@ select:focus {
         <option value="NIDA">NIDA</option>
         <option value="JENNELYN">JENNELYN</option>
         <option value="JERCY">JERCY</option>
-        <option value="NORI">NORI</option>        
-      </select>    
+        <option value="NORI">NORI</option>
+      </select>
       <input type="text" id="jo-number" name="JO NUMBER" placeholder="JO NUMBER" hidden>
-  
+
       <div id="joResultFolded" style="display: none; margin-top: 10px; padding: 10px; background-color: #f0f0f0;"></div>
           <label for="datefold">Petsa ng Pagtupi</label>
           <input type="date" id="Date of Fold" name="Date of Fold" required>
@@ -225,25 +279,49 @@ select:focus {
           <input type="text" id="Comments" name="Comments" placeholder="Comments" required>
         <input type="submit" value="Submit" id="submit">
       </form>
+
+
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 class="2xl font-bold mb-4 text-gray-800">Report Missing Pickup Data</h2>
+            <p class="mb-4 text-gray-700">You are about to report that no pickup data was found for the following details:</p>
+            <p class="mb-2 text-gray-800"><strong>JO Number:</strong> <span id="modalJoNumber"></span></p>
+            <p class="mb-4 text-gray-800"><strong>Name:</strong> <span id="modalName"></span></p>
+            <p class="text-sm text-gray-600 mb-6">This action will log the details for review. Are you sure you want to proceed?</p>
+            <div class="flex justify-end space-x-4">
+                <button id="cancelReportButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">Cancel</button>
+                <button id="confirmReportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">Confirm Report</button>
+            </div>
+        </div>
     </div>
-
-
-
 
 
   <script>
     //FoldFormSearchJO
  const foldJOWebAppURL = "https://script.google.com/macros/s/AKfycbxyEZI2rcBljv0Yi9-uiVLwH8hkdXahm4KhwCzOx3scYEGTGjSUouPyvI8aGOsDd22R/exec";
  let currentCustomerName = "";  // Global variable to store the name found in searchFoldJO
+ let currentJoNumber = ""; // Global variable to store the JO number
+ let currentDateCreated = ""; // New global variable to store the date created
 
 async function searchFoldJO() {
   const input = document.getElementById("joSearch").value.trim();
   const resultDiv = document.getElementById("foldJoResult");
-      const dropdown = document.getElementById("pickupDropdown");
-    dropdown.innerHTML = '<option value="">-- Select Pickup --</option>';
+  const dropdown = document.getElementById("pickupDropdown");
+  const reportButton = document.getElementById("reportButton"); // Get reference to the button
+
+  dropdown.innerHTML = '<option value="">-- Select Pickup --</option>'; // Clear previous options
+  // Ensure the report button is hidden at the start of a new search
+  reportButton.style.display = 'none'; // Directly set inline style to hide
+
+  console.log("searchFoldJO started for JO:", input);
+
 
   if (!input) {
     resultDiv.style.display = "none";
+    console.log("No JO input, hiding result div.");
     return;
   }
 
@@ -253,31 +331,39 @@ async function searchFoldJO() {
   try {
     const response = await fetch(`${foldJOWebAppURL}?jo=${encodeURIComponent(input)}`);
     const data = await response.json();
+    console.log("Response from foldJOWebAppURL:", data);
+
 
     if (data.error || !data.match) {
       resultDiv.innerHTML = `<div class="text-danger">JO #${input} not found.</div>`;
+      currentJoNumber = input; // Store the JO number even if not found
+      currentCustomerName = ""; // Clear customer name
+      currentDateCreated = ""; // Clear date created
+      console.log("JO not found or error in foldJOWebAppURL. currentCustomerName cleared, currentJoNumber set.");
+      loadPickupDropdown(); // Still call to update pickup dropdown and potentially show report button
       return;
     }
 
     const joData = data.match;
     const headers = ["Date Created", "JO", "Customer Name", "Amount"];
-    
+
     let html = `<ul class="list-group">`;
     headers.forEach((header, index) => {
       let value = joData[index] || "";
 
       if (header === "Date Created") {
-        value = formatDateTime(value);
+        currentDateCreated = value; // Store the raw date string
+        value = formatDateTime(value); // Format for display
+      }
+
+      if (header === "JO") { // Assuming "JO" is the header for the JO number
+        currentJoNumber = value;
       }
 
       if (header === "Customer Name") {
         const customerInput = document.getElementById("customername");
         if (customerInput) customerInput.value = value;
         currentCustomerName = value.trim().toLowerCase();  // set global variable
-
-        // *** CALL loadPickupDropdown HERE ***
-        loadPickupDropdown();
-        
       }
       html += `
         <li class="list-group-item d-flex justify-content-between">
@@ -286,7 +372,7 @@ async function searchFoldJO() {
         </li>`;
     });
     html += `</ul>`;
-          
+
     resultDiv.innerHTML = html;
 
     // Optionally set JO number field here if needed
@@ -294,13 +380,22 @@ async function searchFoldJO() {
     if (joIndex !== -1) {
       document.getElementById("jo-number").value = joData[joIndex] || "";
     }
+    console.log("JO data found. currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber, "currentDateCreated:", currentDateCreated);
+
+    // *** CALL loadPickupDropdown HERE after currentCustomerName and currentJoNumber are set ***
+    loadPickupDropdown();
 
   } catch (err) {
     resultDiv.innerHTML = `<div class="text-danger">Error fetching JO: ${err.message}</div>`;
+    currentJoNumber = input; // Store the JO number even on error
+    currentCustomerName = ""; // Clear customer name on error
+    currentDateCreated = ""; // Clear date created on error
+    console.error("Error in searchFoldJO:", err);
+    loadPickupDropdown(); // Still call to update pickup dropdown and potentially show report button
   }
 }
 
- 
+
 
     function formatDateTime(dateString) {
       const date = new Date(dateString);
@@ -313,7 +408,10 @@ async function searchFoldJO() {
     }
 
     //FoldFormSearchPickups
+    // This URL will now need the 'name' parameter for filtering
 const pickupWebAppURL = "https://script.google.com/macros/s/AKfycbz_gvAtAjY3ecsNhm6fjBDli-Uu4Uq6OxKWDH5b3rZDLkUHGfWKrLB6FWDLE2N5HKoB/exec";
+// New Web App URL for reporting missing pickups
+const reportMissingPickupWebAppURL = "https://script.google.com/macros/s/AKfycbzvyovjIfgl2Uc8RUOdkiEoHNVmEa6dBwLS3dcMB3cMXsQe-QSK8DMe_0EpNhyaR8Nm/exec"; // <<< IMPORTANT: REPLACE WITH YOUR DEPLOYED SCRIPT URL
 
 function formatDate(input) {
   const d = new Date(input);
@@ -323,41 +421,78 @@ function formatDate(input) {
 }
 
 async function loadPickupDropdown() {
-  try {
-    const response = await fetch(pickupWebAppURL);
-    const data = await response.json();
+  const dropdown = document.getElementById("pickupDropdown");
+  const reportButton = document.getElementById("reportButton"); // Get reference to the button
+  dropdown.innerHTML = '<option value="">-- Select Pickup --</option>'; // Clear previous options
 
-    const dropdown = document.getElementById("pickupDropdown");
-    dropdown.innerHTML = '<option value="">-- Select Pickup --</option>';
+  // Ensure button is hidden before evaluating conditions
+  reportButton.style.display = 'none'; // Directly set inline style to hide
+
+  console.log("loadPickupDropdown called. currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber);
+
+  if (!currentCustomerName) {
+      const option = document.createElement("option");
+      option.disabled = true;
+      option.textContent = "No customer name found for pickup search.";
+      dropdown.appendChild(option);
+      // If no customer name, still allow reporting if JO was searched
+      if (currentJoNumber) {
+          console.log("Showing report button because no customer name but JO found.");
+          reportButton.style.display = 'block'; // Directly set inline style to show
+      }
+      return;
+  }
+
+  try {
+    // Fetch pickup data, passing the currentCustomerName as a query parameter
+    const response = await fetch(`${pickupWebAppURL}?name=${encodeURIComponent(currentCustomerName)}`);
+    const data = await response.json();
+    console.log("Response from pickupWebAppURL:", data); // Log the response data
 
     let matchCount = 0;
 
-data.result.forEach(item => {
-  const pickupName = item.name?.trim().toLowerCase() || "";
+    if (data.result && data.result.length > 0) {
+        data.result.forEach(item => {
+            const pickupName = item.name?.trim().toLowerCase() || "";
 
-  if (pickupName === currentCustomerName) {
-    const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID} `;
-    const option = document.createElement("option");
-    option.value = label;
-    option.textContent = label;
-    dropdown.appendChild(option);
-
-    matchCount++;  // <---- THIS WAS MISSING
-  }
-});
-
-
-    if (matchCount === 0) {
-      const option = document.createElement("option");
-      option.disabled = true;
-      option.textContent = "No matching pickups found";
-      dropdown.appendChild(option);
+            // The backend script already filters by name, so we just iterate through results
+            const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID}`; // Removed "UID-" prefix
+            const option = document.createElement("option");
+            option.value = label;
+            option.textContent = label;
+            dropdown.appendChild(option);
+            matchCount++;
+        });
+        console.log("Matching pickups found. Match count:", matchCount);
+    } else if (data.error) { // Explicitly check for the 'error' property from your backend
+        console.log("Backend reported an error:", data.error);
+        const option = document.createElement("option");
+        option.disabled = true;
+        option.textContent = "No matching pickups found"; // Display the desired message
+        dropdown.appendChild(option);
+        console.log("Showing report button because backend reported no matches/error.");
+        reportButton.style.display = 'block'; // Directly set inline style to show
+    } else { // Fallback if data.result is empty/undefined and no explicit error
+        console.log("No matching pickups found (data.result empty/undefined and no explicit error).");
+        const option = document.createElement("option");
+        option.disabled = true;
+        option.textContent = "No matching pickups found";
+        dropdown.appendChild(option);
+        console.log("Showing report button because matchCount is 0.");
+        reportButton.style.display = 'block'; // Directly set inline style to show
     }
 
   } catch (error) {
     console.error("Failed to load pickup data:", error);
+    const option = document.createElement("option");
+    option.disabled = true;
+    option.textContent = "Error loading pickups";
+    dropdown.appendChild(option);
+    console.log("Showing report button because of fetch error.");
+    reportButton.style.display = 'block'; // Directly set inline style to show
   }
   console.log("currentCustomerName =", currentCustomerName);
+  console.log("currentJoNumber =", currentJoNumber);
 }
 
 
@@ -392,7 +527,7 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
     "Time of Folds": formData.get("Time of Folds"),
     "Comments": formData.get("Comments"),
     "Date of Fold": formData.get("Date of Fold"),
-    "PickupUID": formData.get("PickupUID") 
+    "PickupUID": formData.get("PickupUID")
   };
 
   try {
@@ -409,7 +544,7 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
 
     if (resultText.trim() === "Success") {
       alert("Submission successful!");
-      location.reload(); 
+      location.reload();
     } else {
       alert("Submission failed: " + resultText);
     }
@@ -428,15 +563,88 @@ document.forms["contact-form"].addEventListener("submit", async function(e) {
   }
 });
 
+
+// Get references to DOM elements for the modal and report button
+const reportButton = document.getElementById('reportButton');
+const reportModal = document.getElementById('reportModal');
+const closeButton = document.querySelector('.close-button');
+const cancelReportButton = document.getElementById('cancelReportButton');
+const confirmReportButton = document.getElementById('confirmReportButton');
+const modalJoNumber = document.getElementById('modalJoNumber');
+const modalName = document.getElementById('modalName');
+const joSearchInput = document.getElementById('joSearch'); // Assuming joSearch is the JO input
+const customerNameInput = document.getElementById('customername'); // Assuming customername is the name input
+
+// Event listener for the report button to open the modal
+reportButton.addEventListener('click', () => {
+    modalJoNumber.textContent = joSearchInput.value.trim(); // Use joSearch for JO number
+    modalName.textContent = customerNameInput.value.trim(); // Use customername for the name
+    reportModal.style.display = 'flex'; // Show the modal
+});
+
+// Event listener for the close button of the modal
+closeButton.addEventListener('click', () => {
+    reportModal.style.display = 'none'; // Hide the modal
+});
+
+// Event listener for the cancel button in the modal
+cancelReportButton.addEventListener('click', () => {
+    reportModal.style.display = 'none'; // Hide the modal
+});
+
+// Event listener for the confirm report button in the modal
+confirmReportButton.addEventListener('click', async () => {
+    const joToReport = modalJoNumber.textContent;
+    const nameToReport = modalName.textContent;
+    const dateCreatedToReport = currentDateCreated; // Get the date created
+
+    if (!joToReport || !nameToReport) {
+        alert("Cannot report: JO Number or Name is missing.");
+        return;
+    }
+
+    try {
+        const response = await fetch(reportMissingPickupWebAppURL, {
+            method: 'POST',
+            body: new URLSearchParams({
+                jo: joToReport,
+                name: nameToReport,
+                dateCreated: dateCreatedToReport // Pass the date created
+            }),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        const result = await response.text();
+        // Check if the result includes the success string from the backend script
+        if (result.includes("Report submitted successfully! (Email Sent)")) {
+            alert("Email Sent"); // Display only "Email Sent"
+            // Enhancement: Disable the report button and change text
+            reportButton.disabled = true;
+            reportButton.textContent = "Email Sent";
+        } else {
+            alert(result); // Display the exact error message from the backend
+        }
+    } catch (error) {
+        console.error("Error submitting report:", error);
+        alert("An error occurred while submitting the report. Please try again.");
+    } finally {
+        reportModal.style.display = 'none'; // Hide the modal after submission attempt
+    }
+});
+
+
 </script>
 <script>
   window.addEventListener("DOMContentLoaded", () => {
     const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-    document.getElementById("Date Of Fold").value = today;
+    document.getElementById("Date of Fold").value = today; // Corrected ID from "Date Of Fold" to "Date of Fold"
   });
 document.getElementById("pickupDropdown").addEventListener("change", function () {
   const selectedValue = this.value;
-  const uidMatch = selectedValue.match(/UID-[\w:-]+/); // Match UID- followed by any word, colon, or dash
+  // Updated regex to correctly extract UID which starts with "UID-"
+  const uidMatch = selectedValue.match(/UID-[\w-]+/);
 
   if (uidMatch) {
     document.getElementById("PickupUID").value = uidMatch[0]; // Set the UID in the input
@@ -447,7 +655,7 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
 
 //searchForFoldedJO
   async function fetchJOInfoFolder(joNumber) {
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbyHz5ij5C0Iw9PWMQfk1W-rAYMZxQ0jrzst-C-emrQve_kUeo4_FSrsOsCmQi39z8C8zw/exec";
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbbyHz5ij5C0Iw9PWMQfk1W-rAYMZxQ0jrzst-C-emrQve_kUeo4_FSrsOsCmQi39z8C8zw/exec";
 
     if (!joNumber) {
       alert("Please enter a JO number.");
@@ -458,7 +666,7 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
       const response = await fetch(`${webAppUrl}?jo=${encodeURIComponent(joNumber)}`);
       const text = await response.text();
       console.log("Response:", text);
-      
+
       try {
         const data = JSON.parse(text);
         const formattedG = new Date(data.G).toLocaleString();
@@ -466,7 +674,7 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
 
         const resultDiv = document.getElementById("joResultFolded");
         resultDiv.style.display = "block";
-        
+
         resultDiv.innerHTML = `
           <strong>JO#:</strong> ${data.JO}<br>
           <strong>Folder:</strong> ${data.D}<br>
