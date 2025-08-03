@@ -140,7 +140,8 @@
     <a href="delivery.html"> Delivery </a> | 
     <a href="deliverysummary.html"> DVS </a> |
     <a href="LavarFormSubmission.html"> Fold | </a> 
-    <a href="FoldSite.html"> Fold Site </a> 
+    <a href="FoldSite.html"> Fold Site | </a> 
+    <a href="dailyreportviewer.html"> View Daily Report  </a> 
     <br>  
 <br>
 
@@ -170,7 +171,6 @@
             document.getElementById('dropoffrequestmedia1').removeAttribute('required');
             document.getElementById('shopPaymentContainer').style.display = 'none';
             document.getElementById('cash').removeAttribute('required');
-
             ">
             Delivery
         </label>        
@@ -181,7 +181,7 @@
             document.getElementById('Comments').value = 'Drop-off in Lavar Shop';
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').setAttribute('required', true);
-            document.getElementById('dropoffrequestmedia1').removeAttribute('required');
+            
             document.getElementById('shopPaymentContainer').style.display = 'inline-block';
             document.getElementById('shopPaymentLabel').innerText ='Did the customer pay during Drop-off?';
             document.getElementById('cash').setAttribute('required', true);
@@ -196,7 +196,6 @@
             document.getElementById('Comments').value = 'Self-Service in Lavar Shop'
             document.getElementById('previousLocations').style.display = 'none';
             document.getElementById('dropoffrequestmedia').removeAttribute('required');
-            document.getElementById('dropoffrequestmedia1').removeAttribute('required');
             document.getElementById('shopPaymentContainer').style.display = 'inline-block';
             document.getElementById('shopPaymentLabel').innerText ='Did the customer pay during during Self-Service?';
             document.getElementById('cash').setAttribute('required', true);
@@ -231,21 +230,21 @@
         </td>
         <td style="vertical-align: top;">
           <div id="freebiecontainertext">
-            <div id="freebiepoints" style="font-size: 0.8rem;">Total Freebie Points: </div>
-            <div id="totalfreebieavailed" style="font-size: 0.8rem;">Availed Freebie Points: </div>
-            <div id="remainingfreebiepoints" style="font-size: 0.8rem;">Remaining Freebie Points: </div>
+            <div id="freebiepoints" style="font-size: 0.8rem; color:#007bff;">Total Freebie Points: </div>
+            <div id="totalfreebieavailed" style="font-size: 0.8rem;color:#007bff;">Availed Freebie Points: </div>
+            <div id="remainingfreebiepoints" style="font-size: 0.8rem;color:#007bff;">Remaining Freebie Points: </div>
           </div>
         </td>
       </tr>
     </table>
-    <br>
+    
     <table id="unpaidTable" style="width: 100%; font-size: 12px; border-collapse: collapse; display: none;">
       <thead>
         <tr>
-          <th style="background-color: transparent; color: black; border: none;">JO#</th>
-          <th style="background-color: transparent; color: black; border: none;">Date Created</th>
-          <th style="background-color: transparent; color: black; border: none;">Customer Name</th>
-          <th style="background-color: transparent; color: black; border: none;">Status</th>
+          <th style="background-color: transparent; color: rgb(208, 32, 32); border: none;">JO#</th>
+          <th style="background-color: transparent; color: rgb(208, 32, 32); border: none;">Date Created</th>
+          <th style="background-color: transparent; color: rgb(208, 32, 32); border: none;">Customer Name</th>
+          <th style="background-color: transparent; color: rgb(208, 32, 32); border: none;">Status</th>
         </tr>
       </thead>
       <tbody id="unpaidTableBody">
@@ -253,6 +252,9 @@
       </tbody>
     </table>
     <br>
+  <button  type= "button" style="background-color: green; color: white; padding: 2px 6px; font-size: 10px; border: none; border-radius: 3px; cursor: pointer;" onclick="toggleTable()">
+  View JOs
+</button>
 
 
       <div id="customerTypeContainer" class="radio-group">
@@ -277,11 +279,7 @@
           required
         />
       </div>
-
         <br>
-      
-
-
       <div class="form-group">
 
         <label id="previousLocations" for="PickupLocation">Location</label>  
@@ -325,21 +323,28 @@
 
       <input type="radio" id="nopayment" name="shop_payment" value="No Payment"
             onclick="document.getElementById('gcashInputContainer').style.display='none'; 
+            document.getElementById('paidamount').style.display='none';
             document.getElementById('6DigitGcash').required=false;
-            document.getElementById('dropoffrequestmedia').removeAttribute('required');
+            
+
             ">
       <label for="nopayment">No Payment</label><br>
 
       <input type="radio" id="cash" name="shop_payment" value="Cash"
             onclick="document.getElementById('gcashInputContainer').style.display='none'; 
+            document.getElementById('paidamount').style.display='inline-block';
             document.getElementById('6DigitGcash').required=false;
-            document.getElementById('dropoffrequestmedia').removeAttribute('required');
+            document.getElementById('paidamount').setAttribute('required', true);
+            document.getElementById('dropoffrequestmedia').setAttribute('required', true);
             ">
-      <label for="cash">Cash</label><br>
+      <label for="cash">Cash</label>
+      <input type="text" id="paidamount" style="display: none;" name="paidamount" placeholder="Enter amount paid" />
+      
+      <br>
 
       <input type="radio" id="gcash" name="shop_payment" value="G-cash"
             onclick="document.getElementById('gcashInputContainer').style.display='inline-block'; 
-            document.getElementById('6DigitGcash').required=true;
+            document.getElementById('paidamount').style.display='none';
             document.getElementById('6DigitGcash').required=true;
             document.getElementById('dropoffrequestmedia').setAttribute('required', true);
             ">
@@ -350,16 +355,12 @@
 
       <input type="radio" id="online" name="shop_payment" value="Other Online Payment"
             onclick="document.getElementById('gcashInputContainer').style.display='none'; 
+            document.getElementById('paidamount').style.display='none';
             document.getElementById('6DigitGcash').required=false;
             document.getElementById('dropoffrequestmedia').setAttribute('required', true);
             ">
       <label for="online">Other Online Payment</label>
     </div>
-
-
-
-
-
       <div class="form-group">
         <label for="Comments">Comments / Notes / Instructions</label>
         <textarea
@@ -409,6 +410,28 @@
     -->
       <button type="submit" class="btn btn-submit mt-3">Submit Request</button>
     </form>
+    <br>
+    <table id="allJOTable" style="display: none;font-size: 10px;">
+    <thead>
+      <tr>
+        <th>JOs</th>
+        <th>Date Created</th>
+        <th>Date Paid</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Loading....</td>
+        <td></td>
+        <td></td>
+      </tr>
+      <!-- Add more rows as needed -->
+    </tbody>
+  </table>
+
+    <div id="filtered-results" style="margin-top: 20px; font-size: 14px;">
+      <!-- Filtered results will be displayed here -->
+    </div>
   </div>
 
   <!-- JS Dependencies -->
@@ -877,7 +900,7 @@ function formatDecimal(value, decimals = 2, fallback = 'Not found') {
 }
 
 
-const webAppURL = 'https://script.google.com/macros/s/AKfycbxQZ3Jf0es1N69riskJenX2B9PO3GbOjqgS07O5YNL6vbiHyJfVylP_XsfDCZM1TP4D1A/exec'; // Replace with your deployed Web App URL
+const webAppURL = 'https://script.google.com/macros/s/AKfycbxQZ3Jf0es1N69riskJenX2B9PO3GbOjqgS07O5YNL6vbiHyJfVylP_XsfDCZM1TP4D1A/exec'; 
 
 function updateFreebiePoints(name) {
       document.getElementById('freebiepoints').innerHTML = ``;
@@ -986,7 +1009,69 @@ async function loadUnpaidRows(name) {
   }
 }
 
-// Example usage
+
+
+
+
+
+function allJOsforCustomer(name) {
+  const url = `https://script.google.com/macros/s/AKfycbytvAnAP6eidMPNV6h8S7pNBsb55z0b9jk0MMaxKvPwdVysA6vnvLONmdcH71rDLonf1g/exec?name=${encodeURIComponent(name)}`;
+
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      const table = document.getElementById("allJOTable");
+      const tbody = table.querySelector("tbody");
+
+      // Clear old rows
+      tbody.innerHTML = "";
+
+      // Add new rows
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+
+        const joTd = document.createElement("td");
+        joTd.textContent = row.JOR || "";
+        tr.appendChild(joTd);
+
+        const createdTd = document.createElement("td");
+        createdTd.textContent = formatDateTime(row.DATE_CREATED) || "";
+        tr.appendChild(createdTd);
+
+        const paidTd = document.createElement("td");
+        paidTd.textContent = row.DATE_PAID || "";
+        tr.appendChild(paidTd);
+
+        tbody.appendChild(tr);
+      });
+
+      // Show table if data was found
+      table.style.display = data.length > 0 ? "table" : "none";
+    })
+    .catch(error => {
+      console.error("Fetch error:", error);
+      alert("There was an error fetching JO data.");
+    });
+}
+
+function toggleTable() {
+  
+  const table = document.getElementById("allJOTable");
+  const name = document.getElementById("name").value.trim();
+
+  
+  if (!name) {
+    alert("Please enter a customer name.");
+    return;
+  }
+
+  // Fetch the data
+  allJOsforCustomer(name);
+
+  // Toggle display after data is loaded (or immediately, if preferred)
+  table.style.display = (table.style.display === "none") ? "table" : "none";
+}
+
 
 
 </script>
