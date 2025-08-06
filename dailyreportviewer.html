@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daily Image Viewer</title>
   <style>
     body {
@@ -71,7 +72,7 @@
       border-radius: 8px;
     }
 
-    /* Lightbox viewer */
+    /* Lightbox viewer (now just a placeholder/container for the close button) */
     .lightbox {
       display: none;
       position: fixed;
@@ -81,25 +82,14 @@
       align-items: center;
       z-index: 999;
       flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
     }
 
-    .lightbox img {
-      max-width: 90%;
-      max-height: 80%;
-      border-radius: 12px;
-    }
-
-    .lightbox-controls {
-      color: white;
-      margin-top: 10px;
-    }
-
-    .nav-button {
-      font-size: 30px;
-      cursor: pointer;
-      margin: 0 30px;
-      user-select: none;
-    }
+    /* Remove image specific styles from lightbox as it's no longer displaying the image */
+    /* .lightbox img { ... } */
+    /* .lightbox-controls { ... } */
+    /* .nav-button { ... } */
 
     .close-button {
       position: absolute;
@@ -110,9 +100,25 @@
       cursor: pointer;
     }
 
+    .link-wrapper {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .link-wrapper a {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #e0e0e0;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #0a84ff;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
     .link-wrapper a:hover {
-      background-color: #e6f0ff;
-    }    
+      background-color: #d0d0d0;
+    }
   </style>
 </head>
 <body>
@@ -129,26 +135,36 @@
     <h3>Summary by Date</h3>
   </div>
 
-  <!-- Lightbox viewer -->
+  <!-- Lightbox viewer - simplified as it now just opens a new tab -->
   <div class="lightbox" id="lightbox">
     <span class="close-button" onclick="closeLightbox()">×</span>
-    <img id="lightboxImage" src="">
-    <div class="lightbox-controls">
-      <span class="nav-button" onclick="prevImage()">⟨</span>
-      <span class="nav-button" onclick="nextImage()">⟩</span>
-    </div>
+    <!-- The image and navigation controls are no longer needed here as the image opens in a new tab -->
+    <!-- <img id="lightboxImage" src="" onerror="this.onerror=null;this.src='https://placehold.co/600x400/FF0000/FFFFFF?text=Image+Load+Error'; console.error('Failed to load image:', this.src);"> -->
+    <!-- <div class="lightbox-controls"> -->
+      <!-- <span class="nav-button" onclick="prevImage()">⟨</span> -->
+      <!-- <span class="nav-button" onclick="nextImage()">⟩</span> -->
+    <!-- </div> -->
   </div>
 
   <script>
     const webAppURL = "https://script.google.com/macros/s/AKfycbxXPGJSr3b86WWY_lYWPivLqa_9cYFkKmjMtoEXZwd17kqZspTv_KQDNuVhBlKX5zmmQQ/exec?action=getImages";
     let allData = {};
-    let currentImages = [];
+    let currentImages = []; // This will now store objects {thumbnailUrl, fullImageUrl}
     let currentIndex = 0;
 
     async function fetchData() {
-      const res = await fetch(webAppURL);
-      allData = await res.json();
-      populateSummary(allData);
+      try {
+        const res = await fetch(webAppURL);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        allData = await res.json();
+        populateSummary(allData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        // Optionally, display an error message to the user
+        // document.getElementById("status").innerText = "Failed to load images.";
+      }
     }
 
     function populateSummary(data) {
@@ -160,9 +176,9 @@
         div.innerHTML = `<div class="summary-date">${date}</div>`;
         const thumbWrap = document.createElement("div");
         thumbWrap.className = "summary-thumbs";
-        data[date].forEach(url => {
+        data[date].forEach(imageObject => { // Iterate over image objects
           const img = document.createElement("img");
-          img.src = url;
+          img.src = imageObject.thumbnailUrl; // Use thumbnailUrl for summary
           thumbWrap.appendChild(img);
         });
         div.appendChild(thumbWrap);
@@ -175,34 +191,44 @@
       container.innerHTML = "";
 
       currentImages = allData[date] || [];
-      currentImages.forEach((url, index) => {
+      currentImages.forEach((imageObject, index) => { // Iterate over image objects
         const img = document.createElement("img");
-        img.src = url;
-        img.onclick = () => openLightbox(index);
+        img.src = imageObject.thumbnailUrl; // Use thumbnailUrl for grid
+        img.onclick = () => openLightbox(index); // This will now open a new tab
         container.appendChild(img);
       });
     }
 
     function openLightbox(index) {
-      currentIndex = index;
-      document.getElementById("lightbox").style.display = "flex";
-      document.getElementById("lightboxImage").src = currentImages[index];
+      // No need to set display:flex for the lightbox if we're opening a new tab
+      // document.getElementById("lightbox").style.display = "flex";
+      const fullImageUrl = currentImages[index].fullImageUrl;
+      console.log("Opening full image in new tab from:", fullImageUrl);
+      window.open(fullImageUrl, '_blank'); // Open the full image in a new tab
     }
 
     function closeLightbox() {
+      // This function might become less relevant if we're always opening new tabs,
+      // but keeping it for now in case you want to reuse the lightbox for other purposes.
       document.getElementById("lightbox").style.display = "none";
     }
 
+    // These functions are no longer directly used for image display in the lightbox
+    // as the image opens in a new tab.
     function prevImage() {
-      if (currentImages.length === 0) return;
-      currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
-      document.getElementById("lightboxImage").src = currentImages[currentIndex];
+      // if (currentImages.length === 0) return;
+      // currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+      // const fullImageUrl = currentImages[currentIndex].fullImageUrl;
+      // document.getElementById("lightboxImage").src = fullImageUrl;
+      // console.log("Attempting to load full image from:", fullImageUrl);
     }
 
     function nextImage() {
-      if (currentImages.length === 0) return;
-      currentIndex = (currentIndex + 1) % currentImages.length;
-      document.getElementById("lightboxImage").src = currentImages[currentIndex];
+      // if (currentImages.length === 0) return;
+      // currentIndex = (currentIndex + 1) % currentImages.length;
+      // const fullImageUrl = currentImages[currentIndex].fullImageUrl;
+      // document.getElementById("lightboxImage").src = fullImageUrl;
+      // console.log("Attempting to load full image from:", fullImageUrl);
     }
 
     document.getElementById("datePicker").addEventListener("change", e => {
