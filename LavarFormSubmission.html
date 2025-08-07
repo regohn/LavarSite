@@ -210,6 +210,38 @@ select:focus {
   display: none; /* Hidden by default */
 }
 
+  /* Existing styles here... */
+#walangLogDataContainer {
+  width: fit-content;
+  padding: 10px;
+  height: auto;
+  max-height: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#walangLogDataContainer table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  border: none; /* Removed the border from the entire table */
+  border-radius: 8px; /* Optional: keeps the rounded corners on the container */
+}
+
+/* Remove all borders from th and td */
+#walangLogDataContainer th,
+#walangLogDataContainer td {
+  white-space: nowrap;
+  padding: 4px 8px; /* Vertical and horizontal spacing */
+  text-align: left;
+  border: none; /* Removed the border from the cells */
+}
+
+/* Remove the row border */
+#walangLogDataContainer tr {
+  border-bottom: none;
+}
+
   </style>
 </head>
 <body>
@@ -229,9 +261,16 @@ select:focus {
 <div class="form-group">
   <label for="joSearch">Search Fold JO/Mga di pa nalolog</label>
   <input type="text" id="joSearch" name="JO NUMBER" placeholder="Enter JO number (e.g. 04065)" />
-  <button type="button" class="btn mt-2" onclick="searchFoldJO();">Search</button>
 </div>
 
+<div class="button-container">
+    <button type="button" class="btn" onclick="searchFoldJO();">Search</button>
+    <button type="button" class="btn" id="toggleWalangLogData">"Walang Log"</button>
+</div>
+
+<div id="walangLogDataContainer" class="border rounded mt-3 bg-light" style="display:none;">
+</div>
+<br>
 
 
     <div id="foldJoResult" class="border rounded p-3 mt-3 bg-light" style="display:none;"><br></div>
@@ -249,7 +288,7 @@ select:focus {
         Report Missing Pickup - send email to Sir Will
     </button>
 
-    <select id="pickupDropdown" name="Recent Pickup" class="form-control" >
+    <select id="pickupDropdown" name="Recent Pickup" class="form-control" required>
       <option value="">-- Select Pickup --</option>
     </select>
 
@@ -698,5 +737,102 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
 
 </script>
 
+<!-- New script for the "Walang Log" table -->
+<script>
+    // REPLACE THIS URL with the one you got from deploying your Apps Script web app
+    const APPS_SCRIPT_WEB_APP_URL_WALANG_LOG = 'https://script.google.com/macros/s/AKfycbwm_1X4HD_FoJv0CWf-OEwidJ-iLGjLDFPxrEkMGtoXdS0ANgcLpOT5lkuMuj0HnOQz/exec';
+
+    const toggleWalangLogDataLink = document.getElementById('toggleWalangLogData');
+    const walangLogDataContainer = document.getElementById('walangLogDataContainer');
+    let isWalangLogTableLoaded = false;
+
+    async function fetchAndRenderWalangLogTable() {
+        try {
+            // Show a loading message
+            walangLogDataContainer.innerHTML = '<p>Loading data...</p>';
+            walangLogDataContainer.style.display = 'block';
+
+            const response = await fetch(APPS_SCRIPT_WEB_APP_URL_WALANG_LOG);
+            const result = await response.json(); // Parse the JSON response
+
+            if (result.error) {
+                walangLogDataContainer.innerHTML = `<p class="text-danger">Error from server: ${result.error}</p>`;
+                return;
+            }
+
+            const dataRows = result.data; // This will be the 2D array of values
+
+            if (!dataRows || dataRows.length === 0) {
+                walangLogDataContainer.innerHTML = '<p>No data found in the specified range.</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            const tableBody = document.createElement('tbody');
+
+            // Define headers explicitly as they are not part of the C4:F100 range
+            const headers = ["Date Created JO", "JO#", "Customer Name", "Amount"];
+            const headerRow = document.createElement('tr');
+            headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText.trim();
+                headerRow.appendChild(th);
+            });
+            tableBody.appendChild(headerRow);
+
+            // Process the data rows
+            dataRows.forEach(rowData => {
+                const tr = document.createElement('tr');
+                rowData.forEach(cellData => {
+                    const td = document.createElement('td');
+                    // Basic formatting for Date Created JO if it's the first column
+                    if (headers[rowData.indexOf(cellData)] === "Date Created JO" && cellData) {
+                        try {
+                            const date = new Date(cellData);
+                            if (!isNaN(date)) {
+                                td.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                            } else {
+                                td.textContent = cellData; // Fallback if not a valid date
+                            }
+                        } catch (e) {
+                            td.textContent = cellData; // Fallback for parsing errors
+                        }
+                    } else {
+                        td.textContent = cellData;
+                    }
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            table.appendChild(tableBody);
+            walangLogDataContainer.innerHTML = ''; // Clear loading message
+            walangLogDataContainer.appendChild(table);
+            isWalangLogTableLoaded = true;
+            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"';
+        } catch (error) {
+            console.error('Error fetching or processing Walang Log data:', error);
+            walangLogDataContainer.innerHTML = '<p class="text-danger">Error loading data. Please check the Apps Script URL and deployment permissions.</p>';
+            toggleWalangLogDataLink.textContent = 'Show "Walang Log" Data';
+        }
+    }
+
+    function toggleWalangLogVisibility(event) {
+        event.preventDefault(); // Prevent the link from navigating
+        if (walangLogDataContainer.style.display === 'none' || walangLogDataContainer.style.display === '') {
+            if (!isWalangLogTableLoaded) {
+                fetchAndRenderWalangLogTable();
+            }
+            walangLogDataContainer.style.display = 'block';
+            toggleWalangLogDataLink.textContent = 'Hide "Walang Log" Data';
+        } else {
+            walangLogDataContainer.style.display = 'none';
+            toggleWalangLogDataLink.textContent = 'Show "Walang Log" Data';
+        }
+    }
+
+    toggleWalangLogDataLink.addEventListener('click', toggleWalangLogVisibility);
+</script>
 </body>
 </html>
