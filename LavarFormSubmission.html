@@ -737,61 +737,61 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
 
 </script>
 
-<!-- New script for the "Walang Log" table -->
 <script>
+    // --- New script for the "Walang Log" table ---
     // REPLACE THIS URL with the one you got from deploying your Apps Script web app
-    const APPS_SCRIPT_WEB_APP_URL_WALANG_LOG = 'https://script.google.com/macros/s/AKfycbwm_1X4HD_FoJv0CWf-OEwidJ-iLGjLDFPxrEkMGtoXdS0ANgcLpOT5lkuMuj0HnOQz/exec';
+    const APPS_SCRIPT_WEB_APP_URL_WALANG_LOG = 'https://script.google.com/macros/s/AKfycbwm_1X4HD_FoJv0CWf-OEwidJ-iLGjLDFPxrEkMGtoXdS0ANgcLpOT5lkuMuj0HnOQz/exec'; //
 
-    const toggleWalangLogDataLink = document.getElementById('toggleWalangLogData');
-    const walangLogDataContainer = document.getElementById('walangLogDataContainer');
-    let isWalangLogTableLoaded = false;
+    const toggleWalangLogDataLink = document.getElementById('toggleWalangLogData'); //
+    const walangLogDataContainer = document.getElementById('walangLogDataContainer'); //
+    // Removed: let isWalangLogTableLoaded = false; // This variable is no longer needed for continuous fetching
 
     async function fetchAndRenderWalangLogTable() {
         try {
             // Show a loading message
-            walangLogDataContainer.innerHTML = '<p>Loading data...</p>';
-            walangLogDataContainer.style.display = 'block';
+            walangLogDataContainer.innerHTML = '<p>Loading data...</p>'; //
+            walangLogDataContainer.style.display = 'block'; //
 
-            const response = await fetch(APPS_SCRIPT_WEB_APP_URL_WALANG_LOG);
-            const result = await response.json(); // Parse the JSON response
+            const response = await fetch(APPS_SCRIPT_WEB_APP_URL_WALANG_LOG); //
+            const result = await response.json(); //
 
             if (result.error) {
-                walangLogDataContainer.innerHTML = `<p class="text-danger">Error from server: ${result.error}</p>`;
+                walangLogDataContainer.innerHTML = `<p class="text-danger">Error from server: ${result.error}</p>`; //
                 return;
             }
 
             const dataRows = result.data; // This will be the 2D array of values
 
             if (!dataRows || dataRows.length === 0) {
-                walangLogDataContainer.innerHTML = '<p>No data found in the specified range.</p>';
+                walangLogDataContainer.innerHTML = '<p>No data found in the specified range.</p>'; //
                 return;
             }
 
-            const table = document.createElement('table');
-            table.style.width = '100%';
-            const tableBody = document.createElement('tbody');
+            const table = document.createElement('table'); //
+            table.style.width = '100%'; //
+            const tableBody = document.createElement('tbody'); //
 
             // Define headers explicitly as they are not part of the C4:F100 range
-            const headers = ["Date Created JO", "JO#", "Customer Name", "Amount"];
-            const headerRow = document.createElement('tr');
+            const headers = ["Date Created JO", "JO#", "Customer Name", "Amount"]; //
+            const headerRow = document.createElement('tr'); //
             headers.forEach(headerText => {
-                const th = document.createElement('th');
-                th.textContent = headerText.trim();
-                headerRow.appendChild(th);
+                const th = document.createElement('th'); //
+                th.textContent = headerText.trim(); //
+                headerRow.appendChild(th); //
             });
-            tableBody.appendChild(headerRow);
+            tableBody.appendChild(headerRow); //
 
-            // Process the data rows
-            dataRows.forEach(rowData => {
-                const tr = document.createElement('tr');
+            // Process the data rows - Skip the first row if it's a header
+            dataRows.slice(1).forEach(rowData => { //
+                const tr = document.createElement('tr'); //
                 rowData.forEach(cellData => {
-                    const td = document.createElement('td');
+                    const td = document.createElement('td'); //
                     // Basic formatting for Date Created JO if it's the first column
-                    if (headers[rowData.indexOf(cellData)] === "Date Created JO" && cellData) {
+                    if (headers[rowData.indexOf(cellData)] === "Date Created JO" && cellData) { //
                         try {
-                            const date = new Date(cellData);
-                            if (!isNaN(date)) {
-                                td.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                            const date = new Date(cellData); //
+                            if (!isNaN(date.getTime())) { // Use getTime() for robust check
+                                td.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }); //
                             } else {
                                 td.textContent = cellData; // Fallback if not a valid date
                             }
@@ -799,40 +799,41 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
                             td.textContent = cellData; // Fallback for parsing errors
                         }
                     } else {
-                        td.textContent = cellData;
+                        td.textContent = cellData; //
                     }
-                    tr.appendChild(td);
+                    tr.appendChild(td); //
                 });
-                tableBody.appendChild(tr);
+                tableBody.appendChild(tr); //
             });
 
-            table.appendChild(tableBody);
+            table.appendChild(tableBody); //
             walangLogDataContainer.innerHTML = ''; // Clear loading message
-            walangLogDataContainer.appendChild(table);
-            isWalangLogTableLoaded = true;
-            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"';
+            walangLogDataContainer.appendChild(table); //
+            // Removed: isWalangLogTableLoaded = true;
+            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"'; //
         } catch (error) {
-            console.error('Error fetching or processing Walang Log data:', error);
-            walangLogDataContainer.innerHTML = '<p class="text-danger">Error loading data. Please check the Apps Script URL and deployment permissions.</p>';
-            toggleWalangLogDataLink.textContent = 'Show "Walang Log" Data';
+            console.error('Error fetching or processing Walang Log data:', error); //
+            walangLogDataContainer.innerHTML = '<p class="text-danger">Error loading data. Please check the Apps Script URL and deployment permissions.</p>'; //
+            toggleWalangLogDataLink.textContent = 'Show "Walang Log"'; //
         }
     }
 
-    function toggleWalangLogVisibility(event) {
-        event.preventDefault(); // Prevent the link from navigating
+    function toggleWalangLogVisibility() {
+        // event.preventDefault(); // Removed as it's now a button
+
         if (walangLogDataContainer.style.display === 'none' || walangLogDataContainer.style.display === '') {
-            if (!isWalangLogTableLoaded) {
-                fetchAndRenderWalangLogTable();
-            }
-            walangLogDataContainer.style.display = 'block';
-            toggleWalangLogDataLink.textContent = 'Hide "Walang Log" Data';
+            // Always fetch when the container is hidden and needs to be shown
+            fetchAndRenderWalangLogTable(); // Always call this to get fresh data
+            // Removed: if (!isWalangLogTableLoaded) { fetchAndRenderWalangLogTable(); }
+            walangLogDataContainer.style.display = 'block'; //
+            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"'; //
         } else {
-            walangLogDataContainer.style.display = 'none';
-            toggleWalangLogDataLink.textContent = 'Show "Walang Log" Data';
+            walangLogDataContainer.style.display = 'none'; //
+            toggleWalangLogDataLink.textContent = 'Show "Walang Log"'; //
         }
     }
 
-    toggleWalangLogDataLink.addEventListener('click', toggleWalangLogVisibility);
+    toggleWalangLogDataLink.addEventListener('click', toggleWalangLogVisibility); //
 </script>
 </body>
 </html>
