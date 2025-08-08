@@ -13,16 +13,20 @@
       background-color: #f2f2f7; /* Light gray background */
       color: #1c1c1e; /* Dark text color */
     }
-    /* Ensure file input padding is consistent */
+
+    /* Aggressively hide the native file input element */
     input[type="file"] {
-      padding-top: 8px;
-      padding-bottom: 8px;
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      position: absolute;
+      z-index: -1;
     }
-    /* Hide default file input button, if desired, and style a custom one */
-    input[type="file"]::-webkit-file-upload-button {
-      visibility: hidden;
-    }
-    input[type="file"]::before {
+
+    /* Style the custom 'Choose File' button using the label's ::before pseudo-element */
+    /* We target the label associated with the file input */
+    .file-input-label::before {
       content: 'Choose File';
       display: inline-block;
       background: #0a84ff;
@@ -32,20 +36,29 @@
       padding: 0.5rem 1rem; /* py-2 px-4 */
       outline: none;
       white-space: nowrap;
-      -webkit-user-select: none;
       cursor: pointer;
       font-weight: 500;
       font-size: 0.9375rem; /* text-base */
       transition: background-color 0.3s;
     }
-    input[type="file"]:hover::before {
+    .file-input-label:hover::before {
       background-color: #006be6;
     }
-    input[type="file"]:active::before {
+    .file-input-label:active::before {
       background-color: #005bb5;
     }
-    input[type="file"] {
-        color: transparent; /* Make the actual file name text transparent */
+
+    /* Style for the file name display */
+    .file-name-display {
+      margin-left: 0.5rem; /* Space between button and text */
+      font-size: 0.875rem; /* text-sm */
+      color: #555;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: calc(100% - 120px); /* Adjust based on button width, giving more space */
+      display: inline-block; /* Allow it to sit next to the button */
+      vertical-align: middle; /* Align with the button */
     }
   </style>
 </head>
@@ -63,24 +76,24 @@
                   class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base bg-gray-50 resize-y"></textarea>
       </label>
 
-      <label class="block text-sm font-medium text-gray-700">Image 1:
-        <input type="file" name="image1" accept="image/*"
-               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+      <label for="image1Input" class="block text-sm font-medium text-gray-700 flex items-center file-input-label">Image 1:
+        <input type="file" name="image1" accept="image/*" id="image1Input">
+        <span id="image1FileName" class="file-name-display"></span>
       </label>
 
-      <label class="block text-sm font-medium text-gray-700">Image 2:
-        <input type="file" name="image2" accept="image/*"
-               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+      <label for="image2Input" class="block text-sm font-medium text-gray-700 flex items-center file-input-label">Image 2:
+        <input type="file" name="image2" accept="image/*" id="image2Input">
+        <span id="image2FileName" class="file-name-display"></span>
       </label>
 
-      <label class="block text-sm font-medium text-gray-700">Image 3:
-        <input type="file" name="image3" accept="image/*"
-               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+      <label for="image3Input" class="block text-sm font-medium text-gray-700 flex items-center file-input-label">Image 3:
+        <input type="file" name="image3" accept="image/*" id="image3Input">
+        <span id="image3FileName" class="file-name-display"></span>
       </label>
 
-      <label class="block text-sm font-medium text-gray-700">Image 4:
-        <input type="file" name="image4" accept="image/*"
-               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+      <label for="image4Input" class="block text-sm font-medium text-gray-700 flex items-center file-input-label">Image 4:
+        <input type="file" name="image4" accept="image/*" id="image4Input">
+        <span id="image4FileName" class="file-name-display"></span>
       </label>
 
       <button type="submit"
@@ -94,6 +107,23 @@
 
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbxrqZKjjtLqnrSEMsEISfDuBVfcvncN7LpdFoiRPBdscFe8KwZlxupWF66hL2hBITbuEw/exec";
+
+    // Function to update file name display
+    function updateFileName(inputId, spanId) {
+      const input = document.getElementById(inputId);
+      const span = document.getElementById(spanId);
+      if (input.files.length > 0) {
+        span.textContent = input.files[0].name;
+      } else {
+        span.textContent = ""; // Set to empty string
+      }
+    }
+
+    // Add event listeners for each file input
+    document.getElementById("image1Input").addEventListener("change", () => updateFileName("image1Input", "image1FileName"));
+    document.getElementById("image2Input").addEventListener("change", () => updateFileName("image2Input", "image2FileName"));
+    document.getElementById("image3Input").addEventListener("change", () => updateFileName("image3Input", "image3FileName"));
+    document.getElementById("image4Input").addEventListener("change", () => updateFileName("image4Input", "image4FileName"));
 
     document.getElementById("uploadForm").addEventListener("submit", async function (e) {
       e.preventDefault();
@@ -132,6 +162,11 @@
         document.getElementById("status").innerText = txt;
         document.getElementById("status").style.color = "#28a745"; // Success color
         form.reset();
+        // Reset file name displays after form submission
+        updateFileName("image1Input", "image1FileName");
+        updateFileName("image2Input", "image2FileName");
+        updateFileName("image3Input", "image3FileName");
+        updateFileName("image4Input", "image4FileName");
       })
       .catch(err => {
         document.getElementById("status").innerText = "Error: " + err.message;

@@ -1,187 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Report Upload</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Daily Image Viewer</title>
   <style>
-    /* Custom styles or overrides for specific elements if needed */
     body {
-      font-family: "Inter", sans-serif; /* Using Inter font */
-      background-color: #f2f2f7; /* Light gray background */
-      color: #1c1c1e; /* Dark text color */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f2f2f7;
+      margin: 0;
+      padding: 20px;
+      color: #1c1c1e;
     }
 
-    /* Aggressively hide the native file input element */
-    input[type="file"] {
-      width: 0.1px;
-      height: 0.1px;
-      opacity: 0;
-      overflow: hidden;
-      position: absolute;
-      z-index: -1;
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #0a84ff;
     }
 
-    /* Style the custom 'Choose File' button using the label's ::before pseudo-element */
-    /* We target the label associated with the file input */
-    .file-input-label::before {
-      content: 'Choose File';
-      display: inline-block;
-      background: #0a84ff;
-      color: white;
-      border: 1px solid #0a84ff;
-      border-radius: 0.75rem; /* rounded-xl */
-      padding: 0.5rem 1rem; /* py-2 px-4 */
-      outline: none;
-      white-space: nowrap;
+    input[type="date"] {
+      display: block;
+      margin: 0 auto 20px auto;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+    }
+
+    .image-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .image-grid img {
+      width: 140px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 10px;
       cursor: pointer;
-      font-weight: 500;
-      font-size: 0.9375rem; /* text-base */
-      transition: background-color 0.3s;
-    }
-    .file-input-label:hover::before {
-      background-color: #006be6;
-    }
-    .file-input-label:active::before {
-      background-color: #005bb5;
+      transition: transform 0.2s;
     }
 
-    /* Style for the file name display */
-    .file-name-display {
-      margin-left: 0.5rem; /* Space between button and text */
-      font-size: 0.875rem; /* text-sm */
-      color: #555;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: calc(100% - 120px); /* Adjust based on button width, giving more space */
-      display: inline-block; /* Allow it to sit next to the button */
-      vertical-align: middle; /* Align with the button */
+    .image-grid img:hover {
+      transform: scale(1.05);
+    }
+
+    .summary {
+      margin-top: 40px;
+    }
+
+    .summary-date {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .summary-thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .summary-thumbs img {
+      width: 80px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    /* Lightbox viewer (now just a placeholder/container for the close button) */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.9);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* Remove image specific styles from lightbox as it's no longer displaying the image */
+    /* .lightbox img { ... } */
+    /* .lightbox-controls { ... } */
+    /* .nav-button { ... } */
+
+    .close-button {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 28px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .link-wrapper {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .link-wrapper a {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #e0e0e0;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #0a84ff;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    .link-wrapper a:hover {
+      background-color: #d0d0d0;
     }
   </style>
 </head>
-<body class="p-4 sm:p-6 md:p-8 flex justify-center items-center min-h-screen">
-  <div class="container bg-white rounded-2xl shadow-lg p-6 sm:p-8 md:p-10 w-full max-w-md mx-auto">
-    <h2 class="text-center text-3xl font-semibold mb-6 text-blue-600">Submit Daily Report</h2>
-    <form id="uploadForm" class="space-y-5">
-      <label class="block text-sm font-medium text-gray-700">Report Date:
-        <input type="date" name="reportDate" required
-               class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base bg-gray-50">
-      </label>
+<body>
 
-      <label class="block text-sm font-medium text-gray-700">Comments:
-        <textarea name="comments" rows="4" required
-                  class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base bg-gray-50 resize-y"></textarea>
-      </label>
+  <h2>View Uploaded Images</h2>
+    <div class="link-wrapper">
+    <a href="dailyreport.html">Upload Daily Report</a>
+  </div>
+  <input type="date" id="datePicker" />
 
-      <label for="image1Input" class="block text-sm font-medium text-gray-700 flex items-center file-input-label">Image 1:
-        <input type="file" name="image1" accept="image/*" id="image1Input">
-        <span id="image1FileName" class="file-name-display"></span>
-      </label>
+  <div class="image-grid" id="imageContainer"></div>
 
-      <label for="image2Input" class="block text-sm font-medium text-gray-700 flex items-center file-input-label">Image 2:
-        <input type="file" name="image2" accept="image/*" id="image2Input">
-        <span id="image2FileName" class="file-name-display"></span>
-      </label>
+  <div class="summary" id="summaryContainer">
+    <h3>Summary by Date</h3>
+  </div>
 
-      <label for="image3Input" class="block text-sm font-medium text-gray-700 flex items-center file-input-label">Image 3:
-        <input type="file" name="image3" accept="image/*" id="image3Input">
-        <span id="image3FileName" class="file-name-display"></span>
-      </label>
-
-      <label for="image4Input" class="block text-sm font-medium text-gray-700 flex items-center file-input-label">Image 4:
-        <input type="file" name="image4" accept="image/*" id="image4Input">
-        <span id="image4FileName" class="file-name-display"></span>
-      </label>
-
-      <button type="submit"
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-2xl transition duration-300 ease-in-out shadow-md">
-        Submit Report
-      </button>
-    </form>
-
-    <p id="status" class="text-center mt-6 text-base text-gray-600"></p>
+  <!-- Lightbox viewer - simplified as it now just opens a new tab -->
+  <div class="lightbox" id="lightbox">
+    <span class="close-button" onclick="closeLightbox()">×</span>
+    <!-- The image and navigation controls are no longer needed here as the image opens in a new tab -->
+    <!-- <img id="lightboxImage" src="" onerror="this.onerror=null;this.src='https://placehold.co/600x400/FF0000/FFFFFF?text=Image+Load+Error'; console.error('Failed to load image:', this.src);"> -->
+    <!-- <div class="lightbox-controls"> -->
+      <!-- <span class="nav-button" onclick="prevImage()">⟨</span> -->
+      <!-- <span class="nav-button" onclick="nextImage()">⟩</span> -->
+    <!-- </div> -->
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbxrqZKjjtLqnrSEMsEISfDuBVfcvncN7LpdFoiRPBdscFe8KwZlxupWF66hL2hBITbuEw/exec";
+    const webAppURL = "https://script.google.com/macros/s/AKfycbxXPGJSr3b86WWY_lYWPivLqa_9cYFkKmjMtoEXZwd17kqZspTv_KQDNuVhBlKX5zmmQQ/exec?action=getImages";
+    let allData = {};
+    let currentImages = []; // This will now store objects {thumbnailUrl, fullImageUrl}
+    let currentIndex = 0;
 
-    // Function to update file name display
-    function updateFileName(inputId, spanId) {
-      const input = document.getElementById(inputId);
-      const span = document.getElementById(spanId);
-      if (input.files.length > 0) {
-        span.textContent = input.files[0].name;
-      } else {
-        span.textContent = ""; // Set to empty string
+    async function fetchData() {
+      try {
+        const res = await fetch(webAppURL);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        allData = await res.json();
+        populateSummary(allData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        // Optionally, display an error message to the user
+        // document.getElementById("status").innerText = "Failed to load images.";
       }
     }
 
-    // Add event listeners for each file input
-    document.getElementById("image1Input").addEventListener("change", () => updateFileName("image1Input", "image1FileName"));
-    document.getElementById("image2Input").addEventListener("change", () => updateFileName("image2Input", "image2FileName"));
-    document.getElementById("image3Input").addEventListener("change", () => updateFileName("image3Input", "image3FileName"));
-    document.getElementById("image4Input").addEventListener("change", () => updateFileName("image4Input", "image4FileName"));
+    function populateSummary(data) {
+      const container = document.getElementById("summaryContainer");
+      container.innerHTML = '<h3>Summary by Date</h3>';
 
-    document.getElementById("uploadForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const form = e.target;
-      const status = document.getElementById("status");
-      status.style.color = "#1c1c1e";
-      status.innerText = "Uploading report, please wait...";
-
-      const formData = new FormData(form);
-
-      const plainData = {
-        reportDate: formData.get("reportDate"),
-        comments: formData.get("comments")
-      };
-
-      for (let i = 1; i <= 4; i++) {
-        const file = formData.get(`image${i}`);
-        if (file && file.size > 0) {
-          const base64 = await toBase64(file);
-          plainData[`image${i}`] = base64.split(",")[1];
-          plainData[`image${i}_name`] = file.name;
-        }
-      }
-
-      const urlEncoded = new URLSearchParams(plainData).toString();
-
-      fetch(scriptURL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: urlEncoded
-      })
-      .then(res => res.text())
-      .then(txt => {
-        document.getElementById("status").innerText = txt;
-        document.getElementById("status").style.color = "#28a745"; // Success color
-        form.reset();
-        // Reset file name displays after form submission
-        updateFileName("image1Input", "image1FileName");
-        updateFileName("image2Input", "image2FileName");
-        updateFileName("image3Input", "image3FileName");
-        updateFileName("image4Input", "image4FileName");
-      })
-      .catch(err => {
-        document.getElementById("status").innerText = "Error: " + err.message;
-        document.getElementById("status").style.color = "#dc3545"; // Error color
+      Object.keys(data).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
+        const div = document.createElement("div");
+        div.innerHTML = `<div class="summary-date">${date}</div>`;
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "summary-thumbs";
+        data[date].forEach(imageObject => { // Iterate over image objects
+          const img = document.createElement("img");
+          img.src = imageObject.thumbnailUrl; // Use thumbnailUrl for summary
+          thumbWrap.appendChild(img);
+        });
+        div.appendChild(thumbWrap);
+        container.appendChild(div);
       });
+    }
+
+    function displayImages(date) {
+      const container = document.getElementById("imageContainer");
+      container.innerHTML = "";
+
+      currentImages = allData[date] || [];
+      currentImages.forEach((imageObject, index) => { // Iterate over image objects
+        const img = document.createElement("img");
+        img.src = imageObject.thumbnailUrl; // Use thumbnailUrl for grid
+        img.onclick = () => openLightbox(index); // This will now open a new tab
+        container.appendChild(img);
+      });
+    }
+
+    function openLightbox(index) {
+      // No need to set display:flex for the lightbox if we're opening a new tab
+      // document.getElementById("lightbox").style.display = "flex";
+      const fullImageUrl = currentImages[index].fullImageUrl;
+      console.log("Opening full image in new tab from:", fullImageUrl);
+      window.open(fullImageUrl, '_blank'); // Open the full image in a new tab
+    }
+
+    function closeLightbox() {
+      // This function might become less relevant if we're always opening new tabs,
+      // but keeping it for now in case you want to reuse the lightbox for other purposes.
+      document.getElementById("lightbox").style.display = "none";
+    }
+
+    // These functions are no longer directly used for image display in the lightbox
+    // as the image opens in a new tab.
+    function prevImage() {
+      // if (currentImages.length === 0) return;
+      // currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+      // const fullImageUrl = currentImages[currentIndex].fullImageUrl;
+      // document.getElementById("lightboxImage").src = fullImageUrl;
+      // console.log("Attempting to load full image from:", fullImageUrl);
+    }
+
+    function nextImage() {
+      // if (currentImages.length === 0) return;
+      // currentIndex = (currentIndex + 1) % currentImages.length;
+      // const fullImageUrl = currentImages[currentIndex].fullImageUrl;
+      // document.getElementById("lightboxImage").src = fullImageUrl;
+      // console.log("Attempting to load full image from:", fullImageUrl);
+    }
+
+    document.getElementById("datePicker").addEventListener("change", e => {
+      const selectedDate = e.target.value;
+      displayImages(selectedDate);
     });
 
-    function toBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-      });
-    }
+    fetchData();
   </script>
+
 </body>
 </html>
