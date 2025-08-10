@@ -237,6 +237,28 @@ select:focus {
   border: none; /* Removed the border from the cells */
 }
 
+
+#allPickupRequestsContainer table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+}
+
+#allPickupRequestsContainer th,
+#allPickupRequestsContainer td {
+  white-space: nowrap;
+  padding: 4px 8px;
+  text-align: left;
+  border: none;
+}
+
+#allPickupRequestsContainer tr {
+  border-bottom: none;
+}
+
+
 /* Remove the row border */
 #walangLogDataContainer tr {
   border-bottom: none;
@@ -266,8 +288,10 @@ select:focus {
 <div class="button-container">
     <button type="button" class="btn" onclick="searchFoldJO();">Search</button>
     <button type="button" class="btn" id="toggleWalangLogData">"Walang Log"</button>
+    <button id="showAllPickupBtn" class="btn" style="display:none;" onclick="showallpickuprequest()">Show All Pickup Requests</button>
 </div>
 
+<div id="allPickupRequestsContainer" class="border rounded mt-3 bg-light" style="display:none;"></div>
 <div id="walangLogDataContainer" class="border rounded mt-3 bg-light" style="display:none;">
 </div>
 <br>
@@ -403,6 +427,8 @@ async function searchFoldJO() {
         const customerInput = document.getElementById("customername");
         if (customerInput) customerInput.value = value;
         currentCustomerName = value.trim().toLowerCase();  // set global variable
+        showShowAllPickupBtn(); // <-- show the button when customer is found
+        loadPickupDropdown(); 
       }
       html += `
         <li class="list-group-item d-flex justify-content-between">
@@ -421,8 +447,7 @@ async function searchFoldJO() {
     }
     console.log("JO data found. currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber, "currentDateCreated:", currentDateCreated);
 
-    // *** CALL loadPickupDropdown HERE after currentCustomerName and currentJoNumber are set ***
-    loadPickupDropdown();
+
 
   } catch (err) {
     resultDiv.innerHTML = `<div class="text-danger">Error fetching JO: ${err.message}</div>`;
@@ -834,6 +859,90 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
     }
 
     toggleWalangLogDataLink.addEventListener('click', toggleWalangLogVisibility); //
+
+const showAllPickupWebAppURL = "https://script.google.com/macros/s/AKfycbzCe2UevQp2bUZMF6B3_Da-m34AQ2FaORncFHTWvOa0vkEpMQQyhtTpaqy-nsYm70uM/exec"; // replace with your actual deployed URL
+
+function showShowAllPickupBtn() {
+    document.getElementById("showAllPickupBtn").style.display = "inline-block";
+}
+
+async function showallpickuprequest() {
+    const container = document.getElementById("allPickupRequestsContainer");
+    container.style.display = "none";
+    container.innerHTML = "";
+
+    // get customer name from foldJoResult div
+    let customerName = "";
+    const foldResult = document.getElementById("foldJoResult");
+    if (foldResult && foldResult.innerText) {
+        const match = foldResult.innerText.match(/Customer Name\s*(.+)/i);
+        if (match) {
+            customerName = match[1].trim();
+        }
+    }
+
+    if (!customerName) {
+        alert("No customer name found.");
+        return;
+    }
+
+    container.innerHTML = "<p>Loading pickup requests...</p>";
+    container.style.display = "block";
+
+    try {
+        const res = await fetch(`${showAllPickupWebAppURL}?name=${encodeURIComponent(customerName)}`);
+        const data = await res.json();
+
+        if (data.error || !data.pickups || data.pickups.length === 0) {
+            container.innerHTML = "<p>No pickup requests found.</p>";
+            return;
+        }
+
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        const tbody = document.createElement("tbody");
+
+        const headers = ["Name", "Date of Pickup", "Delivery Staff", "Request Type", "Folded JO"];
+        const headerRow = document.createElement("tr");
+        headers.forEach(h => {
+            const th = document.createElement("th");
+            th.textContent = h;
+            headerRow.appendChild(th);
+        });
+        tbody.appendChild(headerRow);
+
+        data.pickups.forEach(item => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${item.name}</td>
+                <td>${formatDate(item.dateofpickup)}</td>
+                <td>${item.DeliveryStaff || ""}</td>
+                <td>${item.request_type}</td>
+                <td>${item.FoldedJO || ""}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        container.innerHTML = "";
+        container.appendChild(table);
+
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = "<p class='text-danger'>Error loading pickup requests.</p>";
+    }
+}
+
+// Hide the table when Walang Log or Search is clicked
+document.getElementById("toggleWalangLogData").addEventListener("click", () => {
+    document.getElementById("allPickupRequestsContainer").style.display = "none";
+});
+document.querySelector(".button-container .btn").addEventListener("click", () => {
+    document.getElementById("allPickupRequestsContainer").style.display = "none";
+});
+
 </script>
+
+
 </body>
 </html>
