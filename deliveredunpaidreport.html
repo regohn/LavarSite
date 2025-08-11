@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DELIVERED UNPAID</title> <!-- Page title set to DELIVERED UNPAID -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Align to start for better top spacing on mobile */
+            align-items: center;
+            padding: 1rem;
+            margin: 0;
+            line-height: 1.5; /* Default line height for better readability */
+            font-size: 14px; /* Base font size for mobile */
+        }
+        @media (min-width: 768px) {
+            body {
+                justify-content: center; /* Center content on larger screens */
+                font-size: 14px; /* Base font size for desktop */
+            }
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: #ffffff; /* White background for the main content area */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Softer shadow */
+            border-radius: 12px; /* More pronounced rounded corners */
+            padding: 1rem; /* Adjusted padding for mobile */
+            overflow-x: auto; /* Ensures horizontal scrolling for tables on small screens */
+            border: 1px solid #e0e0e0; /* Subtle border for iOS-like separation */
+        }
+        @media (min-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+        }
+        h1 {
+            font-size: 1.5rem; /* Smaller font size for heading on mobile */
+            font-weight: 700;
+            text-align: center;
+            color: #1a73e8; /* A slightly darker, more prominent blue */
+            margin-bottom: 1.5rem; /* Adjusted margin for mobile */
+            letter-spacing: -0.02em; /* Tighter letter spacing for a cleaner look */
+        }
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 1.75rem; /* Original size for desktop */
+                margin-bottom: 2rem;
+            }
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #loading {
+            text-align: center;
+            color: #4b5563;
+            font-size: 1rem; /* Smaller font size for loading text */
+        }
+        @media (min-width: 768px) {
+            #loading {
+                font-size: 1.125rem;
+            }
+        }
+        #error-message {
+            display: none;
+            background-color: #fee2e2; /* Light red background */
+            border: 1px solid #f87171; /* Red border */
+            color: #b91c1c; /* Dark red text */
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            position: relative;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem; /* Smaller error message text */
+        }
+        @media (min-width: 768px) {
+            #error-message {
+                font-size: 1rem;
+            }
+        }
+        #error-message strong {
+            font-weight: 700;
+        }
+        #error-message .close-button {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            color: #ef4444;
+            height: 1.5rem;
+            width: 1.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate; /* Use separate to apply border-radius to table */
+            border-spacing: 0; /* Remove default spacing */
+            margin-top: 1rem; /* Adjusted margin */
+            background-color: #ffffff;
+            border-radius: 8px; /* Slightly more rounded table corners */
+            overflow: hidden; /* Ensures rounded corners apply to content */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03); /* Lighter shadow for table */
+            border: 1px solid #e5e7eb; /* Soft border around the table */
+        }
+        @media (min-width: 768px) {
+            table {
+                margin-top: 1.5rem;
+            }
+        }
+        th, td {
+            padding: 0.7rem 0.8rem; /* Reduced padding for compact table on mobile */
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6; /* Very light gray border between rows */
+            white-space: nowrap; /* Prevent text from wrapping in table cells by default */
+        }
+        @media (min-width: 768px) {
+            th, td {
+                padding: 0.85rem 1rem; /* Original padding for desktop */
+                white-space: normal; /* Allow text wrapping on desktop */
+            }
+        }
+        th {
+            background-color: #f8f9fa; /* Very light background for headers */
+            color: #4b5563; /* Darker gray for header text */
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.65rem; /* Even smaller, subtle header text for mobile */
+            letter-spacing: 0.08em; /* More letter spacing for uppercase headers */
+        }
+        @media (min-width: 768px) {
+            th {
+                font-size: 0.75rem; /* Original header font size for desktop */
+            }
+        }
+        /* Specific rounded corners for first/last table header/data cells */
+        th:first-child { border-top-left-radius: 8px; }
+        th:last-child { border-top-right-radius: 8px; }
+        tr:last-child td { border-bottom: none; } /* No border on the last row */
+
+        tr:hover {
+            background-color: #f0f8ff; /* Very subtle light blue on hover */
+        }
+        .text-blue-600 { color: #2563eb; font-weight: 500;} /* For JO# - medium weight */
+        .text-green-600 { color: #10b981; font-weight: 600;} /* Stronger green for amount */
+        #no-data-message {
+            display: none;
+            text-align: center;
+            color: #6b7280;
+            font-size: 1rem; /* Smaller no data message text */
+            margin-top: 1.5rem; /* Adjusted margin */
+        }
+        @media (min-width: 768px) {
+            #no-data-message {
+                font-size: 1.125rem;
+                margin-top: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="container">
+    <a href="pickuprequestsummary.html"> Requests Summary </a> | 
+    <a href="pickuprequest.html"> Request Forms </a> | 
+    <a href="pickup.html"> Pickup </a>  | 
+    <a href="delivery.html"> Delivery </a> | 
+    <a href="deliverysummary.html"> DVS </a> |
+    <a href="LavarFormSubmission.html"> Fold | </a> 
+    <a href="FoldSite.html"> Fold Site | </a> 
+    <a href="dailyreportviewer.html"> View Daily Report | </a> 
+    <a href="deliveredunpaidreport.html">Delivered Unpaid  </a> 
+    <br>  
+        <h1>DELIVERED UNPAID</h1> <!-- Changed heading text -->
+
+        <div id="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading data...</p>
+        </div>
+
+        <div id="error-message" role="alert">
+            <strong>Error!</strong>
+            <span id="error-text"></span>
+            <span class="close-button" onclick="document.getElementById('error-message').style.display='none';">
+                <svg class="fill-current" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.103l-2.651 3.746a1.2 1.2 0 0 1-1.697-1.697l3.746-2.651-3.746-2.651a1.2 1.2 0 0 1 1.697-1.697L10 8.897l2.651-3.746a1.2 1.2 0 0 1 1.697 1.697L11.103 10l3.746 2.651a1.2 1.2 0 0 1 0 1.698z"/></svg>
+            </span>
+        </div>
+
+        <div id="data-container">
+            <!-- Table will be injected here -->
+        </div>
+
+        <p id="no-data-message">No pending deliveries found matching the criteria.</p>
+    </div>
+
+    <script>
+        // Make sure to replace this with your deployed Google Apps Script URL
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbyLlLjHEQdeK98-tIes9m2A3e4WXvKb_7LPXsD-vzdx1HhwxeO4liq5X1lWEnHNaxEq/exec';
+
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const dataContainer = document.getElementById('data-container');
+        const noDataMessage = document.getElementById('no-data-message');
+
+        /**
+         * Formats a date/time string into "mm/dd/yyyy hh:mm am/pm" for Manila Time.
+         * It prioritizes parsing the input timeString as a full timestamp.
+         * If timeString is not a valid date, it attempts to combine dateString and timeString.
+         * @param {string} dateString - The date part (e.g., "8/11/2025").
+         * @param {string} timeValue - The time part, which might be a full timestamp (e.g., "2025-08-11T09:35:17.279Z")
+         * or a simple time (e.g., "10:30 AM").
+         * @returns {string} The formatted date and time string, or original if parsing fails.
+         */
+        function formatManilaDateTime(dateString, timeValue) {
+            let dateObj;
+
+            // First, try to parse timeValue directly as it might contain a full timestamp
+            dateObj = new Date(timeValue);
+
+            // If timeValue alone is not a valid date, try combining dateString and timeValue
+            if (isNaN(dateObj.getTime()) && dateString && timeValue) {
+                // If timeValue is just a time (e.g., "10:30 AM"), combine it with dateString
+                const combinedString = `${dateString} ${timeValue}`;
+                dateObj = new Date(combinedString);
+            }
+
+            // If still an invalid date, or if inputs are missing, return fallback
+            if (isNaN(dateObj.getTime())) {
+                console.warn(`Failed to parse date-time string(s): Date="${dateString}", Time="${timeValue}". Displaying as-is.`);
+                return timeValue || ''; // Fallback to original timeValue or empty
+            }
+
+            const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true, // Use AM/PM
+                timeZone: 'Asia/Manila' // Set timezone to Manila
+            };
+
+            try {
+                // Use 'en-US' locale for consistent output format (MM/DD/YYYY)
+                const formatter = new Intl.DateTimeFormat('en-US', options);
+                return formatter.format(dateObj);
+            } catch (e) {
+                console.error("Error formatting date for Manila time:", e);
+                return `${dateString || ''} ${timeValue || ''} (Format Error)`; // Indicate formatting issue
+            }
+        }
+
+        async function fetchData() {
+            loadingDiv.style.display = 'block'; // Show loading
+            errorDiv.style.display = 'none'; // Hide error
+            dataContainer.innerHTML = ''; // Clear previous data
+            noDataMessage.style.display = 'none'; // Hide no data message
+
+            try {
+                // Exponential backoff for API calls
+                let response;
+                let attempts = 0;
+                const maxAttempts = 5;
+                const baseDelay = 1000; // 1 second
+
+                while (attempts < maxAttempts) {
+                    try {
+                        response = await fetch(webAppUrl);
+                        if (response.ok) {
+                            break; // Exit loop if successful
+                        } else if (response.status === 429 || response.status >= 500) {
+                            // Too Many Requests or Server Errors, retry
+                            const delay = baseDelay * Math.pow(2, attempts) + Math.random() * 500; // Add jitter
+                            console.warn(`Attempt ${attempts + 1} failed with status ${response.status}. Retrying in ${delay}ms...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            attempts++;
+                        } else {
+                            // Other non-retryable errors
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                        }
+                    } catch (fetchError) {
+                        // Network errors or other non-HTTP errors
+                        if (attempts < maxAttempts - 1) {
+                            const delay = baseDelay * Math.pow(2, attempts) + Math.random() * 500;
+                            console.warn(`Attempt ${attempts + 1} failed: ${fetchError.message}. Retrying in ${delay}ms...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            attempts++;
+                        } else {
+                            throw fetchError; // Re-throw after max attempts
+                        }
+                    }
+                }
+
+                if (!response || !response.ok) {
+                    throw new Error('Failed to fetch data after multiple retries.');
+                }
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                const data = result.data;
+
+                if (data.length === 0) {
+                    noDataMessage.style.display = 'block';
+                    return;
+                }
+
+                // Create table element
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>JO#</th>
+                            <th>Date Created</th>
+                            <th>Time of Delivery</th>
+                            <th>Delivery Type</th>
+                            <th>Delivery Staff</th>
+                            <th>Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                `;
+                const tbody = table.querySelector('tbody');
+
+                data.forEach(item => {
+                    const formattedTimeOfDelivery = formatManilaDateTime(item.dateCreated, item.timeOfDelivery);
+                    const row = `
+                        <tr>
+                            <td>${item.customer}</td>
+                            <td><span class="text-blue-600">${item.joNumber}</span></td>
+                            <td>${item.dateCreated}</td>
+                            <td>${formattedTimeOfDelivery}</td> <!-- Using the formatted time -->
+                            <td>${item.deliveryType}</td>
+                            <td>${item.deliveryStaff}</td>
+                            <td><span class="text-green-600">₱${parseFloat(item.totalAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+
+                dataContainer.appendChild(table);
+
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+                errorText.textContent = `Could not load data: ${error.message}. Please check the web app URL and permissions.`;
+                errorDiv.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Fetch data when the page loads
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
