@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DELIVERED UNPAID</title> <!-- Page title set to DELIVERED UNPAID -->
+    <title>UNREPORTED JOs</title> <!-- Page title for Unreported JOs -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -17,12 +17,12 @@
             padding: 1rem;
             margin: 0;
             line-height: 1.5; /* Default line height for better readability */
-            font-size: 14px; /* Base font size for mobile */
+            font-size: 10px; /* Base font size for mobile - changed to 10px */
         }
         @media (min-width: 768px) {
             body {
                 justify-content: center; /* Center content on larger screens */
-                font-size: 14px; /* Base font size for desktop */
+                font-size: 12px; /* Base font size for desktop - slightly larger than 10px for readability */
             }
         }
         .container {
@@ -41,7 +41,7 @@
             }
         }
         h1 {
-            font-size: 1.5rem; /* Smaller font size for heading on mobile */
+            font-size: 1.2rem; /* Smaller font size for heading on mobile */
             font-weight: 700;
             text-align: center;
             color: #1a73e8; /* A slightly darker, more prominent blue */
@@ -50,7 +50,7 @@
         }
         @media (min-width: 768px) {
             h1 {
-                font-size: 1.75rem; /* Original size for desktop */
+                font-size: 1.5rem; /* Original size for desktop */
                 margin-bottom: 2rem;
             }
         }
@@ -69,11 +69,11 @@
         #loading {
             text-align: center;
             color: #4b5563;
-            font-size: 1rem; /* Smaller font size for loading text */
+            font-size: 0.9rem; /* Smaller font size for loading text */
         }
         @media (min-width: 768px) {
             #loading {
-                font-size: 1.125rem;
+                font-size: 1rem;
             }
         }
         #error-message {
@@ -85,11 +85,11 @@
             border-radius: 0.375rem;
             position: relative;
             margin-bottom: 1.5rem;
-            font-size: 0.875rem; /* Smaller error message text */
+            font-size: 0.8rem; /* Smaller error message text */
         }
         @media (min-width: 768px) {
             #error-message {
-                font-size: 1rem;
+                font-size: 0.9rem;
             }
         }
         #error-message strong {
@@ -123,14 +123,14 @@
             }
         }
         th, td {
-            padding: 0.7rem 0.8rem; /* Reduced padding for compact table on mobile */
+            padding: 0.6rem 0.7rem; /* Reduced padding for compact table on mobile */
             text-align: left;
             border-bottom: 1px solid #f3f4f6; /* Very light gray border between rows */
             white-space: nowrap; /* Prevent text from wrapping in table cells by default */
         }
         @media (min-width: 768px) {
             th, td {
-                padding: 0.85rem 1rem; /* Original padding for desktop */
+                padding: 0.7rem 0.8rem; /* Original padding for desktop */
                 white-space: normal; /* Allow text wrapping on desktop */
             }
         }
@@ -139,12 +139,12 @@
             color: #4b5563; /* Darker gray for header text */
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.65rem; /* Even smaller, subtle header text for mobile */
+            font-size: 0.6rem; /* Even smaller, subtle header text for mobile */
             letter-spacing: 0.08em; /* More letter spacing for uppercase headers */
         }
         @media (min-width: 768px) {
             th {
-                font-size: 0.75rem; /* Original header font size for desktop */
+                font-size: 0.7rem; /* Original header font size for desktop */
             }
         }
         /* Specific rounded corners for first/last table header/data cells */
@@ -155,18 +155,19 @@
         tr:hover {
             background-color: #f0f8ff; /* Very subtle light blue on hover */
         }
-        .text-blue-600 { color: #2563eb; font-weight: 500;} /* For JO# - medium weight */
-        .text-green-600 { color: #10b981; font-weight: 600;} /* Stronger green for amount */
+        /* Specific styles for data cells if needed */
+        .text-blue-600 { color: #2563eb; font-weight: 500;}
+        .text-green-600 { color: #10b981; font-weight: 600;}
         #no-data-message {
             display: none;
             text-align: center;
             color: #6b7280;
-            font-size: 1rem; /* Smaller no data message text */
+            font-size: 0.9rem; /* Smaller no data message text */
             margin-top: 1.5rem; /* Adjusted margin */
         }
         @media (min-width: 768px) {
             #no-data-message {
-                font-size: 1.125rem;
+                font-size: 1rem;
                 margin-top: 2rem;
             }
         }
@@ -182,11 +183,9 @@
     <a href="LavarFormSubmission.html"> Fold | </a> 
     <a href="FoldSite.html"> Fold Site | </a> 
     <a href="dailyreportviewer.html"> View Daily Report | </a> 
-    <a href="deliveredunpaidreport.html">Delivered Unpaid |</a> 
-    <a href="unreportedJOsReport.html">Unreported JOs  </a>        
-    
-    <br>  
-        <h1>DELIVERED UNPAID</h1> <!-- Changed heading text -->
+    <a href="deliveredunpaidreport.html">Delivered Unpaid  </a> 
+    <br>          
+        <h1>UNREPORTED JOs</h1> <!-- Heading text for Unreported JOs -->
 
         <div id="loading">
             <div class="loading-spinner"></div>
@@ -205,12 +204,12 @@
             <!-- Table will be injected here -->
         </div>
 
-        <p id="no-data-message">No pending deliveries found matching the criteria.</p>
+        <p id="no-data-message">No unreported JOs found in the specified range.</p>
     </div>
 
     <script>
-        // Make sure to replace this with your deployed Google Apps Script URL
-        const webAppUrl = 'https://script.google.com/macros/s/AKfycbyLlLjHEQdeK98-tIes9m2A3e4WXvKb_7LPXsD-vzdx1HhwxeO4liq5X1lWEnHNaxEq/exec';
+        // Web app link for Unreported JOs - using the provided URL
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbyP3zOnKoJfmdSTBNfjMWBaL6AQMKkk0EZAAT57pMDgAh2oQ_qCWDiLvAmXcHxb2MI0/exec';
 
         const loadingDiv = document.getElementById('loading');
         const errorDiv = document.getElementById('error-message');
@@ -219,37 +218,22 @@
         const noDataMessage = document.getElementById('no-data-message');
 
         /**
-         * Formats a date/time string into "mm/dd/yyyy hh:mm am/pm" for Manila Time.
-         * It prioritizes parsing the input timeString as a full timestamp.
-         * If timeString is not a valid date, it attempts to combine dateString and timeString.
-         * @param {string} dateString - The date part (e.g., "8/11/2025").
-         * @param {string} timeValue - The time part, which might be a full timestamp (e.g., "2025-08-11T09:35:17.279Z")
-         * or a simple time (e.g., "10:30 AM").
+         * Formats a timestamp string into "mm/dd/yy hh:mm am/pm" for Manila Time.
+         * @param {string} timestampString - The timestamp string (e.g., "2025-08-12T08:35:13.000Z").
          * @returns {string} The formatted date and time string, or original if parsing fails.
          */
-        function formatManilaDateTime(dateString, timeValue) {
-            let dateObj;
+        function formatTimestampForManila(timestampString) {
+            const dateObj = new Date(timestampString);
 
-            // First, try to parse timeValue directly as it might contain a full timestamp
-            dateObj = new Date(timeValue);
-
-            // If timeValue alone is not a valid date, try combining dateString and timeValue
-            if (isNaN(dateObj.getTime()) && dateString && timeValue) {
-                // If timeValue is just a time (e.g., "10:30 AM"), combine it with dateString
-                const combinedString = `${dateString} ${timeValue}`;
-                dateObj = new Date(combinedString);
-            }
-
-            // If still an invalid date, or if inputs are missing, return fallback
             if (isNaN(dateObj.getTime())) {
-                console.warn(`Failed to parse date-time string(s): Date="${dateString}", Time="${timeValue}". Displaying as-is.`);
-                return timeValue || ''; // Fallback to original timeValue or empty
+                console.warn(`Failed to parse timestamp: "${timestampString}". Displaying as-is.`);
+                return timestampString; // Fallback to original string if parsing fails
             }
 
             const options = {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
+                year: '2-digit', // yy
+                month: '2-digit', // mm
+                day: '2-digit',   // dd
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true, // Use AM/PM
@@ -257,12 +241,12 @@
             };
 
             try {
-                // Use 'en-US' locale for consistent output format (MM/DD/YYYY)
+                // Use 'en-US' locale for consistent output format (MM/DD/YY)
                 const formatter = new Intl.DateTimeFormat('en-US', options);
                 return formatter.format(dateObj);
             } catch (e) {
                 console.error("Error formatting date for Manila time:", e);
-                return `${dateString || ''} ${timeValue || ''} (Format Error)`; // Indicate formatting issue
+                return `${timestampString} (Format Error)`; // Indicate formatting issue
             }
         }
 
@@ -319,6 +303,14 @@
                 }
 
                 const data = result.data;
+                const headers = result.headers; // Get headers from the response
+
+                // --- DEBUGGING IN HTML CONSOLE ---
+                console.log("Headers received from Apps Script:", headers);
+                if (data.length > 0) {
+                    console.log("First data item received:", data[0]);
+                }
+                // --- END DEBUGGING IN HTML CONSOLE ---
 
                 if (data.length === 0) {
                     noDataMessage.style.display = 'block';
@@ -327,16 +319,15 @@
 
                 // Create table element
                 const table = document.createElement('table');
+                let headerRowHtml = '';
+                headers.forEach(header => {
+                    headerRowHtml += `<th>${header}</th>`;
+                });
+
                 table.innerHTML = `
                     <thead>
                         <tr>
-                            <th>Customer</th>
-                            <th>JO#</th>
-                            <th>Date Created</th>
-                            <th>Time of Delivery</th>
-                            <th>Delivery Type</th>
-                            <th>Delivery Staff</th>
-                            <th>Total Amount</th>
+                            ${headerRowHtml}
                         </tr>
                     </thead>
                     <tbody>
@@ -345,19 +336,56 @@
                 const tbody = table.querySelector('tbody');
 
                 data.forEach(item => {
-                    const formattedTimeOfDelivery = formatManilaDateTime(item.dateCreated, item.timeOfDelivery);
-                    const row = `
-                        <tr>
-                            <td>${item.customer}</td>
-                            <td><span class="text-blue-600">${item.joNumber}</span></td>
-                            <td>${item.dateCreated}</td>
-                            <td>${formattedTimeOfDelivery}</td> <!-- Using the formatted time -->
-                            <td>${item.deliveryType}</td>
-                            <td>${item.deliveryStaff}</td>
-                            <td><span class="text-green-600">₱${parseFloat(item.totalAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></td>
-                        </tr>
-                    `;
-                    tbody.insertAdjacentHTML('beforeend', row);
+                    let dataRowHtml = '<tr>';
+                    headers.forEach(header => {
+                        let cellValue = '';
+                        // Explicitly check if the item has the property before trying to access it
+                        if (Object.prototype.hasOwnProperty.call(item, header)) {
+                            cellValue = item[header];
+                            // If cell value is null, undefined, or empty string after trimming, use '---'
+                            if (cellValue === null || cellValue === undefined || (typeof cellValue === 'string' && cellValue.trim() === '')) {
+                                cellValue = '---';
+                            }
+                        } else {
+                            // This means the header from the Apps Script is not a key in the current data item
+                            cellValue = 'NA (Key Missing)';
+                            console.warn(`Header '${header}' not found as a key in data item:`, item);
+                        }
+
+                        // Apply specific formatting based on header name
+                        if (header.includes('Amount') || header.includes('TOTAL')) {
+                            let displayValue = cellValue;
+                            if (typeof cellValue === 'number' || (typeof cellValue === 'string' && !isNaN(parseFloat(cellValue)))) {
+                                displayValue = `₱${parseFloat(cellValue).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            }
+                            dataRowHtml += `<td><span class="text-green-600">${displayValue}</span></td>`;
+                        } else if (header.includes('JO#')) {
+                            dataRowHtml += `<td><span class="text-blue-600">${cellValue}</span></td>`;
+                        } else if (header.includes('Date')) { // For "Date Created" and "Audit Date"
+                            let displayDate = cellValue;
+                            if (cellValue instanceof Date) {
+                                displayDate = cellValue.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }); // MM/DD/YYYY
+                            } else if (typeof cellValue === 'string') {
+                                const parsedDate = new Date(cellValue);
+                                if (!isNaN(parsedDate.getTime())) {
+                                    displayDate = parsedDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                                }
+                            }
+                            dataRowHtml += `<td>${displayDate}</td>`;
+                        } else if (header.includes('Payment Status')) { // Specific formatting for Payment Status
+                            if (cellValue !== '[UNPAID]' && typeof cellValue === 'string' && new Date(cellValue).toString() !== 'Invalid Date') {
+                                // Attempt to parse as a date if it's not '[UNPAID]' and looks like a date string
+                                dataRowHtml += `<td>${formatTimestampForManila(cellValue)}</td>`;
+                            } else {
+                                dataRowHtml += `<td>${cellValue}</td>`;
+                            }
+                        }
+                        else {
+                            dataRowHtml += `<td>${cellValue}</td>`;
+                        }
+                    });
+                    dataRowHtml += '</tr>';
+                    tbody.insertAdjacentHTML('beforeend', dataRowHtml);
                 });
 
                 dataContainer.appendChild(table);
