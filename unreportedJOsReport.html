@@ -1,406 +1,706 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNREPORTED JOs</title> <!-- Page title for Unreported JOs -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Light gray background */
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start; /* Align to start for better top spacing on mobile */
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNREPORTED JOs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6; /* Original background color */
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem; /* Original padding */
+      margin: 0;
+      font-size: 10px;
+    }
+    @media (min-width: 768px) {
+      body { font-size: 12px; }
+    }
+    .container {
+      width: 90%;
+      max-width: 1400px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); /* Original shadow */
+      border-radius: 12px; /* Original border radius */
+      padding: 1rem; /* Original padding */
+      overflow-x: auto;
+      border: 1px solid #e0e0e0; /* Original border */
+    }
+    h1 {
+      font-size: 1.2rem; /* Original font size */
+      font-weight: 700;
+      text-align: center;
+      color: #1a73e8; /* Original color */
+      margin-bottom: 1.5rem; /* Original margin */
+      letter-spacing: normal; /* Revert letter spacing */
+    }
+    @media (min-width: 768px) {
+      h1 { font-size: 1.5rem; margin-bottom: 2rem; }
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse; /* Original border collapse */
+      border-spacing: 0; /* Original border spacing */
+      margin-top: 1rem; /* Original margin */
+      background-color: #ffffff;
+      border-radius: 8px; /* Original border radius */
+      overflow: hidden;
+      border: 1px solid #e5e7eb; /* Original border */
+      table-layout: auto;
+    }
+    th, td {
+      padding: 0.6rem 0.7rem; /* Original padding */
+      text-align: left;
+      border: 1px solid #e5e7eb; /* Original border */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 0.7rem; /* Original font size for td */
+    }
+    th:last-child, td:last-child {
+      border-right: 1px solid #e5e7eb; /* Revert border-right to original */
+    }
+    tr:last-child td {
+      border-bottom: 1px solid #e5e7eb; /* Revert border-bottom to original */
+    }
+    th {
+      background-color: #f8f9fa; /* Original background color */
+      color: #4b5563; /* Original color */
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem; /* Original font size for th */
+    }
+    tr:hover { background-color: #f0f8ff; } /* Original hover effect */
+    .text-blue-600 { color: #2563eb; font-weight: 500; } /* Original blue */
+    .text-green-600 { color: #10b981; font-weight: 600; } /* Original green */
+
+    th.status-col, td.status-col {
+      width: 150px;
+      max-width: 150px;
+    }
+    th.comments-col, td.comments-col {
+      max-width: 300px;
+    }
+
+    .flash-success {
+      animation: flashGreen 1s ease;
+    }
+    @keyframes flashGreen {
+      0%   { background-color: #d1fae5; } /* Original flash green */
+      100% { background-color: transparent; }
+    }
+
+    input.comment-input {
+      width: 100%;
+      padding: 3px; /* Original padding */
+      font-size: 0.8rem;
+      box-sizing: border-box;
+      border: 1px solid #ccc; /* Original border */
+      border-radius: 4px; /* Original border radius */
+      transition: none; /* Revert transition */
+    }
+    input.comment-input:focus {
+        outline: none;
+        border-color: #ccc; /* Revert border color on focus */
+        box-shadow: none; /* Revert shadow on focus */
+    }
+
+    /* Filter controls styling (keeping the layout, reverting aesthetic) */
+    .filter-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px; /* Original gap */
+        margin-bottom: 1.5rem; /* Original margin */
+        justify-content: center;
+        align-items: center; /* Original alignment */
+        padding: 0; /* Revert padding */
+        background-color: transparent; /* Revert background */
+        border-radius: 0; /* Revert border radius */
+        box-shadow: none; /* Revert shadow */
+    }
+    .filter-controls div {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .filter-controls label {
+        font-size: 0.8rem; /* Original label font size */
+        font-weight: 600;
+        color: #4b5563; /* Original label color */
+        margin-bottom: 4px; /* Original margin */
+    }
+    .filter-controls select,
+    .filter-controls input[type="text"] {
+        padding: 0.5rem; /* Original padding */
+        border: 1px solid #d1d5db; /* Original border */
+        border-radius: 6px; /* Original border radius */
+        font-size: 0.9rem; /* Original font size */
+        min-width: 120px; /* Original min-width */
+        transition: none; /* Revert transition */
+        -webkit-appearance: menulist; /* Revert appearance */
+        -moz-appearance: menulist;
+        appearance: menulist;
+        background-image: none; /* Remove custom arrow */
+        background-repeat: initial;
+        background-position: initial;
+        background-size: initial;
+        cursor: initial;
+    }
+    .filter-controls select:focus,
+    .filter-controls input[type="text"]:focus {
+        outline: none;
+        border-color: #d1d5db; /* Revert border color on focus */
+        box-shadow: none; /* Revert shadow on focus */
+    }
+    .filter-controls button {
+      padding: 0.5rem 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background-color: #e0e0e0;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #4b5563;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .filter-controls button:hover {
+      background-color: #d0d0d0;
+    }
+
+    @media (min-width: 768px) {
+        .filter-controls {
+            flex-direction: row;
+            justify-content: flex-start;
+        }
+        .filter-controls div {
+            flex-direction: row;
             align-items: center;
-            padding: 1rem;
-            margin: 0;
-            line-height: 1.5; /* Default line height for better readability */
-            font-size: 10px; /* Base font size for mobile - changed to 10px */
         }
-        @media (min-width: 768px) {
-            body {
-                justify-content: center; /* Center content on larger screens */
-                font-size: 12px; /* Base font size for desktop - slightly larger than 10px for readability */
-            }
+        .filter-controls label {
+            margin-bottom: 0;
+            margin-right: 8px;
         }
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            background-color: #ffffff; /* White background for the main content area */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Softer shadow */
-            border-radius: 12px; /* More pronounced rounded corners */
-            padding: 1rem; /* Adjusted padding for mobile */
-            overflow-x: auto; /* Ensures horizontal scrolling for tables on small screens */
-            border: 1px solid #e0e0e0; /* Subtle border for iOS-like separation */
-        }
-        @media (min-width: 768px) {
-            .container {
-                padding: 2rem;
-            }
-        }
-        h1 {
-            font-size: 1.2rem; /* Smaller font size for heading on mobile */
-            font-weight: 700;
-            text-align: center;
-            color: #1a73e8; /* A slightly darker, more prominent blue */
-            margin-bottom: 1.5rem; /* Adjusted margin for mobile */
-            letter-spacing: -0.02em; /* Tighter letter spacing for a cleaner look */
-        }
-        @media (min-width: 768px) {
-            h1 {
-                font-size: 1.5rem; /* Original size for desktop */
-                margin-bottom: 2rem;
-            }
-        }
-        .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 2rem auto;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        #loading {
-            text-align: center;
-            color: #4b5563;
-            font-size: 0.9rem; /* Smaller font size for loading text */
-        }
-        @media (min-width: 768px) {
-            #loading {
-                font-size: 1rem;
-            }
-        }
-        #error-message {
-            display: none;
-            background-color: #fee2e2; /* Light red background */
-            border: 1px solid #f87171; /* Red border */
-            color: #b91c1c; /* Dark red text */
-            padding: 0.75rem 1rem;
-            border-radius: 0.375rem;
-            position: relative;
-            margin-bottom: 1.5rem;
-            font-size: 0.8rem; /* Smaller error message text */
-        }
-        @media (min-width: 768px) {
-            #error-message {
-                font-size: 0.9rem;
-            }
-        }
-        #error-message strong {
-            font-weight: 700;
-        }
-        #error-message .close-button {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            right: 0;
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            color: #ef4444;
-            height: 1.5rem;
-            width: 1.5rem;
-        }
-        table {
-            width: 100%;
-            border-collapse: separate; /* Use separate to apply border-radius to table */
-            border-spacing: 0; /* Remove default spacing */
-            margin-top: 1rem; /* Adjusted margin */
-            background-color: #ffffff;
-            border-radius: 8px; /* Slightly more rounded table corners */
-            overflow: hidden; /* Ensures rounded corners apply to content */
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03); /* Lighter shadow for table */
-            border: 1px solid #e5e7eb; /* Soft border around the table */
-        }
-        @media (min-width: 768px) {
-            table {
-                margin-top: 1.5rem;
-            }
-        }
-        th, td {
-            padding: 0.6rem 0.7rem; /* Reduced padding for compact table on mobile */
-            text-align: left;
-            border-bottom: 1px solid #f3f4f6; /* Very light gray border between rows */
-            white-space: nowrap; /* Prevent text from wrapping in table cells by default */
-        }
-        @media (min-width: 768px) {
-            th, td {
-                padding: 0.7rem 0.8rem; /* Original padding for desktop */
-                white-space: normal; /* Allow text wrapping on desktop */
-            }
-        }
-        th {
-            background-color: #f8f9fa; /* Very light background for headers */
-            color: #4b5563; /* Darker gray for header text */
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.6rem; /* Even smaller, subtle header text for mobile */
-            letter-spacing: 0.08em; /* More letter spacing for uppercase headers */
-        }
-        @media (min-width: 768px) {
-            th {
-                font-size: 0.7rem; /* Original header font size for desktop */
-            }
-        }
-        /* Specific rounded corners for first/last table header/data cells */
-        th:first-child { border-top-left-radius: 8px; }
-        th:last-child { border-top-right-radius: 8px; }
-        tr:last-child td { border-bottom: none; } /* No border on the last row */
+    }
 
-        tr:hover {
-            background-color: #f0f8ff; /* Very subtle light blue on hover */
-        }
-        /* Specific styles for data cells if needed */
-        .text-blue-600 { color: #2563eb; font-weight: 500;}
-        .text-green-600 { color: #10b981; font-weight: 600;}
-        #no-data-message {
-            display: none;
-            text-align: center;
-            color: #6b7280;
-            font-size: 0.9rem; /* Smaller no data message text */
-            margin-top: 1.5rem; /* Adjusted margin */
-        }
-        @media (min-width: 768px) {
-            #no-data-message {
-                font-size: 1rem;
-                margin-top: 2rem;
-            }
-        }
-    </style>
+    /* Modal Styling (reverted to original, simpler look) */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4); /* Original overlay */
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-content {
+        background-color: #fefefe; /* Original background */
+        margin: auto;
+        padding: 20px; /* Original padding */
+        border: 1px solid #888; /* Original border */
+        width: 80%;
+        max-width: 400px; /* Original max-width */
+        border-radius: 12px; /* Original border radius */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Original shadow */
+        text-align: center;
+        transform: none; /* Revert animation */
+        animation: none; /* Remove animation */
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        color: #333; /* Original color */
+        font-size: 1.2rem; /* Original font size */
+        margin-bottom: 10px; /* Original margin */
+    }
+    .modal-content p {
+        margin-bottom: 20px; /* Original margin */
+        color: #555;
+        font-size: 1rem;
+        line-height: normal; /* Revert line height */
+    }
+    .modal-close-button {
+        background-color: #1a73e8; /* Original button color */
+        color: white;
+        padding: 10px 20px; /* Original padding */
+        border: none;
+        border-radius: 8px; /* Original border radius */
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: normal; /* Revert font weight */
+        transition: none; /* Revert transition */
+    }
+    .modal-close-button:hover {
+        background-color: #1a73e8; /* Revert hover effect */
+        transform: none; /* Revert transform */
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-4">
-    <div class="container">
-    <a href="pickuprequestsummary.html"> Requests Summary </a> | 
-    <a href="pickuprequest.html"> Request Forms </a> | 
-    <a href="pickup.html"> Pickup </a>  | 
-    <a href="delivery.html"> Delivery </a> | 
-    <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold | </a> 
-    <a href="FoldSite.html"> Fold Site | </a> 
-    <a href="dailyreportviewer.html"> View Daily Report | </a> 
-    <a href="deliveredunpaidreport.html">Delivered Unpaid  </a> 
-    <br>          
-        <h1>UNREPORTED JOs</h1> <!-- Heading text for Unreported JOs -->
+<body>
+  <div class="container">
+    <h1>UNREPORTED JOs</h1>
 
-        <div id="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading data...</p>
-        </div>
-
-        <div id="error-message" role="alert">
-            <strong>Error!</strong>
-            <span id="error-text"></span>
-            <span class="close-button" onclick="document.getElementById('error-message').style.display='none';">
-                <svg class="fill-current" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.103l-2.651 3.746a1.2 1.2 0 0 1-1.697-1.697l3.746-2.651-3.746-2.651a1.2 1.2 0 0 1 1.697-1.697L10 8.897l2.651-3.746a1.2 1.2 0 0 1 1.697 1.697L11.103 10l3.746 2.651a1.2 1.2 0 0 1 0 1.698z"/></svg>
-            </span>
-        </div>
-
-        <div id="data-container">
-            <!-- Table will be injected here -->
-        </div>
-
-        <p id="no-data-message">No unreported JOs found in the specified range.</p>
+    <!-- Filter Controls -->
+    <div class="filter-controls">
+      <div>
+        <label for="monthFilter">Month:</label>
+        <select id="monthFilter" onchange="filterTable()"></select>
+      </div>
+      <div>
+        <label for="customerNameFilter">Customer Name:</label>
+        <select id="customerNameFilter" onchange="filterTable()"></select>
+      </div>
+      <div>
+        <label for="staffFilter">Staff:</label>
+        <select id="staffFilter" onchange="filterTable()"></select>
+      </div>
+      <div>
+        <label for="paymentTypeFilter">Payment Type:</label>
+        <select id="paymentTypeFilter" onchange="filterTable()"></select>
+      </div>
+      <div>
+        <label for="statusFilter">Status:</label>
+        <select id="statusFilter" onchange="filterTable()">
+          <option value="">Select</option>
+          <option value="Non Blanks">Non Blanks</option>
+        </select>
+      </div>
+      <div>
+        <button id="commentsFilterButton" onclick="toggleCommentsFilter()">Non-Blank Comments</button>
+      </div>
     </div>
+    <!-- End Filter Controls -->
 
-    <script>
-        // Web app link for Unreported JOs - using the provided URL
-        const webAppUrl = 'https://script.google.com/macros/s/AKfycbyP3zOnKoJfmdSTBNfjMWBaL6AQMKkk0EZAAT57pMDgAh2oQ_qCWDiLvAmXcHxb2MI0/exec';
+    <div id="loading"><p>Loading data...</p></div>
+    <div id="error-message" style="display:none; color:red;"></div>
+    <div id="data-container"></div>
+    <p id="no-data-message" style="display:none;">No unreported JOs found in the specified range.</p>
+  </div>
 
-        const loadingDiv = document.getElementById('loading');
-        const errorDiv = document.getElementById('error-message');
-        const errorText = document.getElementById('error-text');
-        const dataContainer = document.getElementById('data-container');
-        const noDataMessage = document.getElementById('no-data-message');
+  <!-- Custom Alert Modal -->
+  <div id="customAlertModal" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle"></h3>
+      <p id="modalMessage"></p>
+      <button id="modalCloseButton" class="modal-close-button">Close</button>
+    </div>
+  </div>
 
-        /**
-         * Formats a timestamp string into "mm/dd/yy hh:mm am/pm" for Manila Time.
-         * @param {string} timestampString - The timestamp string (e.g., "2025-08-12T08:35:13.000Z").
-         * @returns {string} The formatted date and time string, or original if parsing fails.
-         */
-        function formatTimestampForManila(timestampString) {
-            const dateObj = new Date(timestampString);
+  <script>
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbyP3zOnKoJfmdSTBNfjMWBaL6AQMKkk0EZAAT57pMDgAh2oQ_qCWDiLvAmXcHxb2MI0/exec';
 
-            if (isNaN(dateObj.getTime())) {
-                console.warn(`Failed to parse timestamp: "${timestampString}". Displaying as-is.`);
-                return timestampString; // Fallback to original string if parsing fails
+    const loadingDiv = document.getElementById('loading');
+    const errorDiv = document.getElementById('error-message');
+    const dataContainer = document.getElementById('data-container');
+    const noDataMessage = document.getElementById('no-data-message');
+
+    // Modal elements
+    const customAlertModal = document.getElementById('customAlertModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalCloseButton = document.getElementById('modalCloseButton');
+    const commentsFilterButton = document.getElementById('commentsFilterButton');
+
+    // Global variable to store all fetched data
+    let allReportData = [];
+    let displayedHeaders = []; // Store the actual headers being displayed
+    let isCommentsFilterActive = false; // New state for comments filter
+
+    const desiredHeaders = [
+      "JO#",
+      "Date Created",
+      "Customer Name",
+      "Total Amount",
+      "Pay Status",
+      "Audit Date",
+      "Del/Pickup Time",
+      "Staff",
+      "Del Pay",
+      "Status",
+      "Comments"
+    ];
+
+    // Function to show custom alert modal
+    function showAlert(title, message) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        customAlertModal.style.display = 'flex';
+    }
+
+    // Close modal when button is clicked
+    modalCloseButton.onclick = function() {
+        customAlertModal.style.display = 'none';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        if (event.target == customAlertModal) {
+            customAlertModal.style.display = 'none';
+        }
+    }
+
+
+    // Function to dynamically populate dropdowns
+    function populateFilters(data) {
+        const monthFilter = document.getElementById('monthFilter');
+        const customerNameFilter = document.getElementById('customerNameFilter');
+        const staffFilter = document.getElementById('staffFilter');
+        const paymentTypeFilter = document.getElementById('paymentTypeFilter');
+
+        const months = new Set();
+        const customerNames = new Set();
+        const staffNames = new Set();
+        const paymentTypes = new Set();
+
+        data.forEach(item => {
+            if (item['Date Created']) {
+                const date = new Date(item['Date Created']);
+                if (!isNaN(date.getTime())) {
+                    months.add(date.toLocaleString('en-US', { month: 'long' }));
+                }
             }
-
-            const options = {
-                year: '2-digit', // yy
-                month: '2-digit', // mm
-                day: '2-digit',   // dd
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true, // Use AM/PM
-                timeZone: 'Asia/Manila' // Set timezone to Manila
-            };
-
-            try {
-                // Use 'en-US' locale for consistent output format (MM/DD/YY)
-                const formatter = new Intl.DateTimeFormat('en-US', options);
-                return formatter.format(dateObj);
-            } catch (e) {
-                console.error("Error formatting date for Manila time:", e);
-                return `${timestampString} (Format Error)`; // Indicate formatting issue
+            if (item['Customer Name']) {
+                customerNames.add(String(item['Customer Name']).trim());
             }
+            if (item['Staff']) {
+                staffNames.add(String(item['Staff']).trim());
+            }
+            // Corrected: Use 'Del Pay' for Payment Type filter population
+            if (item['Del Pay']) {
+                paymentTypes.add(String(item['Del Pay']).trim());
+            }
+        });
+
+        // Clear existing options, but keep "All"
+        monthFilter.innerHTML = '<option value="">All</option>';
+        customerNameFilter.innerHTML = '<option value="">All</option>';
+        staffFilter.innerHTML = '<option value="">All</option>';
+        paymentTypeFilter.innerHTML = '<option value="">All</option>';
+
+        // Populate Month filter
+        Array.from(months).sort().forEach(month => {
+            const option = document.createElement('option');
+            option.value = month;
+            option.textContent = month;
+            monthFilter.appendChild(option);
+        });
+
+        // Populate Customer Name filter
+        Array.from(customerNames).sort().forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            customerNameFilter.appendChild(option);
+        });
+
+        // Populate Staff filter
+        Array.from(staffNames).sort().forEach(staff => {
+            const option = document.createElement('option');
+            option.value = staff;
+            option.textContent = staff;
+            staffFilter.appendChild(option);
+        });
+
+        // Populate Payment Type filter
+        Array.from(paymentTypes).sort().forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            paymentTypeFilter.appendChild(option);
+        });
+    }
+
+    // Function to render the table with provided data
+    function renderTable(dataToRender) {
+        dataContainer.innerHTML = ''; // Clear previous table
+        if (dataToRender.length === 0) {
+            noDataMessage.style.display = 'block';
+            return;
+        } else {
+            noDataMessage.style.display = 'none';
         }
 
-        async function fetchData() {
-            loadingDiv.style.display = 'block'; // Show loading
-            errorDiv.style.display = 'none'; // Hide error
-            dataContainer.innerHTML = ''; // Clear previous data
-            noDataMessage.style.display = 'none'; // Hide no data message
+        const table = document.createElement('table');
+        table.id = 'reportTable'; // Give the table an ID for filtering
+        let headerRowHtml = '<thead><tr>';
+        displayedHeaders.forEach(h => {
+          if (h === 'Comments') {
+            headerRowHtml += `<th class="comments-col">${h}</th>`;
+          } else if (h === 'Status') {
+            headerRowHtml += `<th class="status-col">${h}</th>`;
+          } else {
+            headerRowHtml += `<th>${h}</th>`;
+          }
+        });
+        headerRowHtml += '</tr></thead>';
+        table.innerHTML = headerRowHtml + '<tbody></tbody>';
+        const tbody = table.querySelector('tbody');
 
-            try {
-                // Exponential backoff for API calls
-                let response;
-                let attempts = 0;
-                const maxAttempts = 5;
-                const baseDelay = 1000; // 1 second
+        dataToRender.forEach((item) => {
+          let dataRowHtml = '<tr>';
+          displayedHeaders.forEach(header => {
+            let cellValue = item[header] || '';
 
-                while (attempts < maxAttempts) {
-                    try {
-                        response = await fetch(webAppUrl);
-                        if (response.ok) {
-                            break; // Exit loop if successful
-                        } else if (response.status === 429 || response.status >= 500) {
-                            // Too Many Requests or Server Errors, retry
-                            const delay = baseDelay * Math.pow(2, attempts) + Math.random() * 500; // Add jitter
-                            console.warn(`Attempt ${attempts + 1} failed with status ${response.status}. Retrying in ${delay}ms...`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            attempts++;
-                        } else {
-                            // Other non-retryable errors
-                            const errorData = await response.json();
-                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                        }
-                    } catch (fetchError) {
-                        // Network errors or other non-HTTP errors
-                        if (attempts < maxAttempts - 1) {
-                            const delay = baseDelay * Math.pow(2, attempts) + Math.random() * 500;
-                            console.warn(`Attempt ${attempts + 1} failed: ${fetchError.message}. Retrying in ${delay}ms...`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            attempts++;
-                        } else {
-                            throw fetchError; // Re-throw after max attempts
-                        }
+            if (header === 'Status') {
+              const options = ["In Shop Undelivered","Delivered Unreported","Unknown"];
+              const joNumber = item['JO#'] ? String(item['JO#']).trim() : "";
+              let dropdownHtml = `<select data-jo="${joNumber}">`;
+              dropdownHtml += `<option value="">-- Select --</option>`;
+              options.forEach(opt => {
+                const selected = (cellValue && String(cellValue).trim() === opt) ? 'selected' : ''; // Ensure cellValue is string and trimmed
+                dropdownHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
+              });
+              dropdownHtml += `</select>`;
+              dataRowHtml += `<td class="status-col">${dropdownHtml}</td>`;
+            }
+            else if (header === 'Comments') {
+              const joNumber = item['JO#'] ? String(item['JO#']).trim() : "";
+              const commentValue = cellValue || "";
+              dataRowHtml += `
+                <td class="comments-col">
+                  <input type="text"
+                         value="${commentValue}"
+                         data-jo="${joNumber}"
+                         class="comment-input" />
+                </td>`;
+            }
+            else if (header === 'Total Amount') {
+              let displayValue = cellValue;
+              if (!isNaN(parseFloat(cellValue))) {
+                displayValue = `₱${parseFloat(cellValue).toLocaleString('en-PH',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
+              }
+              dataRowHtml += `<td><span class="text-green-600">${displayValue}</span></td>`;
+            }
+            else if (header === 'JO#') {
+              dataRowHtml += `<td><span class="text-blue-600">${cellValue}</span></td>`;
+            }
+            else if (
+              header.includes('Date') ||
+              header === "Del/Pickup Time"
+            ) {
+              let displayValue = cellValue;
+              // Special handling for "[UNPAID]" to ensure it's not parsed as a date
+              if (cellValue && String(cellValue).trim() === "[UNPAID]") { // Ensure cellValue is string and trimmed
+                displayValue = "[UNPAID]";
+              } else {
+                const parsedDate = new Date(cellValue);
+                if (!isNaN(parsedDate.getTime())) {
+                  displayValue = parsedDate.toLocaleString('en-US', {
+                    year: '2-digit',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  });
+                }
+              }
+              dataRowHtml += `<td>${displayValue}</td>`;
+            }
+            // Add an explicit check for "Pay Status" if it should be displayed as is
+            else if (header === 'Pay Status') {
+                dataRowHtml += `<td>${cellValue}</td>`;
+            }
+            else {
+              dataRowHtml += `<td>${cellValue}</td>`;
+            }
+          });
+          dataRowHtml += '</tr>';
+          tbody.insertAdjacentHTML('beforeend', dataRowHtml);
+        });
+
+        dataContainer.appendChild(table);
+    }
+
+    // Filter table function
+    function filterTable() {
+        const monthFilterVal = document.getElementById('monthFilter').value.toLowerCase();
+        const customerNameFilterVal = document.getElementById('customerNameFilter').value.toLowerCase();
+        const staffFilterVal = document.getElementById('staffFilter').value.toLowerCase();
+        const paymentTypeFilterVal = document.getElementById('paymentTypeFilter').value.toLowerCase();
+        const statusFilterVal = document.getElementById('statusFilter').value; // Get value from new status filter
+
+        let currentFilteredData = allReportData.filter(item => {
+            let matchMonth = true;
+            let matchCustomer = true;
+            let matchStaff = true;
+            let matchPaymentType = true;
+            let matchStatus = true; // New status filter variable
+            let matchComments = true; // For comments filter
+
+            // Month Filter
+            if (monthFilterVal) {
+                const dateCreated = item['Date Created'];
+                if (dateCreated) {
+                    const date = new Date(dateCreated);
+                    const monthName = date.toLocaleString('en-US', { month: 'long' }).toLowerCase();
+                    if (monthName !== monthFilterVal) {
+                        matchMonth = false;
                     }
+                } else {
+                    matchMonth = false;
                 }
-
-                if (!response || !response.ok) {
-                    throw new Error('Failed to fetch data after multiple retries.');
-                }
-
-                const result = await response.json();
-
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-
-                const data = result.data;
-                const headers = result.headers; // Get headers from the response
-
-                // --- DEBUGGING IN HTML CONSOLE ---
-                console.log("Headers received from Apps Script:", headers);
-                if (data.length > 0) {
-                    console.log("First data item received:", data[0]);
-                }
-                // --- END DEBUGGING IN HTML CONSOLE ---
-
-                if (data.length === 0) {
-                    noDataMessage.style.display = 'block';
-                    return;
-                }
-
-                // Create table element
-                const table = document.createElement('table');
-                let headerRowHtml = '';
-                headers.forEach(header => {
-                    headerRowHtml += `<th>${header}</th>`;
-                });
-
-                table.innerHTML = `
-                    <thead>
-                        <tr>
-                            ${headerRowHtml}
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                `;
-                const tbody = table.querySelector('tbody');
-
-                data.forEach(item => {
-                    let dataRowHtml = '<tr>';
-                    headers.forEach(header => {
-                        let cellValue = '';
-                        // Explicitly check if the item has the property before trying to access it
-                        if (Object.prototype.hasOwnProperty.call(item, header)) {
-                            cellValue = item[header];
-                            // If cell value is null, undefined, or empty string after trimming, use '---'
-                            if (cellValue === null || cellValue === undefined || (typeof cellValue === 'string' && cellValue.trim() === '')) {
-                                cellValue = '---';
-                            }
-                        } else {
-                            // This means the header from the Apps Script is not a key in the current data item
-                            cellValue = 'NA (Key Missing)';
-                            console.warn(`Header '${header}' not found as a key in data item:`, item);
-                        }
-
-                        // Apply specific formatting based on header name
-                        if (header.includes('Amount') || header.includes('TOTAL')) {
-                            let displayValue = cellValue;
-                            if (typeof cellValue === 'number' || (typeof cellValue === 'string' && !isNaN(parseFloat(cellValue)))) {
-                                displayValue = `₱${parseFloat(cellValue).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                            }
-                            dataRowHtml += `<td><span class="text-green-600">${displayValue}</span></td>`;
-                        } else if (header.includes('JO#')) {
-                            dataRowHtml += `<td><span class="text-blue-600">${cellValue}</span></td>`;
-                        } else if (header.includes('Date')) { // For "Date Created" and "Audit Date"
-                            let displayDate = cellValue;
-                            if (cellValue instanceof Date) {
-                                displayDate = cellValue.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }); // MM/DD/YYYY
-                            } else if (typeof cellValue === 'string') {
-                                const parsedDate = new Date(cellValue);
-                                if (!isNaN(parsedDate.getTime())) {
-                                    displayDate = parsedDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-                                }
-                            }
-                            dataRowHtml += `<td>${displayDate}</td>`;
-                        } else if (header.includes('Payment Status')) { // Specific formatting for Payment Status
-                            if (cellValue !== '[UNPAID]' && typeof cellValue === 'string' && new Date(cellValue).toString() !== 'Invalid Date') {
-                                // Attempt to parse as a date if it's not '[UNPAID]' and looks like a date string
-                                dataRowHtml += `<td>${formatTimestampForManila(cellValue)}</td>`;
-                            } else {
-                                dataRowHtml += `<td>${cellValue}</td>`;
-                            }
-                        }
-                        else {
-                            dataRowHtml += `<td>${cellValue}</td>`;
-                        }
-                    });
-                    dataRowHtml += '</tr>';
-                    tbody.insertAdjacentHTML('beforeend', dataRowHtml);
-                });
-
-                dataContainer.appendChild(table);
-
-            } catch (error) {
-                console.error('Failed to fetch data:', error);
-                errorText.textContent = `Could not load data: ${error.message}. Please check the web app URL and permissions.`;
-                errorDiv.style.display = 'block';
-            } finally {
-                loadingDiv.style.display = 'none';
             }
+
+            // Customer Name Filter (exact match for dropdown)
+            if (customerNameFilterVal) {
+                if (!item['Customer Name'] || String(item['Customer Name']).toLowerCase().trim() !== customerNameFilterVal) {
+                    matchCustomer = false;
+                }
+            }
+
+            // Staff Filter (exact match for dropdown)
+            if (staffFilterVal) {
+                if (!item['Staff'] || String(item['Staff']).toLowerCase().trim() !== staffFilterVal) {
+                    matchStaff = false;
+                }
+            }
+
+            // Payment Type Filter (uses 'Del Pay' for comparison)
+            if (paymentTypeFilterVal) {
+                if (!item['Del Pay'] || String(item['Del Pay']).toLowerCase().trim() !== paymentTypeFilterVal) {
+                    matchPaymentType = false;
+                }
+            }
+
+            // Status Filter (new)
+            if (statusFilterVal === 'Non Blanks') {
+                if (!item['Status'] || String(item['Status']).trim() === '') {
+                    matchStatus = false;
+                }
+            }
+
+            // Comments Filter (new - based on global state)
+            if (isCommentsFilterActive) {
+                if (!item['Comments'] || String(item['Comments']).trim() === '') {
+                    matchComments = false;
+                }
+            }
+
+            return matchMonth && matchCustomer && matchStaff && matchPaymentType && matchStatus && matchComments;
+        });
+
+        renderTable(currentFilteredData);
+    }
+
+    // New function to toggle comments filter
+    function toggleCommentsFilter() {
+        isCommentsFilterActive = !isCommentsFilterActive;
+        commentsFilterButton.textContent = isCommentsFilterActive ? 'All Comments' : 'Non-Blank Comments';
+        filterTable(); // Re-apply all filters including the comments filter state
+    }
+
+
+    async function fetchData() {
+      loadingDiv.style.display = 'block';
+      errorDiv.style.display = 'none';
+      dataContainer.innerHTML = '';
+      noDataMessage.style.display = 'none';
+
+      try {
+        const response = await fetch(webAppUrl);
+        if (!response.ok) throw new Error("Failed to fetch data");
+        const result = await response.json();
+
+        if (result.error) throw new Error(result.error);
+
+        allReportData = result.data; // Store raw data globally
+        const headers = result.headers; // Original headers from fetch
+
+        if (allReportData.length === 0) {
+          noDataMessage.style.display = 'block';
+          return;
         }
 
-        // Fetch data when the page loads
-        window.onload = fetchData;
-    </script>
+        // Determine which headers to display based on desiredHeaders and fetched headers
+        displayedHeaders = desiredHeaders.filter(h => headers.includes(h));
+
+        populateFilters(allReportData); // Populate dropdowns with unique values from fetched data
+        filterTable(); // Render table with initial data (all data, no filters applied yet)
+
+      } catch (err) {
+        console.error(err);
+        errorDiv.textContent = "Error: " + err.message;
+        errorDiv.style.display = 'block';
+        showAlert("Error", "Failed to load data: " + err.message);
+      } finally {
+        loadingDiv.style.display = 'none';
+      }
+    }
+
+    // Save Status
+    dataContainer.addEventListener('change', async (e) => {
+      if (e.target.tagName === 'SELECT' && e.target.getAttribute('data-jo')) { // Check if it's a status dropdown
+        const joNumber = e.target.getAttribute('data-jo');
+        const status = e.target.value;
+
+        try {
+          const formData = new URLSearchParams();
+          formData.append("joNumber", joNumber);
+          formData.append("status", status);
+
+          const response = await fetch(webAppUrl, {
+            method: 'POST',
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData.toString()
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            const td = e.target.closest('td');
+            td.classList.add('flash-success');
+            setTimeout(() => td.classList.remove('flash-success'), 1000);
+          } else {
+            showAlert("Update Failed", "Failed to update status: " + (result.error || "Unknown error"));
+          }
+        } catch (err) {
+          console.error(err);
+          showAlert("Error", "Failed to update status. Please try again.");
+        }
+      }
+    });
+
+    // Save Comments
+    dataContainer.addEventListener('blur', async (e) => {
+      if (e.target.classList.contains('comment-input')) {
+        const joNumber = e.target.getAttribute('data-jo');
+        const comments = e.target.value;
+
+        try {
+          const formData = new URLSearchParams();
+          formData.append("joNumber", joNumber);
+          formData.append("comments", comments);
+
+          const response = await fetch(webAppUrl, {
+            method: 'POST',
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData.toString()
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            const td = e.target.closest('td');
+            td.classList.add('flash-success');
+            setTimeout(() => td.classList.remove('flash-success'), 1000);
+          } else {
+            showAlert("Update Failed", "Failed to update comments: " + (result.error || "Unknown error"));
+          }
+        } catch (err) {
+          console.error(err);
+          showAlert("Error", "Failed to update comments. Please try again.");
+        }
+      }
+    }, true);
+
+    // Initial data fetch on window load
+    window.onload = fetchData;
+  </script>
 </body>
 </html>
