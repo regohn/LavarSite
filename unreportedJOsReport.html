@@ -449,7 +449,7 @@
             let cellValue = item[header] || '';
 
             if (header === 'Status') {
-              const options = ["In Shop Undelivered","Delivered Unreported","Unknown"];
+              const options = ["In Shop Undelivered","Delivered Unreported","Unknown", "Resolved"];
               const joNumber = item['JO#'] ? String(item['JO#']).trim() : "";
               let dropdownHtml = `<select data-jo="${joNumber}">`;
               dropdownHtml += `<option value="">-- Select --</option>`;
