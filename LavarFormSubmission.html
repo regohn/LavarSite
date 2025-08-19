@@ -264,6 +264,16 @@ select:focus {
   border-bottom: none;
 }
 
+/* New style for clickable JO# */
+.jo-clickable {
+    cursor: pointer;
+    color: #007aff; /* Blue like other links */
+    text-decoration: underline;
+}
+.jo-clickable:hover {
+    text-decoration: none; /* Remove underline on hover for a subtle effect */
+}
+
   </style>
 </head>
 <body>
@@ -298,16 +308,12 @@ select:focus {
 
 
     <div id="foldJoResult" class="border rounded p-3 mt-3 bg-light" style="display:none;"><br></div>
-      <!--<p id="customer-name">Customer Name:</p>
-
-      <label for="jo-number">JO NUMBER (example: 04065... di kasama JO)</label>-->
-    <div >
+      <div >
     <label for="pickupDropdown">Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
    </div>
     <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" />
     <label for="" style="font-size: 10px;">Customer Name || Date of Pickup/Drop-Off || Delivery Staff</label>
-    
-    <!-- New Report Button - Moved outside form -->
+
     <button id="reportButton" class="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105" style="display: none;">
         Report Missing Pickup - send email to Sir Will
     </button>
@@ -345,7 +351,6 @@ select:focus {
 
 
 
-    <!-- Report Modal -->
     <div id="reportModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -428,7 +433,7 @@ async function searchFoldJO() {
         if (customerInput) customerInput.value = value;
         currentCustomerName = value.trim().toLowerCase();  // set global variable
         showShowAllPickupBtn(); // <-- show the button when customer is found
-        loadPickupDropdown(); 
+        loadPickupDropdown();
       }
       html += `
         <li class="list-group-item d-flex justify-content-between">
@@ -765,58 +770,63 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
 <script>
     // --- New script for the "Walang Log" table ---
     // REPLACE THIS URL with the one you got from deploying your Apps Script web app
-    const APPS_SCRIPT_WEB_APP_URL_WALANG_LOG = 'https://script.google.com/macros/s/AKfycbwm_1X4HD_FoJv0CWf-OEwidJ-iLGjLDFPxrEkMGtoXdS0ANgcLpOT5lkuMuj0HnOQz/exec'; //
+    const APPS_SCRIPT_WEB_APP_URL_WALANG_LOG = 'https://script.google.com/macros/s/AKfycbwm_1X4HD_FoJv0CWf-OEwidJ-iLGjLDFPxrEkMGtoXdS0ANgcLpOT5lkuMuj0HnOQz/exec';
 
-    const toggleWalangLogDataLink = document.getElementById('toggleWalangLogData'); //
-    const walangLogDataContainer = document.getElementById('walangLogDataContainer'); //
-    // Removed: let isWalangLogTableLoaded = false; // This variable is no longer needed for continuous fetching
+    const toggleWalangLogDataLink = document.getElementById('toggleWalangLogData');
+    const walangLogDataContainer = document.getElementById('walangLogDataContainer');
+
 
     async function fetchAndRenderWalangLogTable() {
         try {
             // Show a loading message
-            walangLogDataContainer.innerHTML = '<p>Loading data...</p>'; //
-            walangLogDataContainer.style.display = 'block'; //
+            walangLogDataContainer.innerHTML = '<p>Loading data...</p>';
+            walangLogDataContainer.style.display = 'block';
 
-            const response = await fetch(APPS_SCRIPT_WEB_APP_URL_WALANG_LOG); //
-            const result = await response.json(); //
+            const response = await fetch(APPS_SCRIPT_WEB_APP_URL_WALANG_LOG);
+            const result = await response.json();
 
             if (result.error) {
-                walangLogDataContainer.innerHTML = `<p class="text-danger">Error from server: ${result.error}</p>`; //
+                walangLogDataContainer.innerHTML = `<p class="text-danger">Error from server: ${result.error}</p>`;
                 return;
             }
 
-            const dataRows = result.data; // This will be the 2D array of values
+            const dataRows = result.data;
 
             if (!dataRows || dataRows.length === 0) {
-                walangLogDataContainer.innerHTML = '<p>No data found in the specified range.</p>'; //
+                walangLogDataContainer.innerHTML = '<p>No data found in the specified range.</p>';
                 return;
             }
 
-            const table = document.createElement('table'); //
-            table.style.width = '100%'; //
-            const tableBody = document.createElement('tbody'); //
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            const tableBody = document.createElement('tbody');
 
             // Define headers explicitly as they are not part of the C4:F100 range
-            const headers = ["Date Created JO", "JO#", "Customer Name", "Amount"]; //
-            const headerRow = document.createElement('tr'); //
+            const headers = ["Date Created JO", "JO#", "Customer Name", "Amount"];
+            const headerRow = document.createElement('tr');
             headers.forEach(headerText => {
-                const th = document.createElement('th'); //
-                th.textContent = headerText.trim(); //
-                headerRow.appendChild(th); //
+                const th = document.createElement('th');
+                th.textContent = headerText.trim();
+                headerRow.appendChild(th);
             });
-            tableBody.appendChild(headerRow); //
+            tableBody.appendChild(headerRow);
 
             // Process the data rows - Skip the first row if it's a header
-            dataRows.slice(1).forEach(rowData => { //
-                const tr = document.createElement('tr'); //
-                rowData.forEach(cellData => {
-                    const td = document.createElement('td'); //
+            dataRows.slice(1).forEach(rowData => {
+                const tr = document.createElement('tr');
+                rowData.forEach((cellData, index) => { // Added index to get header for the column
+                    const td = document.createElement('td');
+                    // Check if this is the 'JO#' column (index 1 based on headers array)
+                    if (index === headers.indexOf("JO#")) {
+                        td.classList.add('jo-clickable');
+                        td.setAttribute('data-jo-number', cellData);
+                    }
                     // Basic formatting for Date Created JO if it's the first column
-                    if (headers[rowData.indexOf(cellData)] === "Date Created JO" && cellData) { //
+                    if (headers[index] === "Date Created JO" && cellData) {
                         try {
-                            const date = new Date(cellData); //
+                            const date = new Date(cellData);
                             if (!isNaN(date.getTime())) { // Use getTime() for robust check
-                                td.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }); //
+                                td.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
                             } else {
                                 td.textContent = cellData; // Fallback if not a valid date
                             }
@@ -824,41 +834,55 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
                             td.textContent = cellData; // Fallback for parsing errors
                         }
                     } else {
-                        td.textContent = cellData; //
+                        td.textContent = cellData;
                     }
-                    tr.appendChild(td); //
+                    tr.appendChild(td);
                 });
-                tableBody.appendChild(tr); //
+                tableBody.appendChild(tr);
             });
 
-            table.appendChild(tableBody); //
+            table.appendChild(tableBody);
             walangLogDataContainer.innerHTML = ''; // Clear loading message
-            walangLogDataContainer.appendChild(table); //
-            // Removed: isWalangLogTableLoaded = true;
-            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"'; //
+            walangLogDataContainer.appendChild(table);
+            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"';
         } catch (error) {
-            console.error('Error fetching or processing Walang Log data:', error); //
-            walangLogDataContainer.innerHTML = '<p class="text-danger">Error loading data. Please check the Apps Script URL and deployment permissions.</p>'; //
-            toggleWalangLogDataLink.textContent = 'Show "Walang Log"'; //
+            console.error('Error fetching or processing Walang Log data:', error);
+            walangLogDataContainer.innerHTML = '<p class="text-danger">Error loading data. Please check the Apps Script URL and deployment permissions.</p>';
+            toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
         }
     }
 
     function toggleWalangLogVisibility() {
-        // event.preventDefault(); // Removed as it's now a button
-
         if (walangLogDataContainer.style.display === 'none' || walangLogDataContainer.style.display === '') {
-            // Always fetch when the container is hidden and needs to be shown
-            fetchAndRenderWalangLogTable(); // Always call this to get fresh data
-            // Removed: if (!isWalangLogTableLoaded) { fetchAndRenderWalangLogTable(); }
-            walangLogDataContainer.style.display = 'block'; //
-            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"'; //
+            fetchAndRenderWalangLogTable();
+            walangLogDataContainer.style.display = 'block';
+            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"';
         } else {
-            walangLogDataContainer.style.display = 'none'; //
-            toggleWalangLogDataLink.textContent = 'Show "Walang Log"'; //
+            walangLogDataContainer.style.display = 'none';
+            toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
         }
     }
 
-    toggleWalangLogDataLink.addEventListener('click', toggleWalangLogVisibility); //
+    toggleWalangLogDataLink.addEventListener('click', toggleWalangLogVisibility);
+
+    // Event listener for clicking on JO# within walangLogDataContainer
+    walangLogDataContainer.addEventListener('click', (event) => {
+        const clickedElement = event.target;
+        // Check if the clicked element is a clickable JO#
+        if (clickedElement.classList.contains('jo-clickable')) {
+            const joNumber = clickedElement.getAttribute('data-jo-number');
+            if (joNumber) {
+                // Remove '#' before putting it in the input field
+                const cleanJoNumber = joNumber.replace('#', '');
+                document.getElementById('joSearch').value = cleanJoNumber;
+                searchFoldJO(); // Trigger the search function
+                // Optionally hide the walangLogDataContainer after a JO# is selected
+                walangLogDataContainer.style.display = 'none';
+                toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
+            }
+        }
+    });
+
 
 const showAllPickupWebAppURL = "https://script.google.com/macros/s/AKfycbzCe2UevQp2bUZMF6B3_Da-m34AQ2FaORncFHTWvOa0vkEpMQQyhtTpaqy-nsYm70uM/exec"; // replace with your actual deployed URL
 
