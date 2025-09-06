@@ -2,27 +2,27 @@
 <html>
 <head>
   <script>
-      document.addEventListener("DOMContentLoaded", function () {
-    const table = document.querySelector("#tableContainer #dataTable");
-    if (!table) return;
+    document.addEventListener("DOMContentLoaded", function () {
+      const table = document.querySelector("#tableContainer #dataTable");
+      if (!table) return;
 
-    const rows = table.querySelectorAll("tbody tr");
+      const rows = table.querySelectorAll("tbody tr");
 
-    // Get the index of the "Date Paid" column (case-insensitive)
-    const headers = Array.from(table.querySelectorAll("thead th"));
-    const datePaidIndex = headers.findIndex(
-      th => th.textContent.trim().toLowerCase() === "DATE PAID".toLowerCase()
-    );
-    alert(datePaidIndex)
-    if (datePaidIndex === -1) return; // Stop if "Date Paid" column isn't found
+      // Get the index of the "Date Paid" column (case-insensitive)
+      const headers = Array.from(table.querySelectorAll("thead th"));
+      const datePaidIndex = headers.findIndex(
+        th => th.textContent.trim().toLowerCase() === "DATE PAID".toLowerCase()
+      );
+      // alert(datePaidIndex) // Removed the debugging alert
+      if (datePaidIndex === -1) return; // Stop if "Date Paid" column isn't found
 
-    rows.forEach(row => {
-      const cell = row.cells[datePaidIndex];
-      if (cell && cell.textContent.trim().toLowerCase() === "[UNPAID]") {
-        row.style.backgroundColor = "#ffcccc"; // light red highlight
-      }
+      rows.forEach(row => {
+        const cell = row.cells[datePaidIndex];
+        if (cell && cell.textContent.trim().toLowerCase() === "[unpaid]") {
+          row.style.backgroundColor = "#ffcccc"; // light red highlight
+        }
+      });
     });
-  });
 
   </script>
   <title>JO Data Viewer - LAVAR LAUnDRY</title>
@@ -42,54 +42,54 @@
     }
     #dataTable td:nth-child(1) { width: 6.88%; }
     #dataTable td:nth-child(2) { width: 2.88%; }
-    #dataTable td:nth-child(3) { width: 10.88%; }    
-    #dataTable td:nth-child(4) { width: .88%; }    
-    #dataTable td:nth-child(5) { width: 6.88%; }    
-    #dataTable td:nth-child(6) { width: 1.88%; }    
-    #dataTable td:nth-child(7) { width: .88%; }    
-    #dataTable td:nth-child(8) { width: 5.88%; }    
-    #dataTable td:nth-child(9) { width: 13.88%; }    
-    #dataTable td:nth-child(10) { width: 8.88%; }    
-    #dataTable td:nth-child(11) { width: 4.88%; }    
-    #dataTable td:nth-child(12) { width: 5.88%; }    
-    #dataTable td:nth-child(13) { width: 9.88%; }    
-    #dataTable td:nth-child(14) { width: 7.88%; }    
-    #dataTable td:nth-child(15) { width: 3.88%; }    
-    #dataTable td:nth-child(16) { width: 3.88%; }    
-    #dataTable td:nth-child(17) { width: 3.88%; }    
+    #dataTable td:nth-child(3) { width: 10.88%; }
+    #dataTable td:nth-child(4) { width: .88%; }
+    #dataTable td:nth-child(5) { width: 6.88%; }
+    #dataTable td:nth-child(6) { width: 1.88%; }
+    #dataTable td:nth-child(7) { width: .88%; }
+    #dataTable td:nth-child(8) { width: 5.88%; }
+    #dataTable td:nth-child(9) { width: 13.88%; }
+    #dataTable td:nth-child(10) { width: 8.88%; }
+    #dataTable td:nth-child(11) { width: 4.88%; }
+    #dataTable td:nth-child(12) { width: 5.88%; }
+    #dataTable td:nth-child(13) { width: 9.88%; }
+    #dataTable td:nth-child(14) { width: 7.88%; }
+    #dataTable td:nth-child(15) { width: 3.88%; }
+    #dataTable td:nth-child(16) { width: 3.88%; }
+    #dataTable td:nth-child(17) { width: 3.88%; }
 
-/* Modal backdrop */
-#imageModal {
-  display: none;
-  position: fixed;
-  z-index: 999;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.8);
-}
+    /* Modal backdrop */
+    #imageModal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.8);
+    }
 
-/* Modal content */
-#imageModalContent {
-  margin: 10% auto;
-  display: block;
-  max-width: 90%;
-  max-height: 80vh;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-}
+    /* Modal content */
+    #imageModalContent {
+      margin: 10% auto;
+      display: block;
+      max-width: 90%;
+      max-height: 80vh;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
 
-#imageModalClose {
-  position: absolute;
-  top: 20px;
-  right: 40px;
-  color: white;
-  font-size: 30px;
-  font-weight: bold;
-  cursor: pointer;
-}
+    #imageModalClose {
+      position: absolute;
+      top: 20px;
+      right: 40px;
+      color: white;
+      font-size: 30px;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
 
     th, td {
@@ -141,58 +141,58 @@
       background-color: #f44336;
     }
     #clearFiltersButton:hover { background-color: #e53935; }
-.editable-cell {
-  cursor: pointer;
-}
+    .editable-cell {
+      cursor: pointer;
+    }
 
-.editable-cell input {
-  padding: 2px;
-  font-size: 0.9rem;
-}
+    .editable-cell input {
+      padding: 2px;
+      font-size: 0.9rem;
+    }
 
-.editable-cell button {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-}    
+    .editable-cell button {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+    }
 
-#tableContainer table tr td:nth-child(23){
-  display: none;
-}
-#tableContainer table tr th:nth-child(23) {
-  display: none;
-}
+    #tableContainer table tr td:nth-child(23){
+      display: none;
+    }
+    #tableContainer table tr th:nth-child(23) {
+      display: none;
+    }
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Modal Viewer for Enlarged Images -->
   <div id="imageModal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; overflow:auto; background-color: rgba(0,0,0,0.8);">
     <span id="imageModalClose" style="position:absolute; top:20px; right:35px; color:white; font-size:40px; font-weight:bold; cursor:pointer;">&times;</span>
     <img id="imageModalContent" style="margin:auto; display:block; max-width:90%; max-height:90%; margin-top:5%;" />
   </div>
-<div a>
-    <a href="pickuprequestsummary.html"> Requests Summary </a> | 
-    <a href="pickuprequest.html"> Request Forms </a> | 
-    <a href="pickup.html"> Pickup </a>  | 
-    <a href="delivery.html"> Delivery </a> | 
+  <div a>
+    <a href="pickuprequestsummary.html"> Requests Summary </a> |
+    <a href="pickuprequest.html"> Request Forms </a> |
+    <a href="pickup.html"> Pickup </a> |
+    <a href="delivery.html"> Delivery </a> |
     <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold | </a> 
-    <a href="FoldSite.html"> Fold Site </a> 
-    <br>  
-<br>
-</div>
-  <br>  
-   <br>  
+    <a href="LavarFormSubmission.html"> Fold | </a>
+    <a href="FoldSite.html"> Fold Site </a>
+    <br>
+    <br>
+  </div>
+  <br>
+  <br>
   <button onclick="loadData()">Load Data</button>
   <button onclick="triggerCSVImport()">📥 Import CSV</button>
-<button type="button" onclick="window.open('customer_issues.html', 'CustomerIssues', 'width='+ (window.innerWidth * 0.8) + ',height=' + (window.innerHeight * 0.8) + ',left=' + (window.innerWidth * 0.1) + ',top=' + (window.innerHeight * 0.1))">
-  View Customer Issues
-</button>
+  <button type="button" onclick="window.open('customer_issues.html', 'CustomerIssues', 'width='+ (window.innerWidth * 0.8) + ',height=' + (window.innerHeight * 0.8) + ',left=' + (window.innerWidth * 0.1) + ',top=' + (window.innerHeight * 0.1))">
+    View Customer Issues
+  </button>
 
-<button id="filterUnpaidNoDeliveryType">Unpaid Undelivered</button>
+  <button id="filterUnpaidNoDeliveryType">Unpaid Undelivered</button>
+  <button id="filterUnpaidDelivered">Unpaid Delivered</button>
   <div id="controls">
     Max Rows: <input type="number" id="maxDaysInput" value="90" min="1" max="10000">
   </div>
@@ -204,6 +204,15 @@
     <label for="searchCustomer">Search by Customer:</label>
     <select id="searchCustomer" onchange="filterData()">
       <option value="">Select Customer</option>
+    </select>
+    <label for="searchDatePaid">Date Paid Status:</label>
+    <select id="searchDatePaid" onchange="filterData()">
+      <option value="">All</option>
+      <option value="[UNPAID]">[UNPAID]</option>
+    </select>
+    <label for="searchPaymentDeliveryType">Delivery Payment Type:</label>
+    <select id="searchPaymentDeliveryType" onchange="filterData()">
+      <option value="">All</option>
     </select>
     <button id="clearFiltersButton" onclick="clearFilters()">Clear Filters</button>
     <button id="clearTableRows" onclick="clearTableRows()">Clear Table</button>
@@ -218,25 +227,24 @@
     const apiUrl = "https://script.google.com/macros/s/AKfycbx6fziX1510VRFveZ4hfvGfknrryGgQ85S5AjnvV1g2Ja6pciGz4XSyar2yU-aF2QAw/exec";
     let allData = [];
     let filteredData = [];
+    let deliveryPaymentTypeIndex = -1; // Global variable to store the correct index
 
-    
-
-  function formatDateTime(input) {
-    const date = new Date(input);
-    if (isNaN(date)) return input;
+    function formatDateTime(input) {
+      const date = new Date(input);
+      if (isNaN(date)) return input;
 
 
-    date.setHours(date.getHours());
+      date.setHours(date.getHours());
 
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    }).format(date).replace(',', '');
-  }
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }).format(date).replace(',', '');
+    }
 
     function formatDateOnly(input) {
       const date = new Date(input);
@@ -272,96 +280,96 @@
       table.appendChild(thead);
 
       const tbody = document.createElement("tbody");
-    for (let i = 1; i < Math.min(data.length, 10000); i++) {
-      const rowData = data[i];
-      const row = document.createElement("tr");
-      row.id = rowData[18];  // Set the JO# as the row ID
-      rowData.forEach((cell, index) => {
-      const td = document.createElement("td");
+      for (let i = 1; i < Math.min(data.length, 10000); i++) {
+        const rowData = data[i];
+        const row = document.createElement("tr");
+        row.id = rowData[18];  // Set the JO# as the row ID
+        rowData.forEach((cell, index) => {
+          const td = document.createElement("td");
 
-      if (index === 0 || index === 4 || index === 13 || index === 18) {
-        td.textContent = formatDateTime(cell);
-      } else if (index === 12) {
-        td.textContent = formatDateOnly(cell);
-      } else if ([8,19, 20, 21].includes(index)) {
-        if (typeof cell === "string" && cell.includes("drive.google.com")) {
-          const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
-          if (match && match[1]) {
-            const fileId = match[1];
-            const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
-            const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+          if (index === 0 || index === 4 || index === 13 || index === 18) {
+            td.textContent = formatDateTime(cell);
+          } else if (index === 12) {
+            td.textContent = formatDateOnly(cell);
+          } else if ([8, 19, 20, 21].includes(index)) {
+            if (typeof cell === "string" && cell.includes("drive.google.com")) {
+              const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
+              if (match && match[1]) {
+                const fileId = match[1];
+                const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
+                const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
-            const img = document.createElement("img");
-            img.src = thumbUrl;
-            img.alt = "Image";
-            img.style.maxWidth = "80px";
-            img.style.cursor = "pointer";
+                const img = document.createElement("img");
+                img.src = thumbUrl;
+                img.alt = "Image";
+                img.style.maxWidth = "80px";
+                img.style.cursor = "pointer";
 
-            let imgPopup = null; // Keep reference to the popup window
+                let imgPopup = null; // Keep reference to the popup window
 
-            img.onclick = () => {
+                img.onclick = () => {
+                  const width = 600;
+                  const height = 400;
+                  const left = (window.screen.width / 2) - (width / 2);
+                  const top = (window.screen.height / 2) - (height / 2);
+
+                  const windowFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`;
+
+                  if (imgPopup && !imgPopup.closed) {
+                    // If popup is already open, just change its location to the new image
+                    imgPopup.location.href = fullImageUrl;
+                    imgPopup.focus();
+                  } else {
+                    // Open a new popup window with the image URL
+                    imgPopup = window.open(fullImageUrl, "imagePopup", windowFeatures);
+                  }
+                };
+
+                td.appendChild(img);
+              } else {
+                td.textContent = "Invalid link";
+              }
+            } else {
+              td.textContent = "";
+            }
+
+          } else if (index === 1) {
+            const a = document.createElement("a");
+            a.href = "#";
+            a.textContent = cell ?? "N/A";
+            a.style.cursor = "pointer";
+            a.style.color = "#0066cc";
+            a.style.textDecoration = "underline";
+
+            a.onclick = (e) => {
+              e.preventDefault();
+              const joNumber = cell; // e.g., "#12669"
+              const customerName = rowData[2] || ""; // CUSTOMER is column index 2
+              const encodedJO = encodeURIComponent(joNumber);
+              const encodedCustomer = encodeURIComponent(customerName);
               const width = 600;
               const height = 400;
               const left = (window.screen.width / 2) - (width / 2);
               const top = (window.screen.height / 2) - (height / 2);
 
-              const windowFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`;
+              window.open(
+                `JOpopup.html?joNumber=${encodedJO}&customer=${encodedCustomer}`,
+                "JOpopupWindow",
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+              );
 
-              if (imgPopup && !imgPopup.closed) {
-                // If popup is already open, just change its location to the new image
-                imgPopup.location.href = fullImageUrl;
-                imgPopup.focus();
-              } else {
-                // Open a new popup window with the image URL
-                imgPopup = window.open(fullImageUrl, "imagePopup", windowFeatures);
-              }
             };
 
-            td.appendChild(img);
+            td.appendChild(a);
+
           } else {
-            td.textContent = "Invalid link";
+            td.textContent = cell ?? "";
           }
-        } else {
-          td.textContent = "";
-        }
-      
-      } else if (index === 1) {
-          const a = document.createElement("a");
-          a.href = "#";
-          a.textContent = cell ?? "N/A";
-          a.style.cursor = "pointer";
-          a.style.color = "#0066cc";
-          a.style.textDecoration = "underline";
+          row.appendChild(td);
+        });
 
-          a.onclick = (e) => {
-            e.preventDefault();
-            const joNumber = cell; // e.g., "#12669"
-            const customerName = rowData[2] || ""; // CUSTOMER is column index 2
-            const encodedJO = encodeURIComponent(joNumber);
-            const encodedCustomer = encodeURIComponent(customerName);
-            const width = 600;
-            const height = 400;
-            const left = (window.screen.width / 2) - (width / 2);
-            const top = (window.screen.height / 2) - (height / 2);
-
-            window.open(
-              `JOpopup.html?joNumber=${encodedJO}&customer=${encodedCustomer}`,
-              "JOpopupWindow",
-              `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-            );
-
-          };
-
-          td.appendChild(a);
-
-      } else {
-        td.textContent = cell ?? "";
+        tbody.appendChild(row);
       }
-      row.appendChild(td);
-    });
-
-      tbody.appendChild(row);
-    }
 
       table.appendChild(tbody);
       container.appendChild(table);
@@ -385,7 +393,7 @@
       });
       rows.forEach(row => table.appendChild(row));
     }
-    // Load data from the API  
+    // Load data from the API
     async function loadData() {
       const status = document.getElementById("status");
       status.textContent = "Loading...";
@@ -394,15 +402,23 @@
         const data = await response.json();
         allData = data;
         filteredData = data;
+
+        // Find the index for "Delivery Payment Type" when data is loaded
+        const headers = allData[0];
+        deliveryPaymentTypeIndex = headers.findIndex(
+          header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase()
+        );
+
         renderTable(filteredData);
         addUnresolvedWarnings();
         loadCustomers(data);
+        loadPaymentDeliveryTypes(data); // Call the new function
         status.textContent = "";
       } catch (e) {
         status.textContent = "Error loading data: " + e.message;
       }
     }
-    
+
     // Load customers into the dropdown
     function loadCustomers(data) {
       const select = document.getElementById("searchCustomer");
@@ -413,11 +429,13 @@
         if (customer) customerSet.add(customer);
       });
 
-      
+
       select.innerHTML = '<option value="">Select Customer</option>';
 
       // Sort alphabetically, case-insensitive
-      [...customerSet].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+      [...customerSet].sort((a, b) => a.localeCompare(b, undefined, {
+        sensitivity: 'base'
+      }))
         .forEach(name => {
           const opt = document.createElement("option");
           opt.value = name;
@@ -426,11 +444,60 @@
         });
     }
 
+    // Load Payment/Delivery Types into the dropdown dynamically
+    function loadPaymentDeliveryTypes(data) {
+      const select = document.getElementById("searchPaymentDeliveryType");
+      const typeSet = new Set();
+      const headers = data[0];
+      const deliveryPaymentTypeIndex = headers.findIndex(
+        header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase()
+      );
+
+      if (deliveryPaymentTypeIndex === -1) {
+        console.error("Delivery Payment Type column not found.");
+        return;
+      }
+
+      data.slice(1).forEach(row => {
+        let type = (row[deliveryPaymentTypeIndex] || "").trim();
+        if (type) typeSet.add(type);
+      });
+
+      select.innerHTML = '<option value="">All</option>';
+
+      // Hardcoded values to be included regardless of data
+      const fixedOptions = ["Cash", "G-Cash", "Other Online Payment", "Pick Up"];
+      fixedOptions.forEach(type => {
+        typeSet.add(type);
+      });
+
+      // Sort alphabetically, case-insensitive
+      [...typeSet].sort((a, b) => a.localeCompare(b, undefined, {
+        sensitivity: 'base'
+      }))
+        .forEach(type => {
+          const opt = document.createElement("option");
+          opt.value = type;
+          opt.textContent = type;
+          select.appendChild(opt);
+        });
+    }
+
     // Filter data based on date and customer
     function filterData() {
-      
+
       const searchDate = document.getElementById("searchDate").value; // Date picker value
       const searchCustomer = document.getElementById("searchCustomer").value.trim().toLowerCase(); // Normalize input
+      const datePaidFilter = document.getElementById("searchDatePaid").value;
+      const deliveryTypeFilter = document.getElementById("searchPaymentDeliveryType").value.trim().toLowerCase();
+      const headers = allData[0];
+      const deliveryPaymentTypeIndex = headers.findIndex(
+          header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase()
+      );
+      const datePaidIndex = headers.findIndex(
+          header => header.trim().toLowerCase() === "DATE PAID".toLowerCase()
+      );
+
 
       // Convert the search date from yyyy-mm-dd to yyyyMMdd format
       const formattedSearchDate = searchDate.split('-').join(''); // e.g., '2025-05-14' -> '20250514'
@@ -464,6 +531,18 @@
           if (customer !== searchCustomer) isMatch = false;
         }
 
+        // If the date paid filter is selected
+        if (datePaidFilter) {
+          const datePaid = (row[datePaidIndex] || "").trim();
+          if (datePaid !== datePaidFilter) isMatch = false;
+        }
+
+        // If the delivery type filter is selected
+        if (deliveryTypeFilter) {
+          const deliveryType = (row[deliveryPaymentTypeIndex] || "").trim().toLowerCase();
+          if (deliveryType !== deliveryTypeFilter) isMatch = false;
+        }
+
         return isMatch;
       });
 
@@ -475,7 +554,7 @@
     function clearTableRows() {
       const table = document.querySelector("table"); // Select the first table
       const tbody = table.querySelector("tbody"); // Select the tbody (where rows are stored)
-      
+
       if (tbody) {
         tbody.innerHTML = ""; // Remove all rows in the tbody, keeping the headers intact
       }
@@ -484,11 +563,13 @@
     function clearFilters() {
       document.getElementById("searchDate").value = "";
       document.getElementById("searchCustomer").value = "";
+      document.getElementById("searchDatePaid").value = "";
+      document.getElementById("searchPaymentDeliveryType").value = "";
       filteredData = allData;
       renderTable(filteredData);
       addUnresolvedWarnings();
     }
-    
+
     // Create a thumbnail image cell
     function openImageModal(imageUrl) {
       const modal = document.getElementById("imageModal");
@@ -497,7 +578,7 @@
       modalImg.src = imageUrl;
     }
 
-   
+
     // Close the image modal
     function closeImageModal() {
       const modal = document.getElementById("imageModal");
@@ -513,174 +594,205 @@
     document.getElementById("imageModalClose").onclick = function () {
       document.getElementById("imageModal").style.display = "none";
     };
-    // 
+    //
     window.onclick = function (event) {
       const modal = document.getElementById("imageModal");
       if (event.target === modal) {
         modal.style.display = "none";
       }
     };
-    // Load data on page load
-  document.querySelectorAll('.save-comment-btn').forEach((button, index) => {
-    button.addEventListener('click', () => {
-      const row = button.closest('tr');
-      const comment = row.querySelector('.comment-input').value.trim();
-      const uniqueId = row.getAttribute('data-id');
+    //
+    document.querySelectorAll('.save-comment-btn').forEach((button, index) => {
+      button.addEventListener('click', () => {
+        const row = button.closest('tr');
+        const comment = row.querySelector('.comment-input').value.trim();
+        const uniqueId = row.getAttribute('data-id');
 
-      if (!comment || !uniqueId) {
-        alert("Missing comment or ID");
-        return;
-      }
-    
-      fetch('https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_URL/exec', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: uniqueId,
-          column: 'Admin Comments',
-          value: comment
+        if (!comment || !uniqueId) {
+          alert("Missing comment or ID");
+          return;
+        }
+
+        fetch('https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_URL/exec', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            id: uniqueId,
+            column: 'Admin Comments',
+            value: comment
+          })
         })
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.status === 'success') {
-          alert('Comment saved!');
-        } else {
-          alert('Error: ' + result.message);
-        }
-      })
-      .catch(err => alert('Network error: ' + err.message));
-    });
-  });
-
-async function checkUnresolvedIssues(joNumber) {
-  try {
-    const response = await fetch(`https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec?action=checkIssues&jo=${encodeURIComponent(joNumber)}`);
-    const data = await response.json();
-    return data.unresolvedCount || 0;
-  } catch (err) {
-    console.error(`Error checking issues for ${joNumber}:`, err);
-    return 0;
-  }
-}
-
-async function markJOIssuesInTable() {
-  console.log("markJOIssuesInTable called");
-  const rows = document.querySelectorAll("#dataTable tbody tr");
-  for (const row of rows) {
-    const joCell = row.querySelector("td:nth-child(1)");  // 2nd column is JO#
-    const customerCell = row.querySelector("td:nth-child(2)"); // 3rd column is customer
-
-    if (joCell && customerCell) {
-      const joNumber = joCell.textContent.trim();
-
-      const unresolvedCount = await checkUnresolvedIssues(joNumber);
-      if (unresolvedCount > 0) {
-        customerCell.innerHTML += ` <span title="${unresolvedCount} unresolved issue(s)" style="color: red; font-weight: bold;">&#x26A0;</span>`;
-      }
-    }
-  }
-}
-
-
-
-//ImportCSVRaw
-function triggerCSVImport() {
-  if (confirm("Are you sure you want to import the latest CSV? This may overwrite existing data.")) {
-    fetch('https://script.google.com/macros/s/AKfycbwDtZ-VC549G9V9K9PD3i8qSFFUL2KUJnXjGFkM_gmspfLXMczyyD4ikNXKbpBtRLOzqA/exec?importCSV=true')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.text(); // or response.json() if JSON
-      })
-      .then(data => {
-        alert("Success:\n" + data);
-        location.reload();
-      })
-      .catch(error => {
-        alert("Error:\n" + error.message);
+          .then(res => res.json())
+          .then(result => {
+            if (result.status === 'success') {
+              alert('Comment saved!');
+            } else {
+              alert('Error: ' + result.message);
+            }
+          })
+          .catch(err => alert('Network error: ' + err.message));
       });
-  }
-}
+    });
 
+    async function checkUnresolvedIssues(joNumber) {
+      try {
+        const response = await fetch(`https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec?action=checkIssues&jo=${encodeURIComponent(joNumber)}`);
+        const data = await response.json();
+        return data.unresolvedCount || 0;
+      } catch (err) {
+        console.error(`Error checking issues for ${joNumber}:`, err);
+        return 0;
+      }
+    }
 
-function addUnresolvedWarnings() {
-  const table = document.querySelector('#dataTable'); // Replace with your actual table ID
-  if (!table) return;
+    async function markJOIssuesInTable() {
+      console.log("markJOIssuesInTable called");
+      const rows = document.querySelectorAll("#dataTable tbody tr");
+      for (const row of rows) {
+        const joCell = row.querySelector("td:nth-child(1)"); // 2nd column is JO#
+        const customerCell = row.querySelector("td:nth-child(2)"); // 3rd column is customer
 
-  const rows = table.querySelectorAll('tbody tr');
+        if (joCell && customerCell) {
+          const joNumber = joCell.textContent.trim();
 
-  rows.forEach(row => {
-    const cells = row.querySelectorAll('td');
-    if (cells.length >= 22) {
-      const unresolved = parseInt(cells[21].textContent) || 0;
-      if (unresolved > 0) {
-        const customerCell = cells[2]; // Column 3 = CUSTOMER
-        if (!customerCell.innerHTML.includes('⚠️')) {
-          customerCell.innerHTML =  customerCell.innerHTML + '⚠️ ';
-          customerCell.style.color = 'red';
-          customerCell.style.fontWeight = 'bold';
-          customerCell.title = `${unresolved} unresolved issue${unresolved > 1 ? 's' : ''}`;
+          const unresolvedCount = await checkUnresolvedIssues(joNumber);
+          if (unresolvedCount > 0) {
+            customerCell.innerHTML += ` <span title="${unresolvedCount} unresolved issue(s)" style="color: red; font-weight: bold;">&#x26A0;</span>`;
+          }
         }
       }
     }
-  });
-}
+
+
+
+    //ImportCSVRaw
+    function triggerCSVImport() {
+      if (confirm("Are you sure you want to import the latest CSV? This may overwrite existing data.")) {
+        fetch('https://script.google.com/macros/s/AKfycbwDtZ-VC549G9V9K9PD3i8qSFFUL2KUJnXjGFkM_gmspfLXMczyyD4ikNXKbpBtRLOzqA/exec?importCSV=true')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.text(); // or response.json() if JSON
+          })
+          .then(data => {
+            alert("Success:\n" + data);
+            location.reload();
+          })
+          .catch(error => {
+            alert("Error:\n" + error.message);
+          });
+      }
+    }
+
+
+    function addUnresolvedWarnings() {
+      const table = document.querySelector('#dataTable'); // Replace with your actual table ID
+      if (!table) return;
+
+      const rows = table.querySelectorAll('tbody tr');
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 22) {
+          const unresolved = parseInt(cells[21].textContent) || 0;
+          if (unresolved > 0) {
+            const customerCell = cells[2]; // Column 3 = CUSTOMER
+            if (!customerCell.innerHTML.includes('⚠️')) {
+              customerCell.innerHTML = customerCell.innerHTML + '⚠️ ';
+              customerCell.style.color = 'red';
+              customerCell.style.fontWeight = 'bold';
+              customerCell.title = `${unresolved} unresolved issue${unresolved > 1 ? 's' : ''}`;
+            }
+          }
+        }
+      });
+    }
     // Load data on page load
-    window.onload = function() {
+    window.onload = function () {
       loadData();
     };
 
 
-  document.addEventListener("DOMContentLoaded", function () {
-    const table = document.querySelector("#tableContainer #dataTable");
-    if (!table) return;
+    document.addEventListener("DOMContentLoaded", function () {
+      const table = document.querySelector("#tableContainer #dataTable");
+      if (!table) return;
 
-    const rows = table.querySelectorAll("tbody tr");
+      const rows = table.querySelectorAll("tbody tr");
 
-    // Get the index of the "Date Paid" column (case-insensitive)
-    const headers = Array.from(table.querySelectorAll("thead th"));
-    const datePaidIndex = headers.findIndex(
-      th => th.textContent.trim().toLowerCase() === "DATE PAID".toLowerCase()
-    );
-    alert(datePaidIndex)
-    if (datePaidIndex === -1) return; // Stop if "Date Paid" column isn't found
+      // Get the index of the "Date Paid" column (case-insensitive)
+      const headers = Array.from(table.querySelectorAll("thead th"));
+      const datePaidIndex = headers.findIndex(
+        th => th.textContent.trim().toLowerCase() === "DATE PAID".toLowerCase()
+      );
+      // alert(datePaidIndex) // Removed the debugging alert
+      if (datePaidIndex === -1) return; // Stop if "Date Paid" column isn't found
 
-    rows.forEach(row => {
-      const cell = row.cells[datePaidIndex];
-      if (cell && cell.textContent.trim().toLowerCase() === "[UNPAID]") {
-        row.style.backgroundColor = "#ffcccc"; // light red highlight
-      }
+      rows.forEach(row => {
+        const cell = row.cells[datePaidIndex];
+        if (cell && cell.textContent.trim().toLowerCase() === "[unpaid]") {
+          row.style.backgroundColor = "#ffcccc"; // light red highlight
+        }
+      });
     });
-  });
-  document.getElementById("filterUnpaidNoDeliveryType").addEventListener("click", function () {
-    const table = document.getElementById("dataTable");
-    const tbody = table.querySelector("tbody");
-    const rows = tbody.querySelectorAll("tr");
 
-    rows.forEach(row => {
-      const cells = row.querySelectorAll("td");
+    document.getElementById("filterUnpaidNoDeliveryType").addEventListener("click", function () {
+      const table = document.getElementById("dataTable");
+      const tbody = table.querySelector("tbody");
+      const rows = tbody.querySelectorAll("tr");
+      const headers = allData[0];
+      const datePaidIndex = headers.findIndex(header => header.trim().toLowerCase() === "DATE PAID".toLowerCase());
+      const deliveryPaymentTypeIndex = headers.findIndex(header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase());
 
-      const datePaid = (cells[4]?.textContent || "").trim();                 // Column 4
-      const deliveryType = (cells[15]?.textContent || "").trim();     // Column 16
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
 
-      const isUnpaid = datePaid === "[UNPAID]";
-      const isDeliveryTypeBlank = deliveryType === "";
+        const datePaid = (cells[datePaidIndex]?.textContent || "").trim();
+        const deliveryType = (cells[deliveryPaymentTypeIndex]?.textContent || "").trim();
 
-      if (isUnpaid && isDeliveryTypeBlank) {
-        row.style.display = "";
-      } else {
-        row.style.display = "none";
-      }
+        const isUnpaid = datePaid === "[UNPAID]";
+        const isDeliveryTypeBlank = deliveryType === "";
+
+        if (isUnpaid && isDeliveryTypeBlank) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
     });
-  });
 
-</script>
+    document.getElementById("filterUnpaidDelivered").addEventListener("click", function () {
+      const table = document.getElementById("dataTable");
+      const tbody = table.querySelector("tbody");
+      const rows = tbody.querySelectorAll("tr");
+      const headers = allData[0];
+      const datePaidIndex = headers.findIndex(header => header.trim().toLowerCase() === "DATE PAID".toLowerCase());
+      const deliveredColumnIndex = headers.findIndex(header => header.trim().toLowerCase() === "DELIVERED".toLowerCase()); // Assuming a "DELIVERED" column
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+
+        const datePaid = (cells[datePaidIndex]?.textContent || "").trim(); // Column 4
+        const deliveredColumn = (cells[deliveredColumnIndex]?.textContent || "").trim(); // Column 19
+
+        const isUnpaid = datePaid === "[UNPAID]";
+        const hasDeliveredValue = deliveredColumn !== "";
+
+        if (isUnpaid && hasDeliveredValue) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    });
+
+  </script>
 
   <div id="imageModal" onclick="closeImageModal()">
-  <span id="imageModalClose">&times;</span>
-  <img id="imageModalContent" src="" alt="Full Image">
-</div>
+    <span id="imageModalClose">&times;</span>
+    <img id="imageModalContent" src="" alt="Full Image">
+  </div>
 </body>
 </html>
