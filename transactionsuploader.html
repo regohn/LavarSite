@@ -79,17 +79,23 @@
       </label>
 
       <!-- Media Inputs -->
-        <label class="file-label mt-2">Upload Media 1
-        <input type="file" name="Media1" accept="image/*">
-        </label>
+<label class="block">
+  <span class="file-label">Upload Media 1</span>
+  <input type="file" name="Media1" accept="image/*" id="media1">
+  <span id="media1Name" class="text-sm text-gray-600 block mt-1"></span>
+</label>
 
-        <label class="file-label">Upload Media 2
-        <input type="file" name="Media2" accept="image/*">
-        </label>
+<label class="block">
+  <span class="file-label">Upload Media 2</span>
+  <input type="file" name="Media2" accept="image/*" id="media2">
+  <span id="media2Name" class="text-sm text-gray-600 block mt-1"></span>
+</label>
 
-        <label class="file-label">Upload Media 3
-        <input type="file" name="Media3" accept="image/*">
-        </label>
+<label class="block">
+  <span class="file-label">Upload Media 3</span>
+  <input type="file" name="Media3" accept="image/*" id="media3">
+  <span id="media3Name" class="text-sm text-gray-600 block mt-1"></span>
+</label>
 
       <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-2xl shadow-md hover:bg-blue-700">
         Submit
@@ -148,6 +154,25 @@
         reader.onerror = e => reject(e);
       });
     }
+
+    // Show selected file names
+function showFileName(inputId, spanId) {
+  const input = document.getElementById(inputId);
+  const span = document.getElementById(spanId);
+  input.addEventListener("change", () => {
+    if (input.files.length > 0) {
+      span.textContent = input.files[0].name;
+    } else {
+      span.textContent = "";
+    }
+  });
+}
+
+// Attach events to Media inputs
+showFileName("media1", "media1Name");
+showFileName("media2", "media2Name");
+showFileName("media3", "media3Name");
+
   </script>
 </body>
 </html>
