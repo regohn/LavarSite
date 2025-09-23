@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expenses Submission</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      background-color: #f2f2f7;
+      color: #1c1c1e;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .file-label {
+      display: block;
+      text-align: center;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      background-color: #0a84ff;
+      color: #fff;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .file-label:hover {
+      background-color: #006be6;
+    }
+  </style>
+</head>
+<body class="p-4 flex justify-center items-center min-h-screen">
+  <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
+    <h2 class="text-center text-2xl font-semibold mb-6 text-blue-600">Submit Expense</h2>
+    <form id="expenseForm" class="space-y-4">
+
+      <label class="block">
+        <span class="text-gray-700 text-sm">Date</span>
+        <input type="date" name="Date" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
+      </label>
+
+      <label class="block">
+        <span class="text-gray-700 text-sm">Transaction</span>
+        <input type="text" name="Transaction" placeholder="e.g. Purchase of items" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
+      </label>
+
+      <label class="block">
+        <span class="text-gray-700 text-sm">Amount</span>
+        <input type="number" step="0.01" name="Amount" placeholder="0.00" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
+      </label>
+
+      <label class="block">
+        <span class="text-gray-700 text-sm">Transaction Type</span>
+        <select name="TransactionType" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500 bg-white">
+          <option value="">Select Type</option>
+          <option>Salary</option>
+          <option>Consumables</option>
+          <option>Gas</option>
+          <option>Rent</option>
+          <option>Meralco</option>
+          <option>Manila Water</option>
+        </select>
+      </label>
+
+      <label class="block">
+        <span class="text-gray-700 text-sm">Transaction Mode</span>
+        <input type="text" name="TransactionMode" placeholder="e.g. Cash, GCash, Bank Transfer" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
+      </label>
+
+      <label class="block">
+        <span class="text-gray-700 text-sm">Notes</span>
+        <textarea name="Notes" rows="3" placeholder="Additional details..." class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500"></textarea>
+      </label>
+
+      <label class="block">
+        <span class="text-gray-700 text-sm">Receipt Number</span>
+        <input type="text" name="ReceiptNumber" placeholder="e.g. 12345" class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
+      </label>
+
+      <!-- Media Inputs -->
+      <label class="file-label mt-2">Upload Media 1
+        <input type="file" name="Media1" accept="image/*" capture="environment">
+      </label>
+
+      <label class="file-label">Upload Media 2
+        <input type="file" name="Media2" accept="image/*" capture="environment">
+      </label>
+
+      <label class="file-label">Upload Media 3
+        <input type="file" name="Media3" accept="image/*" capture="environment">
+      </label>
+
+      <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-2xl shadow-md hover:bg-blue-700">
+        Submit
+      </button>
+    </form>
+
+    <p id="status" class="text-center mt-4 text-gray-600"></p>
+  </div>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbwc1YQVDvH07gYkCJf4SWtTnlydG5i-qdfq9ToYEVQukaheQm4ftMmiGZflZ44MInUM/exec";
+
+    document.getElementById("expenseForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const status = document.getElementById("status");
+      status.textContent = "Submitting...";
+      status.style.color = "#1c1c1e";
+
+      const formData = new FormData(form);
+      const plainData = {};
+      formData.forEach((v, k) => plainData[k] = v);
+
+      // Handle Media uploads
+      for (let i = 1; i <= 3; i++) {
+        const file = formData.get(`Media${i}`);
+        if (file && file.size > 0) {
+          const base64 = await toBase64(file);
+          plainData[`Media${i}`] = base64.split(",")[1];
+          plainData[`Media${i}_name`] = file.name;
+        }
+      }
+
+      fetch(scriptURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(plainData).toString()
+      })
+      .then(r => r.text())
+      .then(msg => {
+        status.textContent = msg;
+        status.style.color = "#28a745";
+        form.reset();
+      })
+      .catch(err => {
+        status.textContent = "Error: " + err.message;
+        status.style.color = "#dc3545";
+      });
+    });
+
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = e => reject(e);
+      });
+    }
+  </script>
+</body>
+</html>
