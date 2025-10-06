@@ -79,6 +79,17 @@
       button[type="submit"]:hover {
         background-color: #0056b3;
       }
+
+    #pickupTableContainer table {
+      font-size: 10px;
+      background-color: #ffffff; /* force white background */
+    }
+
+    #pickupTableContainer th,
+    #pickupTableContainer td {
+      background-color: #ffffff !important; /* keep cells white */
+      padding: 6px 10px;
+    }   
     </style>
   </head>
   <body>
@@ -98,6 +109,9 @@
   <span id="currentDateDisplay" style="font-weight: bold; min-width: 120px; text-align: center;"></span>
   <button id="nextDayBtn" class="btn btn-outline-secondary btn-sm ml-2">→</button>
 </div>
+
+<!-- TABLE WILL BE RENDERED HERE -->
+<div id="pickupTableContainer" class="mb-4"></div>
 
         <form id="submit-to-google-sheet">
           <input type="hidden" id="pickuprequestid" name="pickuprequestid" value="">
@@ -180,6 +194,7 @@
 
     <!-- SCRIPTS -->
     <script>
+
       const scriptURL = "https://script.google.com/macros/s/AKfycby0oqQjqKO4ti3yHeT1f30FvkiLW0YkSO9QJ6EO_zYP9J9wtk7CvyIgqpr9xV9F7b9e/exec";
       const form = document.forms["submit-to-google-sheet"];
 
@@ -280,11 +295,14 @@
     return date.toISOString().split("T")[0]; // "YYYY-MM-DD"
   }
 
-  function updateDateDisplay() {
-    const display = document.getElementById("currentDateDisplay");
-    display.textContent = formatDate(currentDate);
-    filterDropdownByDate(formatDate(currentDate));
-  }
+function updateDateDisplay() {
+  const display = document.getElementById("currentDateDisplay");
+  const dateStr = formatDate(currentDate);
+  display.textContent = dateStr;
+  filterDropdownByDate(dateStr);
+  renderPickupTable(dateStr); // ⬅ add this line
+}
+
 
   function filterDropdownByDate(dateStr) {
     const dropdown = document.getElementById("nameDropdown");
@@ -328,6 +346,63 @@
         console.error("Failed to load pickups data", err);
       });
   });
+function renderPickupTable(dateStr) {
+  const container = document.getElementById("pickupTableContainer");
+  container.innerHTML = ""; // clear previous table
+
+  const filtered = pickupsData.filter(p => p.dateofpickup === dateStr);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<p class="text-center text-muted">No pickups for this date.</p>`;
+    return;
+  }
+
+  // Create table
+  let table = document.createElement("table");
+  table.className = "table table-bordered table-striped";
+
+  // Table head
+  table.innerHTML = `
+    <thead class="thead-light">
+      <tr>
+        <th>Name</th>
+        <th>Pickup Location</th>
+        <th>Date of Pickup</th>
+        <th>Time of Pickup</th>
+      </tr>
+    </thead>
+  `;
+
+  // Table body
+  let tbody = document.createElement("tbody");
+  filtered.forEach(p => {
+    let row = document.createElement("tr");
+    row.innerHTML = `
+      <td><a href="#" class="pickup-name" data-name="${p.name}">${p.name || ""}</a></td>
+      <td>${p.PickupLocation || ""}</td>
+      <td>${p.dateofpickup || ""}</td>
+      <td>${p.timeofpickup || ""}</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  table.appendChild(tbody);
+  container.appendChild(table);
+
+  // Add click listeners for all name links
+  container.querySelectorAll(".pickup-name").forEach(link => {
+    link.addEventListener("click", function (e) {
+      e.preventDefault();
+      const selectedName = this.dataset.name;
+      const dropdown = document.getElementById("nameDropdown");
+      dropdown.value = selectedName;
+
+      // Trigger the "change" event so the form auto-fills
+      dropdown.dispatchEvent(new Event("change"));
+    });
+  });
+}
+
 
 
     </script>
