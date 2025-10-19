@@ -132,6 +132,7 @@
       font-size: 10px;
     }
     #searchContainer { margin-top: 10px; }
+    /* Updated styles to manage button placement in the flow */
     #clearFiltersButton {
       margin-left: 10px;
       background-color: #f44336;
@@ -157,12 +158,7 @@
       cursor: pointer;
     }
 
-    #tableContainer table tr td:nth-child(23){
-      display: none;
-    }
-    #tableContainer table tr th:nth-child(23) {
-      display: none;
-    }
+    /* Column visibility styles are removed for now to ensure all columns render for debugging */
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
@@ -193,6 +189,7 @@
 
   <button id="filterUnpaidNoDeliveryType">Unpaid Undelivered</button>
   <button id="filterUnpaidDelivered">Unpaid Delivered</button>
+  <button id="filterReportedUnpaid">Reported Unpaid</button>
   <div id="controls">
     Max Rows: <input type="number" id="maxDaysInput" value="90" min="1" max="10000">
   </div>
@@ -214,6 +211,14 @@
     <select id="searchPaymentDeliveryType" onchange="filterData()">
       <option value="">All</option>
     </select>
+    <label for="searchPaymentMethod">POS Payment Method:</label> <select id="searchPaymentMethod" onchange="filterData()">
+      <option value="">All</option>
+    </select>
+    <label for="searchReported">Reported Status:</label>
+    <select id="searchReported" onchange="filterData()">
+      <option value="">All</option>
+      <option value="[UNREPORTED]">Unreported</option>
+    </select>
     <button id="clearFiltersButton" onclick="clearFilters()">Clear Filters</button>
     <button id="clearTableRows" onclick="clearTableRows()">Clear Table</button>
   </div>
@@ -227,7 +232,8 @@
     const apiUrl = "https://script.google.com/macros/s/AKfycbx6fziX1510VRFveZ4hfvGfknrryGgQ85S5AjnvV1g2Ja6pciGz4XSyar2yU-aF2QAw/exec";
     let allData = [];
     let filteredData = [];
-    let deliveryPaymentTypeIndex = -1; // Global variable to store the correct index
+    let deliveryPaymentTypeIndex = -1; 
+    let paymentMethodIndex = -1; 
 
     function formatDateTime(input) {
       const date = new Date(input);
@@ -250,6 +256,14 @@
       const date = new Date(input);
       if (isNaN(date)) return input;
       return date.toISOString().slice(0, 10); // YYYY-MM-DD
+    }
+    
+    // Function to open the image modal
+    function openImageModal(imageUrl) {
+        const modal = document.getElementById("imageModal");
+        const modalImg = document.getElementById("imageModalContent");
+        modal.style.display = "block";
+        modalImg.src = imageUrl;
     }
 
     function renderTable(data) {
@@ -283,19 +297,22 @@
       for (let i = 1; i < Math.min(data.length, 10000); i++) {
         const rowData = data[i];
         const row = document.createElement("tr");
-        row.id = rowData[18];  // Set the JO# as the row ID
+        row.id = rowData[1];  // Use JO# as row ID
         rowData.forEach((cell, index) => {
           const td = document.createElement("td");
 
-          if (index === 0 || index === 4 || index === 13 || index === 18) {
+          if (index === 0 || index === 4 || index === 16 || index === 20) { // DATE CREATED, DATE PAID, Fold Date, Time of Delivery
             td.textContent = formatDateTime(cell);
-          } else if (index === 12) {
+          } else if (index === 15) { // Fold Date
             td.textContent = formatDateOnly(cell);
-          } else if ([8, 19, 20, 21].includes(index)) {
+          } 
+          // CORRECTED IMAGE INDEXES: 8 (Pickup Pic), 9 (DropMedia1), 10 (DropMedia2), 20 (media), 21 (media2), 22 (media3)
+          else if ([8, 9, 10, 21, 22, 23].includes(index)) { 
             if (typeof cell === "string" && cell.includes("drive.google.com")) {
               const match = cell.match(/\/d\/([a-zA-Z0-9_-]+)\//);
               if (match && match[1]) {
                 const fileId = match[1];
+                // Use the correct thumbnail and view URLs
                 const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
                 const fullImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
@@ -305,24 +322,9 @@
                 img.style.maxWidth = "80px";
                 img.style.cursor = "pointer";
 
-                let imgPopup = null; // Keep reference to the popup window
-
+                // Use the defined openImageModal function for a consistent experience
                 img.onclick = () => {
-                  const width = 600;
-                  const height = 400;
-                  const left = (window.screen.width / 2) - (width / 2);
-                  const top = (window.screen.height / 2) - (height / 2);
-
-                  const windowFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`;
-
-                  if (imgPopup && !imgPopup.closed) {
-                    // If popup is already open, just change its location to the new image
-                    imgPopup.location.href = fullImageUrl;
-                    imgPopup.focus();
-                  } else {
-                    // Open a new popup window with the image URL
-                    imgPopup = window.open(fullImageUrl, "imagePopup", windowFeatures);
-                  }
+                    openImageModal(fullImageUrl);
                 };
 
                 td.appendChild(img);
@@ -333,7 +335,7 @@
               td.textContent = "";
             }
 
-          } else if (index === 1) {
+          } else if (index === 1) { // JO# column
             const a = document.createElement("a");
             a.href = "#";
             a.textContent = cell ?? "N/A";
@@ -403,16 +405,24 @@
         allData = data;
         filteredData = data;
 
-        // Find the index for "Delivery Payment Type" when data is loaded
         const headers = allData[0];
+        
+        // Find index for "Delivery Payment Type" (Index 18)
         deliveryPaymentTypeIndex = headers.findIndex(
           header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase()
+        );
+        
+        // Find index for "Payment Method" (Index 5)
+        paymentMethodIndex = headers.findIndex(
+            header => header.trim().toLowerCase() === "PAYMENT METHOD".toLowerCase()
         );
 
         renderTable(filteredData);
         addUnresolvedWarnings();
         loadCustomers(data);
-        loadPaymentDeliveryTypes(data); // Call the new function
+        loadPaymentDeliveryTypes(data); // Call the existing function
+        loadPaymentMethods(data); // Call the new function to load payment methods
+        loadReportedDates(data); // Call the existing function to load reported dates
         status.textContent = "";
       } catch (e) {
         status.textContent = "Error loading data: " + e.message;
@@ -425,7 +435,7 @@
       const customerSet = new Set();
 
       data.slice(1).forEach(row => {
-        let customer = (row[2] || "").trim();
+        let customer = (row[2] || "").trim(); // Index 2
         if (customer) customerSet.add(customer);
       });
 
@@ -449,6 +459,7 @@
       const select = document.getElementById("searchPaymentDeliveryType");
       const typeSet = new Set();
       const headers = data[0];
+      // Use the correct index 18
       const deliveryPaymentTypeIndex = headers.findIndex(
         header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase()
       );
@@ -483,6 +494,76 @@
         });
     }
 
+    // NEW FUNCTION: Load Payment Methods into the dropdown dynamically
+    function loadPaymentMethods(data) {
+        const select = document.getElementById("searchPaymentMethod");
+        const methodSet = new Set();
+        const headers = data[0];
+        // Use the correct index 5
+        const paymentMethodIndex = headers.findIndex(
+            header => header.trim().toLowerCase() === "PAYMENT METHOD".toLowerCase()
+        );
+
+        if (paymentMethodIndex === -1) {
+            console.error("PAYMENT METHOD column not found.");
+            return;
+        }
+
+        data.slice(1).forEach(row => {
+            if (paymentMethodIndex !== -1) {
+                const method = (row[paymentMethodIndex] || "").trim();
+                if (method) methodSet.add(method);
+            }
+        });
+
+        select.innerHTML = '<option value="">All</option>';
+
+        // Sort alphabetically, case-insensitive
+        [...methodSet].sort((a, b) => a.localeCompare(b, undefined, {
+            sensitivity: 'base'
+        }))
+            .forEach(method => {
+                const opt = document.createElement("option");
+                opt.value = method;
+                opt.textContent = method;
+                select.appendChild(opt);
+            });
+    }
+
+    // New function to load unique dates from the "Reported" column
+    function loadReportedDates(data) {
+      const select = document.getElementById("searchReported");
+      const headers = data[0];
+      // Use the correct index 28
+      const reportedIndex = headers.findIndex(header => header.trim().toLowerCase() === "REPORTED".toLowerCase());
+
+      if (reportedIndex === -1) {
+        console.error("Reported column not found.");
+        return;
+      }
+
+      const dateSet = new Set();
+      data.slice(1).forEach(row => {
+        const date = (row[reportedIndex] || "").trim();
+        if (date) {
+          dateSet.add(date);
+        }
+      });
+
+      // Clear existing options
+      select.innerHTML = '<option value="">All</option><option value="[UNREPORTED]">Unreported</option>';
+
+      // Sort dates
+      const sortedDates = Array.from(dateSet).sort((a, b) => new Date(a) - new Date(b));
+
+      sortedDates.forEach(date => {
+        const opt = document.createElement("option");
+        opt.value = date;
+        opt.textContent = date;
+        select.appendChild(opt);
+      });
+    }
+
     // Filter data based on date and customer
     function filterData() {
 
@@ -490,12 +571,22 @@
       const searchCustomer = document.getElementById("searchCustomer").value.trim().toLowerCase(); // Normalize input
       const datePaidFilter = document.getElementById("searchDatePaid").value;
       const deliveryTypeFilter = document.getElementById("searchPaymentDeliveryType").value.trim().toLowerCase();
+      const paymentMethodFilter = document.getElementById("searchPaymentMethod").value.trim().toLowerCase(); // Get POS Payment Method filter value
+      const reportedFilter = document.getElementById("searchReported").value;
       const headers = allData[0];
+      
+      // Get correct indices by header text
       const deliveryPaymentTypeIndex = headers.findIndex(
           header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase()
       );
       const datePaidIndex = headers.findIndex(
           header => header.trim().toLowerCase() === "DATE PAID".toLowerCase()
+      );
+      const reportedIndex = headers.findIndex(
+          header => header.trim().toLowerCase() === "REPORTED".toLowerCase()
+      );
+      const paymentMethodIndex = headers.findIndex( // Index 5
+          header => header.trim().toLowerCase() === "PAYMENT METHOD".toLowerCase()
       );
 
 
@@ -509,38 +600,49 @@
 
         let isMatch = true;
 
-        // If a date is selected
+        // If a date is selected (Index 0)
         if (searchDate) {
-          const rawDate = row[0] || ""; // full ISO 8601 string "2025-02-22T16:00:00.000Z"
-          console.log("Raw Date from Row:", rawDate); // Debugging: Log the raw date from the row
-
-          // Convert the ISO date string to 'yyyyMMdd' format
+          const rawDate = row[0] || ""; 
           const dateObj = new Date(rawDate);
-          const formattedRowDate = `${dateObj.getFullYear()}${(dateObj.getMonth() + 1).toString().padStart(2, '0')}${dateObj.getDate().toString().padStart(2, '0')}`; // e.g., '2025-02-22' -> '20250222'
-
-          console.log("Formatted Row Date:", formattedRowDate); // Debugging: Log the formatted row date
+          const formattedRowDate = `${dateObj.getFullYear()}${(dateObj.getMonth() + 1).toString().padStart(2, '0')}${dateObj.getDate().toString().padStart(2, '0')}`;
 
           if (formattedRowDate !== formattedSearchDate) {
-            isMatch = false; // If the dates don't match, exclude this row
+            isMatch = false; 
           }
         }
 
-        // If a customer filter is selected
+        // If a customer filter is selected (Index 2)
         if (searchCustomer) {
-          const customer = (row[2] || "").trim().toLowerCase(); // Normalize data row
+          const customer = (row[2] || "").trim().toLowerCase(); 
           if (customer !== searchCustomer) isMatch = false;
         }
 
-        // If the date paid filter is selected
-        if (datePaidFilter) {
+        // If the date paid filter is selected (Index 4)
+        if (datePaidFilter && datePaidIndex !== -1) {
           const datePaid = (row[datePaidIndex] || "").trim();
           if (datePaid !== datePaidFilter) isMatch = false;
         }
 
-        // If the delivery type filter is selected
-        if (deliveryTypeFilter) {
+        // If the delivery type filter is selected (Index 18)
+        if (deliveryTypeFilter && deliveryPaymentTypeIndex !== -1) {
           const deliveryType = (row[deliveryPaymentTypeIndex] || "").trim().toLowerCase();
           if (deliveryType !== deliveryTypeFilter) isMatch = false;
+        }
+        
+        // If the POS Payment Method filter is selected (Index 5)
+        if (paymentMethodFilter && paymentMethodIndex !== -1) {
+            const paymentMethod = (row[paymentMethodIndex] || "").trim().toLowerCase();
+            if (paymentMethod !== paymentMethodFilter) isMatch = false;
+        }
+
+        // If the reported filter is selected (Index 28)
+        if (reportedFilter && reportedIndex !== -1) {
+            const reportedValue = (row[reportedIndex] || "").trim();
+            if (reportedFilter === "[UNREPORTED]") {
+                if (reportedValue !== "") isMatch = false;
+            } else {
+                if (reportedValue !== reportedFilter) isMatch = false;
+            }
         }
 
         return isMatch;
@@ -565,19 +667,12 @@
       document.getElementById("searchCustomer").value = "";
       document.getElementById("searchDatePaid").value = "";
       document.getElementById("searchPaymentDeliveryType").value = "";
+      document.getElementById("searchPaymentMethod").value = ""; // Clear the POS Payment Method filter
+      document.getElementById("searchReported").value = "";
       filteredData = allData;
       renderTable(filteredData);
       addUnresolvedWarnings();
     }
-
-    // Create a thumbnail image cell
-    function openImageModal(imageUrl) {
-      const modal = document.getElementById("imageModal");
-      const modalImg = document.getElementById("imageModalContent");
-      modal.style.display = "block";
-      modalImg.src = imageUrl;
-    }
-
 
     // Close the image modal
     function closeImageModal() {
@@ -637,6 +732,8 @@
     });
 
     async function checkUnresolvedIssues(joNumber) {
+      // Assuming Unresolved Issues is at index 27
+      const unresolvedIssuesIndex = 27; 
       try {
         const response = await fetch(`https://script.google.com/macros/s/AKfycbx1djlMVlkR3nt1_5l2vCVzqahdHjipOPwDXcjo1fc_KtpaWoL4uLF1LoXpPXGpoOw/exec?action=checkIssues&jo=${encodeURIComponent(joNumber)}`);
         const data = await response.json();
@@ -651,13 +748,14 @@
       console.log("markJOIssuesInTable called");
       const rows = document.querySelectorAll("#dataTable tbody tr");
       for (const row of rows) {
-        const joCell = row.querySelector("td:nth-child(1)"); // 2nd column is JO#
-        const customerCell = row.querySelector("td:nth-child(2)"); // 3rd column is customer
+        const joCell = row.querySelector("td:nth-child(2)"); // JO# is the 2nd cell (index 1)
+        const customerCell = row.querySelector("td:nth-child(3)"); // CUSTOMER is the 3rd cell (index 2)
 
         if (joCell && customerCell) {
           const joNumber = joCell.textContent.trim();
 
-          const unresolvedCount = await checkUnresolvedIssues(joNumber);
+          // NOTE: If you are relying on a server-side check, this is fine. 
+          const unresolvedCount = await checkUnresolvedIssues(joNumber); 
           if (unresolvedCount > 0) {
             customerCell.innerHTML += ` <span title="${unresolvedCount} unresolved issue(s)" style="color: red; font-weight: bold;">&#x26A0;</span>`;
           }
@@ -692,14 +790,18 @@
       const table = document.querySelector('#dataTable'); // Replace with your actual table ID
       if (!table) return;
 
-      const rows = table.querySelectorAll('tbody tr');
+      const rows = document.querySelectorAll('#dataTable tbody tr');
+      const headers = allData[0];
+      const unresolvedIssuesIndex = headers.findIndex(header => header.trim().toLowerCase() === "Unresolved Issues".toLowerCase());
+
+      if (unresolvedIssuesIndex === -1) return;
 
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        if (cells.length >= 22) {
-          const unresolved = parseInt(cells[21].textContent) || 0;
+        if (cells.length > unresolvedIssuesIndex) {
+          const unresolved = parseInt(cells[unresolvedIssuesIndex].textContent) || 0;
           if (unresolved > 0) {
-            const customerCell = cells[2]; // Column 3 = CUSTOMER
+            const customerCell = cells[2]; // Column 3 = CUSTOMER (Index 2)
             if (!customerCell.innerHTML.includes('⚠️')) {
               customerCell.innerHTML = customerCell.innerHTML + '⚠️ ';
               customerCell.style.color = 'red';
@@ -744,7 +846,7 @@
       const rows = tbody.querySelectorAll("tr");
       const headers = allData[0];
       const datePaidIndex = headers.findIndex(header => header.trim().toLowerCase() === "DATE PAID".toLowerCase());
-      const deliveryPaymentTypeIndex = headers.findIndex(header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase());
+      const deliveryPaymentTypeIndex = headers.findIndex(header => header.trim().toLowerCase() === "Delivery Payment Type".toLowerCase()); // Index 18
 
       rows.forEach(row => {
         const cells = row.querySelectorAll("td");
@@ -769,13 +871,14 @@
       const rows = tbody.querySelectorAll("tr");
       const headers = allData[0];
       const datePaidIndex = headers.findIndex(header => header.trim().toLowerCase() === "DATE PAID".toLowerCase());
-      const deliveredColumnIndex = headers.findIndex(header => header.trim().toLowerCase() === "DELIVERED".toLowerCase()); // Assuming a "DELIVERED" column
+      // Assuming 'Delivered' is represented by 'Time of Delivery' (Index 21) being non-blank.
+      const timeOfDeliveryIndex = headers.findIndex(header => header.trim().toLowerCase() === "Time of Delivery".toLowerCase()); 
 
       rows.forEach(row => {
         const cells = row.querySelectorAll("td");
 
-        const datePaid = (cells[datePaidIndex]?.textContent || "").trim(); // Column 4
-        const deliveredColumn = (cells[deliveredColumnIndex]?.textContent || "").trim(); // Column 19
+        const datePaid = (cells[datePaidIndex]?.textContent || "").trim(); 
+        const deliveredColumn = (cells[timeOfDeliveryIndex]?.textContent || "").trim(); 
 
         const isUnpaid = datePaid === "[UNPAID]";
         const hasDeliveredValue = deliveredColumn !== "";
@@ -784,6 +887,45 @@
           row.style.display = "";
         } else {
           row.style.display = "none";
+        }
+      });
+    });
+
+    // NEW FUNCTIONALITY FOR "Reported Unpaid" BUTTON
+    document.getElementById("filterReportedUnpaid").addEventListener("click", function () {
+      const table = document.getElementById("dataTable");
+      const tbody = table.querySelector("tbody");
+      const rows = tbody.querySelectorAll("tr");
+      const headers = allData[0];
+      
+      // Get column indices
+      const datePaidIndex = headers.findIndex(header => header.trim().toLowerCase() === "DATE PAID".toLowerCase());
+      const reportedIndex = headers.findIndex(header => header.trim().toLowerCase() === "REPORTED".toLowerCase()); // Index 28
+
+      // Check if both columns exist
+      if (datePaidIndex === -1 || reportedIndex === -1) {
+          console.error("Required columns (DATE PAID or REPORTED) not found for filter.");
+          return;
+      }
+
+      // Filter rows
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+
+        // Get values from the respective cells using the stored indices
+        const datePaid = (cells[datePaidIndex]?.textContent || "").trim();
+        const reportedValue = (cells[reportedIndex]?.textContent || "").trim();
+
+        // Condition 1: Date Paid is [UNPAID]
+        const isUnpaid = datePaid === "[UNPAID]";
+        
+        // Condition 2: Reported column has a value (a date, not blank)
+        const isReported = reportedValue !== "";
+
+        if (isUnpaid && isReported) {
+          row.style.display = ""; // Show row
+        } else {
+          row.style.display = "none"; // Hide row
         }
       });
     });
