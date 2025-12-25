@@ -187,9 +187,10 @@
   const DB_NAME = "DeliveryOfflineDB";
   const STORE_NAME = "uploadQueue";
   let db;
+  let joCache = {}; // Local memory for preloaded JO info
 
   // --- DATABASE SETUP ---
-  const request = indexedDB.open(DB_NAME, 2); // Bump version if needed
+  const request = indexedDB.open(DB_NAME, 2); 
   request.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -199,19 +200,62 @@
   request.onsuccess = (e) => {
     db = e.target.result;
     updateQueueDisplay();
-    setTimeout(processQueue, 1000); // Initial check
+    setTimeout(processQueue, 1000);
   };
 
   // --- UTILITIES ---
   function getDriveThumbnail(url) {
+    if (!url) return "";
     const match = url.match(/[-\w]{25,}/);
     return match ? `https://drive.google.com/thumbnail?id=${match[0]}` : "";
   }
 
-  function formatDateTime(isoString) {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    return date.toLocaleString();
+  // REUSABLE: Display JO Result from any source (Search or Cache)
+  function displayJOResult(data) {
+    if (!data) return;
+
+    const JOresult = document.getElementById("JOresult");
+    
+    // Normalize fields as different endpoints might have different naming conventions
+    const joNumber = data.JO || data["Del JO#"] || "";
+    const customer = data.value || data.name || data.CustomerName || "Unknown";
+    const bags = data.colC || data.Bags || "";
+    const amount = data.colK || data.Amount || "";
+    const staff = data.DeliveryStaff || "";
+    const existingComments = data.Comments || "";
+
+    let picturesHTML = "";
+    ["Picture1", "Picture2", "Picture3"].forEach((pic) => {
+      if (data[pic] && data[pic].startsWith("http")) {
+        picturesHTML += `
+          <div class="mt-2">
+            <small>${pic}:</small><br>
+            <a href="${data[pic]}" target="_blank">
+               <img src="${getDriveThumbnail(data[pic])}" style="height: 50px; border-radius: 4px; border: 1px solid #ddd;" />
+            </a>
+          </div>`;
+      }
+    });
+
+    JOresult.innerHTML = `
+      <div class="card p-2 bg-light" style="font-size: 0.85rem;">
+        <strong>Customer:</strong> ${customer} <br>
+        <strong>JO#:</strong> ${joNumber} ${bags ? '| <strong>Bags:</strong> ' + bags : ''} <br>
+        ${amount ? '<strong>Amount:</strong> ' + amount + '<br>' : ''}
+        <strong>Status:</strong> ${staff ? 'Update Existing' : 'New Entry'}<br>
+        ${picturesHTML}
+      </div>`;
+
+    document.getElementById("JOR").value = joNumber;
+    document.getElementById("CustomerName").value = customer;
+    
+    if (staff) {
+      document.getElementById("DeliveryStaff").value = staff;
+      document.getElementById("Comments").value = existingComments;
+      document.getElementById("mainsubmitbutton").innerText = "Queue Update";
+    } else {
+      document.getElementById("mainsubmitbutton").innerText = "Queue for Upload";
+    }
   }
 
   // --- NETWORK HANDLING ---
@@ -281,13 +325,11 @@
             delete item.id; 
 
             try {
-              // CRITICAL: Use URLSearchParams so AppScript e.parameter picks it up
               const searchParams = new URLSearchParams();
               for (const key in item) {
                 searchParams.append(key, item[key]);
               }
 
-              console.log(`Uploading item ${itemId}...`);
               const response = await fetch(scriptURL, { 
                 method: "POST", 
                 body: searchParams,
@@ -297,20 +339,17 @@
               const result = await response.json();
 
               if (result.result === "success") {
-                console.log(`Item ${itemId} uploaded successfully.`);
                 const deleteTransaction = db.transaction([STORE_NAME], "readwrite");
                 deleteTransaction.objectStore(STORE_NAME).delete(itemId);
                 deleteTransaction.oncomplete = () => {
                   updateQueueDisplay();
                   isProcessing = false;
-                  processQueue(); // Loop to next
+                  processQueue();
                 };
               } else {
-                console.error("Server error:", result.error);
                 isProcessing = false;
               }
             } catch (err) {
-              console.error("Fetch failed for item:", itemId, err);
               isProcessing = false; 
             }
           } else {
@@ -318,7 +357,6 @@
           }
         };
     } catch (err) {
-        console.error("Transaction error:", err);
         isProcessing = false;
     }
   }
@@ -329,10 +367,9 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     
-    // Validation
     const JOR = document.getElementById("JOR").value;
     if (!JOR) {
-      swal("Missing JO#", "Please search for a JO before submitting.", "warning");
+      swal("Missing JO#", "Please search or select a JO before submitting.", "warning");
       return;
     }
 
@@ -350,16 +387,9 @@
     const payload = {};
     const formData = new FormData(form);
     
-    // Process form data into plain object for IDB storage
     for (let [key, value] of formData.entries()) {
         if (value instanceof File) {
             if (value.size > 0) {
-                if (value.size > 5 * 1024 * 1024) {
-                    swal("File too large", "Images must be under 5MB.", "error");
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Queue for Upload";
-                    return;
-                }
                 payload[key] = await readFileAsBase64(value);
             }
         } else {
@@ -376,10 +406,11 @@
       });
       form.reset();
       document.getElementById("JOresult").innerHTML = "";
+      document.getElementById("JOR").value = "";
       document.getElementById("gcashInfo").style.display = "none";
       if (navigator.onLine) processQueue();
     } catch (err) {
-      swal("Error", "Could not save to queue: " + err.message, "error");
+      swal("Error", "Could not save to queue.", "error");
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = "Queue for Upload";
@@ -397,20 +428,16 @@
 
   // --- SEARCH & DATE LOGIC ---
   const JOsearchField = document.getElementById("JOsearch");
-  const JOresult = document.getElementById("JOresult");
   const searchButton = document.getElementById("searchButton");
 
   searchButton.addEventListener("click", async function () {
     if (!navigator.onLine) {
-        swal("Offline", "Searching for JOs requires an active internet connection.", "info");
+        swal("Offline", "Searching for new JOs requires internet. Use the dropdown for preloaded JOs.", "info");
         return;
     }
     
     const joNumber = JOsearchField.value.trim();
-    if (!joNumber) {
-      JOresult.innerHTML = "Please enter a JO number.";
-      return;
-    }
+    if (!joNumber) return;
 
     searchButton.disabled = true;
     searchButton.textContent = "...";
@@ -420,42 +447,11 @@
         const data = await response.json();
 
         if (data.result === "not found") {
-          JOresult.innerHTML = "<div class='alert alert-warning'>Di Pa Na Log ng Mga Nagtupi.</div>";
+          document.getElementById("JOresult").innerHTML = "<div class='alert alert-warning'>JO# not found online.</div>";
           return;
         }
 
-        let picturesHTML = "";
-        ["Picture1", "Picture2", "Picture3"].forEach((pic, i) => {
-          if (data[pic]) {
-            picturesHTML += `
-              <div class="mt-2">
-                <small>${pic}:</small><br>
-                <a href="${data[pic]}" target="_blank">
-                   <img src="${getDriveThumbnail(data[pic])}" style="height: 50px; border-radius: 4px; border: 1px solid #ddd;" />
-                </a>
-              </div>`;
-          }
-        });
-
-        JOresult.innerHTML = `
-          <div class="card p-2 bg-light" style="font-size: 0.85rem;">
-            <strong>Customer:</strong> ${data.value} <br>
-            <strong>JO#:</strong> ${data.JO} | <strong>Bags:</strong> ${data.colC} <br>
-            <strong>Amount:</strong> ${data.colK} <br>
-            <strong>Status:</strong> ${data.DeliveryStaff ? 'Update Existing' : 'New Entry'}<br>
-            ${picturesHTML}
-          </div>`;
-
-        document.getElementById("JOR").value = data.JO;
-        document.getElementById("CustomerName").value = data.value;
-        
-        if (data.DeliveryStaff) {
-          document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
-          document.getElementById("Comments").value = data.Comments || "";
-          document.getElementById("mainsubmitbutton").innerText = "Queue Update";
-        } else {
-          document.getElementById("mainsubmitbutton").innerText = "Queue for Upload";
-        }
+        displayJOResult(data);
     } catch(e) {
         swal("Search Error", "Check connection and try again.", "error");
     } finally {
@@ -464,7 +460,16 @@
     }
   });
 
-  // Date Logic
+  function searchJO() {
+      const input = JOsearchField.value.toUpperCase();
+      const select = document.getElementById("joDropdown");
+      const options = select.getElementsByTagName("option");
+      for (let i = 0; i < options.length; i++) {
+          const txtValue = options[i].textContent || options[i].innerText;
+          options[i].style.display = txtValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+      }
+  }
+
   let activeDate = new Date();
   document.getElementById("currentDate").textContent = activeDate.toISOString().split('T')[0];
 
@@ -487,39 +492,43 @@
 
       dropdown.innerHTML = '<option value="">Select Requested JO# for Delivery</option>';
       if (data && data.length > 0) {
+        joCache = {}; // Reset cache for new date context
         data.forEach(item => {
-          if (item["Del JO#"]) {
+          const joNum = item["Del JO#"];
+          if (joNum) {
+            joCache[joNum] = item; // CACHE FULL INFO IN MEMORY
             const opt = document.createElement("option");
-            opt.value = item["Del JO#"];
-            opt.textContent = `${item["Del JO#"]} || ${item.name}`;
+            opt.value = joNum;
+            opt.textContent = `${joNum} || ${item.name || 'No Name'}`;
             dropdown.appendChild(opt);
           }
         });
       }
     } catch (err) {
-      dropdown.innerHTML = '<option value="">Offline / Error Loading</option>';
+      dropdown.innerHTML = '<option value="">Error Loading</option>';
     }
   }
 
+  // UPDATED: Now triggers from local memory
   function loadDeliveryData() {
     const val = document.getElementById("joDropdown").value;
     if (val) {
-        document.getElementById("JOsearch").value = val;
-        document.getElementById("searchButton").click();
+        if (joCache[val]) {
+          // OFFLINE FRIENDLY: Load from memory
+          displayJOResult(joCache[val]);
+        } else {
+          // Fallback to online search if somehow not in cache
+          JOsearchField.value = val;
+          searchButton.click();
+        }
     }
   }
 
-  // G-Cash Toggle
   document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
     radio.addEventListener('change', function() {
       const gcashInfo = document.getElementById("gcashInfo");
-      if (this.value === "G-Cash") {
-        gcashInfo.style.display = "block";
-        gcashInfo.required = true;
-      } else {
-        gcashInfo.style.display = "none";
-        gcashInfo.required = false;
-      }
+      gcashInfo.style.display = this.value === "G-Cash" ? "block" : "none";
+      gcashInfo.required = this.value === "G-Cash";
     });
   });
 
@@ -529,7 +538,6 @@
       document.getElementById("JOR").value = "";
   };
 
-  // Initial load
   const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
   loadJODropdown(manilaDate);
 
