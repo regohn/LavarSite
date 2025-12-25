@@ -22,13 +22,13 @@
         background-color: #fff;
       }
 
-        .button-container {
+      .button-container {
         display: flex;
         gap: 5px; /* Adds space between the buttons */
         align-items: center; /* Aligns buttons vertically if they have different heights */
-        }
+      }
 
-        button {
+      button {
         padding: 10px 10px;
         font-size: 10px;
         cursor: pointer;
@@ -36,29 +36,49 @@
         border-radius: 5px;
         background-color: #4CAF50;
         color: white;
-        }
+      }
 
-        button:hover {
+      button:hover {
         background-color: #45a049;
-        }      
-        
+      }      
+
+      /* Queue Status Styles */
+      #queueStatus {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 20px;
+        font-size: 12px;
+        display: none; /* Hidden when empty */
+      }
+      .queue-item-info {
+        color: #007bff;
+        font-weight: bold;
+      }
     </style>
   </head>
-  <body class="bg-light"  >
+  <body class="bg-light">
 
     <div class="container">
       <div class="form-container">
+        <!-- Visual Queue Indicator -->
+        <div id="queueStatus">
+          <div><strong>Pending Uploads:</strong> <span id="queueCount">0</span></div>
+          <div id="nextUploadInfo" style="margin-top: 5px;"></div>
+        </div>
+
         <h4 class="text-center mb-4">Lavar Laundry Delivery Form</h4>
         <div>
-    <a href="pickuprequestsummary.html"> Requests Summary </a> | 
-    <a href="pickuprequest.html"> Request Forms </a> | 
-    <a href="pickup.html"> Pickup </a>  | 
-    <a href="delivery.html"> Delivery </a> | 
-    <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold  </a> <br>  
-  <br>
-
+          <a href="pickuprequestsummary.html"> Requests Summary </a> | 
+          <a href="pickuprequest.html"> Request Forms </a> | 
+          <a href="pickup.html"> Pickup </a>  | 
+          <a href="delivery.html"> Delivery </a> | 
+          <a href="deliverysummary.html"> DVS </a> |
+          <a href="LavarFormSubmission.html"> Fold  </a> <br>  
+          <br>
         </div>
+
         <form id="submit-to-google-sheet">
           <div class="form-group">
             <label for="JOR">(Only Folded Laundry JOs will appear in search)<br> (Use Delivery form also for In-shop Pickup of laundry by customer)</label>
@@ -95,81 +115,43 @@
               </div>
             </div>
 
-          <div class="d-flex justify-content-center align-items-center mb-3" style="gap: 1rem;">
-            <img
-              src="https://img.icons8.com/ios-glyphs/20/000000/chevron-left.png"
-              style="cursor: pointer;"
-              onclick="changeDate(-1)"
-              alt="Previous Day"
-            />
-            <span id="currentDate" class="fw-semibold" style="min-width: 120px; text-align: center;"></span>
-            <img
-              src="https://img.icons8.com/ios-glyphs/20/000000/chevron-right.png"
-              style="cursor: pointer;"
-              onclick="changeDate(1)"
-              alt="Next Day"
-            />
-          </div>
+            <div class="d-flex justify-content-center align-items-center mb-3" style="gap: 1rem;">
+              <img
+                src="https://img.icons8.com/ios-glyphs/20/000000/chevron-left.png"
+                style="cursor: pointer;"
+                onclick="changeDate(-1)"
+                alt="Previous Day"
+              />
+              <span id="currentDate" class="fw-semibold" style="min-width: 120px; text-align: center;"></span>
+              <img
+                src="https://img.icons8.com/ios-glyphs/20/000000/chevron-right.png"
+                style="cursor: pointer;"
+                onclick="changeDate(1)"
+                alt="Next Day"
+              />
+            </div>
           
-          <!-- JO Dropdown -->
+            <!-- JO Dropdown -->
             <select class="form-control mb-2" id="joDropdown" onchange="loadDeliveryData()">
               <option value="">Select Requested JO# for Delivery</option>
             </select>   
-            <!-- Delivery Info Display -->
-            <div id="deliveryInfoBox" class="mt-3"></div>         
+
             <input
                 class="form-control mt-2"
                 type="text"
                 id="JOsearch"
                 placeholder="Search for JO..."
-                oninput="searchJO()"
-            />
-            
-            </div>
-            <div>
-            <button id="searchButton" type="button">Search</button>
-            <button id="clearButton" onclick="clearInput()">Clear</button>
-            </div>    
-            <div id="JOresult"></div>
-            
-        <!--
-          <div class="form-group">
-            <label for="LocationofDelivery">Location of Delivery</label>
-            <input
-              class="form-control"
-              type="text"
-              name="LocationofDelivery"
-              id="LocationofDelivery"
-              placeholder="Delivery Location"
-              required
             />
           </div>
-        
-          <div class="form-group">
-            <label for="DateofDelivery">Date of Delivery</label>
-            <input
-              class="form-control"
-              type="date"
-              name="DateofDelivery"
-              id="DateofDelivery"
-              required
-            />
-          </div>
-       
-          <div class="form-group">
-            <label for="TimeofDelivery">Time of Delivery</label>
-            <input
-              class="form-control"
-              type="text"
-              name="TimeofDelivery"
-              id="TimeofDelivery"
-              placeholder="Time of Delivery"
-              required
-            />
-          </div>
-        --> 
 
-          <div class="form-group">
+          <div class="button-container">
+            <button id="searchButton" type="button">Search</button>
+            <button id="clearButton" type="button" onclick="clearForm()">Clear</button>
+          </div>    
+
+          <div id="JOresult" class="mt-3"></div>
+
+          <div class="form-group mt-3">
             <label for="DeliveryStaff">Delivery Staff</label>
             <select class="form-control" name="DeliveryStaff" id="DeliveryStaff" required>
               <option value="" disabled selected hidden>Choose...</option>
@@ -185,46 +167,28 @@
           <div class="form-group">
             <table>
               <tr>
-                <!-- Column 1: Yes/No -->
-                 <!--
-                <td>
-                  <label>Did the Customer Pay During Delivery?</label>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="DeliveryPayMethod" id="payYes" value="Yes" required ">
-                    <label class="form-check-label" for="payYes">Yes</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="DeliveryPayMethod" id="payNo" value="No" ">
-                    <label class="form-check-label" for="payNo">No</label>
-                  </div>
-                </td>
-                   <td>
-                   -->  
-                   </td>
-                <!-- Column 2: Conditional Payment Options -->
-                <td id="paymentTypeColumn" >
+                <td id="paymentTypeColumn">
                   <label>Did the customer pay during delivery?</label>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="Cash" value="Cash" required>
-                    <label class="form-check-label" for="cash">Cash</label>
+                    <label class="form-check-label" for="Cash">Cash</label>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="G-Cash" value="G-Cash">
-                    <label class="form-check-label" for="gcash">G-Cash</label>
-                    <!-- small textbox for G-Cash reference, hidden initially -->
-                    <input type="text" id="gcashInfo" name="gcashInfo"  placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />                    
+                    <label class="form-check-label" for="G-Cash">G-Cash</label>
+                    <input type="text" id="gcashInfo" name="gcashInfo" placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />                    
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="Others" value="Other Online Payment">
-                    <label class="form-check-label" for="Other Online Payment">Other Online Payment</label>
+                    <label class="form-check-label" for="Others">Other Online Payment</label>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="UnPaid" value="Unpaid">
-                    <label class="form-check-label" for="Unpaid">Unpaid</label>
+                    <label class="form-check-label" for="UnPaid">Unpaid</label>
                   </div>
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="PaymentType" id="UnPaid" value="Paid During Pickup/Drop-Off">
-                    <label class="form-check-label" for="Unpaid">Paid During Pickup/Drop-Off</label>
+                    <input class="form-check-input" type="radio" name="PaymentType" id="PaidAdvance" value="Paid During Pickup/Drop-Off">
+                    <label class="form-check-label" for="PaidAdvance">Paid During Pickup/Drop-Off</label>
                   </div>                                    
                 </td>
               </tr>
@@ -264,186 +228,242 @@
     </div>
 
 <script>
-  //LavarSite2Appscript
+  // Configuration
   const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
+  const requestScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
   
+  // Element references
   const form = document.getElementById("submit-to-google-sheet");
   const JOsearchField = document.getElementById("JOsearch");
   const JOresult = document.getElementById("JOresult");
   const searchButton = document.getElementById("searchButton");
+  const joDropdown = document.getElementById("joDropdown");
 
+  // Queue State
+  let uploadQueue = [];
+  let isUploading = false;
+
+  /**
+   * Helper: Extracts ID from Drive URL and returns a thumbnail link
+   */
   function getDriveThumbnail(url) {
+    if (!url) return "";
     const match = url.match(/[-\w]{25,}/);
     return match ? `https://drive.google.com/thumbnail?id=${match[0]}` : "";
   }
 
+  /**
+   * Update the visual queue UI at the top
+   */
+  function updateQueueUI() {
+    const queueStatus = document.getElementById("queueStatus");
+    const queueCount = document.getElementById("queueCount");
+    const nextUploadInfo = document.getElementById("nextUploadInfo");
+
+    if (uploadQueue.length > 0) {
+      queueStatus.style.display = "block";
+      queueCount.innerText = uploadQueue.length;
+      
+      const current = uploadQueue[0];
+      nextUploadInfo.innerHTML = `Next: <span class="queue-item-info">${current.JOR}</span> - <span class="queue-item-info">${current.CustomerName}</span>`;
+    } else {
+      queueStatus.style.display = "none";
+    }
+  }
+
+  /**
+   * Search functionality: Fetches details from Google Sheet master list
+   */
   searchButton.addEventListener("click", async function () {
     const joNumber = JOsearchField.value.trim();
+    
+    // Reset specific form fields and display
     document.getElementById("DeliveryStaff").value = "";
-    const radios = document.getElementsByName("DeliveryPayMethod");
-    radios.forEach(radio => radio.checked = false);
     document.getElementById("Comments").value = "";
-    JOresult.innerHTML = ""; // Clear previous results
+    JOresult.innerHTML = ""; 
 
     if (!joNumber) {
-      JOresult.innerHTML = "Please enter a JO number.";
+      JOresult.innerHTML = "<span class='text-warning'>Please enter a JO number.</span>";
       return;
     }
 
-    const response = await fetch(`${scriptURL}?JO=${joNumber}`);
-    const data = await response.json();
+    JOresult.innerHTML = "Searching...";
 
-    if (data.result === "not found") {
-      JOresult.innerHTML = "Di Pa Na Log ng Mga Nagtupi. Tawagan sila at ipalog.";
-      return;
-    }
+    try {
+      const response = await fetch(`${scriptURL}?JO=${joNumber}`);
+      const data = await response.json();
 
-    let picturesHTML = "";
-    ["Picture1", "Picture2", "Picture3"].forEach((pic, i) => {
-      if (data[pic]) {
-        picturesHTML += `
-          <div>
-            <table>
-              <tr>
-                <td>${pic}:</td>
-                <td>
-                  <a href="${data[pic]}" target="_blank">
-                    <img id="pic${i + 1}img" src="${getDriveThumbnail(data[pic])}" style="height: 60px; margin: 5px; border-radius: 5px;" />
-                  </a>
-                </td>
-                <td>
-                  <button id="Pic${i + 1}Delete" onclick="deletePicture(${i + 1})" type="button" style="height: 20px;">Delete</button>
-                </td>
-              </tr>
-            </table>
-          </div>`;
+      if (data.result === "not found") {
+        JOresult.innerHTML = "<span class='text-danger'>Di Pa Na Log ng Mga Nagtupi. Tawagan sila at ipalog.</span>";
+        return;
       }
-    });
 
-    const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
-
-    JOresult.innerHTML = `
-      <div style="font-size: 11px;">
-        <br>Customer Name: ${data.value} <br>
-        JO#: ${data.JO} <br>
-        No. of Bags: ${data.colC} <br>
-        Total Amount: ${data.colK} <br>
-        Folder: ${data.colD} <br>
-        Details: ${data.colE} <br><br>
-        Delivered By: ${data.DeliveryStaff} <br>
-        Comments: ${data.Comments} <br>
-        Date of Delivery: ${formattedDeliveryDatetime} <br>
-        Delivery ID: ${data.UniqueID} <p id="deliveryid" style="color: white;">${data.UniqueID}</p> ${picturesHTML}
-        <input type="hidden" id="UniqueID" name="UniqueID" value="${data.UniqueID || ''}">
-      </div>`;
-
-    // Prefill fields and control form interactivity
-    const submitButton = document.querySelector("button[type='submit']");
-    document.getElementById("JOR").value = data.JO;
-    document.getElementById("CustomerName").value = data.value;
-    document.getElementById("JOR").disabled = false;
-    
-    submitButton.disabled = false;
-
-    if (data.DeliveryStaff?.trim()) {
-      submitButton.innerText = "Update";
-      document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
-      document.getElementById("Comments").value = data.Comments;
-      document.getElementById("DeliveryPayMethod").value = data.DeliveryPayMethod;
-    } else {
-      submitButton.innerText = "SUBMIT";
-      
-      
-      ["DeliveryStaff", "Comments", "media", "media2", "media3"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = false;
-      });
-    }
-   
-  });
-
-  document.getElementById("clearButton").addEventListener("click", function () {
-  // Option 1: Clear the form manually
-  form.reset();
-
-  // Optional: Clear image previews, result areas, etc.
-  document.getElementById("JOresult").innerHTML = "";
-  document.getElementById("JOR").value = "";
-  document.getElementById("media").value = "";
-  document.getElementById("media2").value = "";
-  document.getElementById("media3").value = "";
-
-  // Re-enable submit button if it was disabled
-  const submitButton = document.querySelector("button[type='submit']");
-  submitButton.disabled = false;
-  submitButton.innerText = "SUBMIT";
-});
-
-  function formatDateTime(isoString) {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    return date.toLocaleString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true
-    });
-  }
-
-  function formatDate(date) {
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    });
-  }
-
-  let currentDate = new Date();
-  function updateDisplayedDate() {
-    document.getElementById("currentDate").textContent = formatDate(currentDate);
-  }
-function changeDate(offsetDays) {
-  const currentDateEl = document.getElementById("currentDate");
-  const currentDate = new Date(currentDateEl.innerText);
-
-  currentDate.setDate(currentDate.getDate() + offsetDays);
-
-  // Format to yyyy-MM-dd
-  const formatted = currentDate.toISOString().split("T")[0];
-  currentDateEl.innerText = formatted;
-
-  // Reload JO dropdown for the new date
-  loadJODropdown(formatted);
-}
-
-  document.addEventListener("DOMContentLoaded", () => {
-    updateDisplayedDate();
-    
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const fileInputs = ["media", "media2", "media3"];
-      for (const id of fileInputs) {
-        const input = document.getElementById(id);
-        if (input?.files.length > 0) {
-          const file = input.files[0];
-          if (file.size > 5 * 1024 * 1024) {
-            swal("Error", `${id} must be less than 5MB.`, "error");
-            return;
-          }
-          const base64 = await readFileAsBase64(file);
-          formData.set(id, base64);
+      // Restore the original thumbnail display logic
+      let picturesHTML = "";
+      ["Picture1", "Picture2", "Picture3"].forEach((pic, i) => {
+        if (data[pic]) {
+          picturesHTML += `
+            <div class="mt-2">
+              <table border="0">
+                <tr>
+                  <td>${pic}:</td>
+                  <td>
+                    <a href="${data[pic]}" target="_blank">
+                      <img id="pic${i + 1}img" src="${getDriveThumbnail(data[pic])}" style="height: 60px; margin: 5px; border-radius: 5px;" />
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </div>`;
         }
-      }
-      await submitForm(formData);
-      
-    });
+      });
 
-    window.location.reload
+      const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
+
+      // Restore original result formatting
+      JOresult.innerHTML = `
+        <div style="font-size: 11px; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
+          <br><strong>Customer Name:</strong> ${data.value} <br>
+          <strong>JO#:</strong> ${data.JO} <br>
+          <strong>No. of Bags:</strong> ${data.colC} <br>
+          <strong>Total Amount:</strong> ${data.colK} <br>
+          <strong>Folder:</strong> ${data.colD} <br>
+          <strong>Details:</strong> ${data.colE} <br><br>
+          <strong>Delivered By:</strong> ${data.DeliveryStaff || ''} <br>
+          <strong>Comments:</strong> ${data.Comments || ''} <br>
+          <strong>Date of Delivery:</strong> ${formattedDeliveryDatetime} <br>
+          <strong>Delivery ID:</strong> ${data.UniqueID || ''} 
+          ${picturesHTML}
+          <input type="hidden" id="UniqueID_hidden" name="UniqueID" value="${data.UniqueID || ''}">
+        </div>`;
+
+      // Prefill hidden fields for submission
+      document.getElementById("JOR").value = data.JO;
+      document.getElementById("CustomerName").value = data.value;
+      
+      // Handle "Update" state if already delivered
+      if (data.DeliveryStaff && data.DeliveryStaff.trim()) {
+        document.getElementById("mainsubmitbutton").innerText = "Update";
+        document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
+        document.getElementById("Comments").value = data.Comments;
+      } else {
+        document.getElementById("mainsubmitbutton").innerText = "SUBMIT";
+      }
+    } catch (error) {
+      console.error("Search Error:", error);
+      JOresult.innerHTML = "<span class='text-danger'>Error connecting to server. Try again.</span>";
+    }
   });
 
+  /**
+   * Reset form state
+   */
+  function clearForm() {
+    form.reset();
+    JOresult.innerHTML = "";
+    document.getElementById("JOR").value = "";
+    document.getElementById("CustomerName").value = "";
+    document.getElementById("gcashInfo").style.display = "none";
+    document.getElementById("mainsubmitbutton").disabled = false;
+    document.getElementById("mainsubmitbutton").innerText = "Submit";
+    JOsearchField.value = "";
+  }
+
+  /**
+   * Date formatting helper
+   */
+  function formatDateTime(isoString) {
+    if (!isoString) return "N/A";
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    return date.toLocaleString("en-US", {
+      month: "2-digit", day: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: true
+    });
+  }
+
+  /**
+   * Date navigation chevrons
+   */
+  function changeDate(offsetDays) {
+    const currentDateEl = document.getElementById("currentDate");
+    const currentDate = new Date(currentDateEl.innerText);
+    currentDate.setDate(currentDate.getDate() + offsetDays);
+    const formatted = currentDate.toISOString().split("T")[0];
+    currentDateEl.innerText = formatted;
+    loadJODropdown(formatted);
+  }
+
+  /**
+   * Fetches scheduled requests for a specific date
+   */
+  async function loadJODropdown(passedDate) {
+    const dropdown = document.getElementById("joDropdown");
+    dropdown.innerHTML = '<option value="">Searching for requests...</option>';
+    try {
+      const url = `${requestScriptURL}?date=${encodeURIComponent(passedDate)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      dropdown.innerHTML = '<option value="">Select Requested JO# for Delivery</option>';
+      if (!Array.isArray(data) || data.length === 0) {
+        const opt = document.createElement("option");
+        opt.textContent = "No JOs found for this date";
+        opt.value = "";
+        dropdown.appendChild(opt);
+        return;
+      }
+      data.forEach(item => {
+        if (item["Del JO#"]) {
+          const option = document.createElement("option");
+          option.value = item["Del JO#"];
+          option.textContent = `${item["Del JO#"]} || ${item.name}`;
+          dropdown.appendChild(option);
+        }
+      });
+    } catch (err) {
+      console.error("Dropdown Load Error:", err);
+      dropdown.innerHTML = '<option value="">Error loading JOs</option>';
+    }
+  }
+
+  /**
+   * Triggered when a dropdown item is selected
+   */
+  function loadDeliveryData() {
+    const selectedValue = joDropdown.value;
+    if (selectedValue) {
+      JOsearchField.value = selectedValue;
+      searchButton.click();
+    }
+  }
+
+  /**
+   * Visibility toggle for GCash reference field
+   */
+  function toggleGcashInput() {
+    const gcashRadio = document.getElementById("G-Cash");
+    const gcashInfo = document.getElementById("gcashInfo");
+    if (gcashRadio && gcashRadio.checked) {
+      gcashInfo.style.display = "inline-block";
+      gcashInfo.required = true;
+    } else {
+      if (gcashInfo) {
+        gcashInfo.style.display = "none";
+        gcashInfo.value = "";
+        gcashInfo.required = false;
+      }
+    }
+  }
+
+  // Attach GCash listeners
+  document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
+    radio.addEventListener('change', toggleGcashInput);
+  });
+
+  /**
+   * Helper: Converts File object to Base64 string for transmission
+   */
   function readFileAsBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -453,163 +473,124 @@ function changeDate(offsetDays) {
     });
   }
 
-  async function submitForm(formData) {
-    const JOR = formData.get("JOR");
+  /**
+   * Submission: Validates form and pushes to queue
+   */
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    // Core validation
+    const JOR = document.getElementById("JOR").value;
     if (!JOR || JOR.trim() === "") {
-      swal("Missing JO#", "Please enter the Job Order Reference before submitting.", "warning");
+      swal("Missing JO#", "Please search and select a Job Order first.", "warning");
       return;
     }
 
-          // New validation for gcashInfo
-          const paymentType = formData.get("PaymentType");
-          const gcashInfo = document.getElementById("gcashInfo");
-
-          if (paymentType === "G-Cash" && gcashInfo.style.display !== "none") {
-            const gcashValue = gcashInfo.value.trim();
-            if (!/^\d{6}$/.test(gcashValue)) { // Regex to check for exactly 6 digits
-              swal("Invalid G-Cash Reference", "G-Cash Reference # must be exactly 6 digits and all numeric.", "warning");
-              return; // Stop form submission
-            }
-          }
-          // End of new validation
-
-    const submitButton = document.querySelector("button[type='submit']");
-    submitButton.disabled = true;
-    submitButton.innerText = "Loading...";
-
-    try {
-      const response = await fetch(scriptURL, {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json();
-
-      if (result.result === "success") {
-        if (result.unique_id) {
-          const uniqueIdInput = document.getElementById("UniqueID");
-          if (uniqueIdInput) uniqueIdInput.value = result.unique_id;
-        }
-        swal("Success", "Record saved successfully!", "success");
-        
-      } else {
-        swal("Error", result.error || "Unknown error", "error");
+    // GCash validation
+    const paymentType = document.querySelector('input[name="PaymentType"]:checked')?.value;
+    const gcashInfo = document.getElementById("gcashInfo");
+    if (paymentType === "G-Cash" && gcashInfo.style.display !== "none") {
+      if (!/^\d{6}$/.test(gcashInfo.value.trim())) {
+        swal("Invalid G-Cash", "Reference # must be exactly 6 digits.", "warning");
+        return;
       }
-    } catch (err) {
-      swal("Error", err.message || "Network error", "error");
-    } finally {
-      submitButton.disabled = false;
-      submitButton.innerText = "Submit";
-    }
-  }
-  
-let deliveryData = [];
-
-async function loadJODropdown(passedDate) {
-  
-  const dropdown = document.getElementById("joDropdown");
-  //const currentDate = document.getElementById("currentDate").innerText.trim(); // get date from span
-
-  dropdown.innerHTML = '<option value="">Select Requested JO# for Delivery</option>';
-
-  try {
-     //JODeliveryRequest 
-    const url = `https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec?date=${encodeURIComponent(passedDate)}`;
-    const response = await fetch(url);
-
-    if (!response.ok) throw new Error("Network error");
-
-    const data = await response.json();
-
-    if (!Array.isArray(data) || data.length === 0) {
-      dropdown.innerHTML += '<option value="">No JOs found</option>';
-      return;
     }
 
-    data.forEach(item => {
-      if (item["Del JO#"]) {
-        const option = document.createElement("option");
-        option.value = item["Del JO#"];
-        option.textContent = `${item["Del JO#"]} || ${item.name}`;
-        dropdown.appendChild(option);
+    const submitBtn = document.getElementById("mainsubmitbutton");
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Queueing...";
+
+    const formData = new FormData(form);
+    const data = {};
+
+    // Process fields and files
+    const filePromises = [];
+    formData.forEach((value, key) => {
+      if (value instanceof File && value.size > 0) {
+        const promise = readFileAsBase64(value).then(b64 => ({ key, value: b64 }));
+        filePromises.push(promise);
+      } else if (!(value instanceof File)) {
+        data[key] = value;
       }
     });
-  } catch (err) {
-    console.error(err);
-    dropdown.innerHTML += '<option value="">Error loading JOs</option>';
-  }
-}
 
-const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
-window.onload = loadJODropdown(manilaDate); // Load JOs for today on page load
+    try {
+      const resolvedFiles = await Promise.all(filePromises);
+      resolvedFiles.forEach(f => data[f.key] = f.value);
+      
+      // Remove the submitted JO from the dropdown immediately
+      const dropdownValue = joDropdown.value;
+      if (dropdownValue === JOR) {
+        const optionToRemove = joDropdown.querySelector(`option[value="${JOR}"]`);
+        if (optionToRemove) {
+          optionToRemove.remove();
+        }
+      }
 
-function initializePage() {
-    currentDate=document.getElementById("currentDate").innerText.trim();
-    //const currentDate = document.getElementById("currentDate").innerText.trim()
-    loadJODropdown(currentDate);
-}
-function loadDeliveryData() {
-  const joDropdown = document.getElementById("joDropdown");
-  const selectedValue = joDropdown.value;
-  const searchInput = document.getElementById("JOsearch"); // use correct ID here
+      // Push to upload queue
+      uploadQueue.push(data);
+      updateQueueUI();
+      
+      swal("Success", "Delivery details have been queued.", "success");
+      clearForm();
+    } catch (err) {
+      console.error("Queue Error:", err);
+      swal("Error", "There was an error processing your photos.", "error");
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Submit";
+    }
+  });
 
-  if (searchInput) {
-    searchInput.value = selectedValue;
-    document.getElementById("searchButton").click();
-  } else {
-    console.warn("JOsearch element not found");
-  }
+  /**
+   * Background process: Sends queued data to Google Apps Script
+   */
+  async function processQueue() {
+    // Only proceed if not already uploading, queue has items, and device is online
+    if (isUploading || uploadQueue.length === 0 || !navigator.onLine) return;
+    
+    isUploading = true;
+    updateQueueUI();
+    const currentData = uploadQueue[0];
 
-  const joResultContainer = document.getElementById("JOresult");
-  if (joResultContainer) {
-    // example: clear previous results before loading new ones
-    joResultContainer.innerHTML = "";
-  } else {
-    console.warn("JOresult container not found");
-  }
+    try {
+      // Use URLSearchParams for POST body to match Apps Script e.parameter handling
+      const params = new URLSearchParams();
+      for (const key in currentData) params.append(key, currentData[key]);
 
-  // Continue with your code...
-}
+      // mode: 'no-cors' allows the request to complete despite redirect issues
+      await fetch(scriptURL, {
+        method: "POST",
+        mode: "no-cors",
+        body: params.toString(),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      });
 
-  function clearInput() {
-  }
-
-    // Function to toggle the JO dropdown based on selected service type
-  function toggleJODropdown() {
-    const deliveryOption = document.getElementById("deliveryOption");
-    const joDropdown = document.getElementById("joDropdown");
-
-    if (deliveryOption.checked) {
-      joDropdown.disabled = false;
-    } else {
-      joDropdown.disabled = true;
-      joDropdown.value = ""; // Optionally reset value if switching away
+      // Shift successful item out of queue
+      uploadQueue.shift();
+      console.log("Queue Update: Upload successful. " + uploadQueue.length + " items remaining.");
+    } catch (err) {
+      console.error("Background Queue Error:", err);
+    } finally {
+      isUploading = false;
+      updateQueueUI();
     }
   }
-function toggleGcashInput() {
-  const gcashRadio = document.getElementById("G-Cash");
-  const gcashInfo = document.getElementById("gcashInfo");
 
-  if (gcashRadio.checked) {
-    gcashInfo.style.display = "inline-block";
-    gcashInfo.required = true;  // Make required when visible
-  } else {
-    gcashInfo.style.display = "none";
-    gcashInfo.value = "";
-    gcashInfo.required = false; // Remove required when hidden
-  }
-
-}
-
-// Attach event listeners to all PaymentType radios
-document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
-  radio.addEventListener('change', toggleGcashInput);
-});
-
-// Initialize visibility on page load
-document.addEventListener("DOMContentLoaded", toggleGcashInput);
-
+  /**
+   * Entry Point
+   */
+  window.onload = function() {
+    // Set current date to Manila Timezone by default
+    const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+    const dateSpan = document.getElementById("currentDate");
+    if (dateSpan) {
+      dateSpan.innerText = manilaDate;
+      loadJODropdown(manilaDate);
+    }
+    
+    // Start the background sync loop
+    setInterval(processQueue, 5000); 
+  };
 </script>
-
-
-  </body>
+</body>
 </html>
