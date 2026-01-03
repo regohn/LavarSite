@@ -274,6 +274,35 @@ select:focus {
     text-decoration: none; /* Remove underline on hover for a subtle effect */
 }
 
+/* Styling for the smaller bag detail selector */
+.bag-detail-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.small-input {
+  padding: 8px 12px !important; /* Smaller than standard 14px */
+  font-size: 14px !important;    /* Smaller than standard 17px */
+  margin-bottom: 0 !important;
+  height: 40px;
+}
+
+.btn-ok {
+  padding: 8px 16px;
+  background: #34c759; /* iOS Green */
+  color: white;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  height: 40px;
+}
+
+.btn-ok:hover {
+  background: #28a745;
+}
   </style>
 </head>
 <body>
@@ -327,10 +356,8 @@ select:focus {
       <select name="NAME OF FOLDER" id="folder" required>
         <option value="">--Select Folder Name--</option>
         <option value="NIDA">NIDA</option>
-        <option value="JERCY">MIA</option>
-        <option value="JERCY">JERCY</option>
         <option value="JENNELYN">JENNELYN</option>
-        
+        <option value="JERCY">JERCY</option>
         <option value="NORI">NORI</option>
       </select>
       <input type="text" id="jo-number" name="JO NUMBER" placeholder="JO NUMBER" hidden>
@@ -343,6 +370,25 @@ select:focus {
           <input type="text" id="Time of Folds" name="Time of Folds" placeholder="Time of Folds" required>
 
           <label for="bags">Number of Bags</label>
+<div class="bag-detail-container">
+  <select id="bagNumberSelect" class="small-input">
+    <option value="" disabled selected>Select Bag</option>
+    <option value="Bag 1">Bag 1</option>
+    <option value="Bag 2">Bag 2</option>
+    <option value="Bag 3">Bag 3</option>
+    <option value="Bag 4">Bag 4</option>
+    <option value="Bag 5">Bag 5</option>
+    <option value="Bag 6">Bag 6</option>
+    <option value="Bag 7">Bag 7</option>
+    <option value="Bag 8">Bag 8</option>
+  </select>
+
+  <input type="number" id="piecesCount" class="small-input" placeholder="Pcs" style="width: 80px;">
+  
+  <button type="button" class="btn-ok" onclick="addBagToField()">OK</button>
+</div>
+
+
           <input type="text" id="bags" name="NUMBER OF BAGS" placeholder="NUMBER OF BAGS" required>
 
           <label for="comments">Comments / Name of Customer</label>
@@ -370,6 +416,11 @@ select:focus {
 
 
   <script>
+    // Global variable to hold all pickup data preloaded from the Apps Script
+    // The Apps Script will inject the JSON data here via the template engine.
+    const allPreloadedPickups = <?!= preloadedPickups ?> || [];
+    console.log(`Preloaded ${allPreloadedPickups.length} pickup records.`);
+    
     //FoldFormSearchJO
  const foldJOWebAppURL = "https://script.google.com/macros/s/AKfycbxyEZI2rcBljv0Yi9-uiVLwH8hkdXahm4KhwCzOx3scYEGTGjSUouPyvI8aGOsDd22R/exec";
  let currentCustomerName = "";  // Global variable to store the name found in searchFoldJO
@@ -433,7 +484,7 @@ async function searchFoldJO() {
       if (header === "Customer Name") {
         const customerInput = document.getElementById("customername");
         if (customerInput) customerInput.value = value;
-        currentCustomerName = value.trim().toLowerCase();  // set global variable
+        currentCustomerName = value.trim();  // set global variable (keep original case for customername field)
         showShowAllPickupBtn(); // <-- show the button when customer is found
         loadPickupDropdown();
       }
@@ -478,10 +529,7 @@ async function searchFoldJO() {
       return new Intl.DateTimeFormat("en-US", options).format(date);
     }
 
-    //FoldFormSearchPickups
-    // This URL will now need the 'name' parameter for filtering
-const pickupWebAppURL = "https://script.google.com/macros/s/AKfycbz_gvAtAjY3ecsNhm6fjBDli-Uu4Uq6OxKWDH5b3rZDLkUHGfWKrLB6FWDLE2N5HKoB/exec";
-// New Web App URL for reporting missing pickups
+    // New Web App URL for reporting missing pickups
 const reportMissingPickupWebAppURL = "https://script.google.com/macros/s/AKfycbzvyovjIfgl2Uc8RUOdkiEoHNVmEa6dBwLS3dcMB3cMXsQe-QSK8DMe_0EpNhyaR8Nm/exec"; // <<< IMPORTANT: REPLACE WITH YOUR DEPLOYED SCRIPT URL
 
 function formatDate(input) {
@@ -491,79 +539,54 @@ function formatDate(input) {
   });
 }
 
+// --- UPDATED loadPickupDropdown to use local data ---
 async function loadPickupDropdown() {
   const dropdown = document.getElementById("pickupDropdown");
-  const reportButton = document.getElementById("reportButton"); // Get reference to the button
-  dropdown.innerHTML = '<option value="">-- Select Pickup --</option>'; // Clear previous options
+  const reportButton = document.getElementById("reportButton");
+  dropdown.innerHTML = '<option value="">-- Select Pickup --</option>';
+  reportButton.style.display = 'none';
 
-  // Ensure button is hidden before evaluating conditions
-  reportButton.style.display = 'none'; // Directly set inline style to hide
-
-  console.log("loadPickupDropdown called. currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber);
+  console.log("loadPickupDropdown called (Local Data). currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber);
 
   if (!currentCustomerName) {
       const option = document.createElement("option");
       option.disabled = true;
       option.textContent = "No customer name found for pickup search.";
       dropdown.appendChild(option);
-      // If no customer name, still allow reporting if JO was searched
       if (currentJoNumber) {
-          console.log("Showing report button because no customer name but JO found.");
-          reportButton.style.display = 'block'; // Directly set inline style to show
+          reportButton.style.display = 'block';
       }
       return;
   }
 
-  try {
-    // Fetch pickup data, passing the currentCustomerName as a query parameter
-    const response = await fetch(`${pickupWebAppURL}?name=${encodeURIComponent(currentCustomerName)}`);
-    const data = await response.json();
-    console.log("Response from pickupWebAppURL:", data); // Log the response data
+  // Use the local preloaded data
+  const customerNameLower = currentCustomerName.trim().toLowerCase();
+  const matchingPickups = allPreloadedPickups.filter(item => {
+      // Ensure the 'name' property exists and is a string before trimming/lowercasing
+      const pickupName = item.name && typeof item.name === 'string' ? item.name.trim().toLowerCase() : "";
+      return pickupName === customerNameLower;
+  });
 
-    let matchCount = 0;
 
-    if (data.result && data.result.length > 0) {
-        data.result.forEach(item => {
-            const pickupName = item.name?.trim().toLowerCase() || "";
-
-            // The backend script already filters by name, so we just iterate through results
-            const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID}`; // Removed "UID-" prefix
-            const option = document.createElement("option");
-            option.value = label;
-            option.textContent = label;
-            dropdown.appendChild(option);
-            matchCount++;
-        });
-        console.log("Matching pickups found. Match count:", matchCount);
-    } else if (data.error) { // Explicitly check for the 'error' property from your backend
-        console.log("Backend reported an error:", data.error);
-        const option = document.createElement("option");
-        option.disabled = true;
-        option.textContent = "No matching pickups found"; // Display the desired message
-        dropdown.appendChild(option);
-        console.log("Showing report button because backend reported no matches/error.");
-        reportButton.style.display = 'block'; // Directly set inline style to show
-    } else { // Fallback if data.result is empty/undefined and no explicit error
-        console.log("No matching pickups found (data.result empty/undefined and no explicit error).");
-        const option = document.createElement("option");
-        option.disabled = true;
-        option.textContent = "No matching pickups found";
-        dropdown.appendChild(option);
-        console.log("Showing report button because matchCount is 0.");
-        reportButton.style.display = 'block'; // Directly set inline style to show
-    }
-
-  } catch (error) {
-    console.error("Failed to load pickup data:", error);
-    const option = document.createElement("option");
-    option.disabled = true;
-    option.textContent = "Error loading pickups";
-    dropdown.appendChild(option);
-    console.log("Showing report button because of fetch error.");
-    reportButton.style.display = 'block'; // Directly set inline style to show
+  if (matchingPickups.length > 0) {
+      matchingPickups.forEach(item => {
+          // Construct the label using the columns available in the preloaded data
+          // item.name, item.dateofpickup, item.pickuplocation, item.deliveryStaff, item.requestType, item.UID
+          const label = `${item.name || ''} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation || ''} || ${item.deliveryStaff || ''} || ${item.requestType || ''} | ${item.UID || ''}`;
+          const option = document.createElement("option");
+          option.value = label;
+          option.textContent = label;
+          dropdown.appendChild(option);
+      });
+      console.log("Matching pickups found (Local Data). Match count:", matchingPickups.length);
+  } else {
+      console.log("No matching pickups found (Local Data).");
+      const option = document.createElement("option");
+      option.disabled = true;
+      option.textContent = "No matching pickups found";
+      dropdown.appendChild(option);
+      reportButton.style.display = 'block';
   }
-  console.log("currentCustomerName =", currentCustomerName);
-  console.log("currentJoNumber =", currentJoNumber);
 }
 
 
@@ -804,7 +827,7 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
             const tableBody = document.createElement('tbody');
 
             // Define headers explicitly as they are not part of the C4:F100 range
-            const headers = ["Date Created JO", "JO#", "Customer Name", "Amount"];
+            const headers = ["Pickup Request Date","Date Created JO", "JO#", "Customer Name", "Amount"];
             const headerRow = document.createElement('tr');
             headers.forEach(headerText => {
                 const th = document.createElement('th');
@@ -886,28 +909,14 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
     });
 
 
-const showAllPickupWebAppURL = "https://script.google.com/macros/s/AKfycbzCe2UevQp2bUZMF6B3_Da-m34AQ2FaORncFHTWvOa0vkEpMQQyhtTpaqy-nsYm70uM/exec"; // replace with your actual deployed URL
-
-function showShowAllPickupBtn() {
-    document.getElementById("showAllPickupBtn").style.display = "inline-block";
-}
-
+// --- UPDATED showallpickuprequest to use local data ---
 async function showallpickuprequest() {
     const container = document.getElementById("allPickupRequestsContainer");
     container.style.display = "none";
     container.innerHTML = "";
 
-    // get customer name from foldJoResult div
-    let customerName = "";
-    const foldResult = document.getElementById("foldJoResult");
-    if (foldResult && foldResult.innerText) {
-        const match = foldResult.innerText.match(/Customer Name\s*(.+)/i);
-        if (match) {
-            customerName = match[1].trim();
-        }
-    }
-
-    if (!customerName) {
+    // currentCustomerName is set by searchFoldJO
+    if (!currentCustomerName) {
         alert("No customer name found.");
         return;
     }
@@ -915,48 +924,49 @@ async function showallpickuprequest() {
     container.innerHTML = "<p>Loading pickup requests...</p>";
     container.style.display = "block";
 
-    try {
-        const res = await fetch(`${showAllPickupWebAppURL}?name=${encodeURIComponent(customerName)}`);
-        const data = await res.json();
+    // Use the local preloaded data
+    const customerNameLower = currentCustomerName.trim().toLowerCase();
+    const filteredPickups = allPreloadedPickups.filter(item => {
+        // Ensure the 'name' property exists and is a string before trimming/lowercasing
+        const pickupName = item.name && typeof item.name === 'string' ? item.name.trim().toLowerCase() : "";
+        return pickupName === customerNameLower;
+    });
 
-        if (data.error || !data.pickups || data.pickups.length === 0) {
-            container.innerHTML = "<p>No pickup requests found.</p>";
-            return;
-        }
-
-        const table = document.createElement("table");
-        table.style.width = "100%";
-        const tbody = document.createElement("tbody");
-
-        const headers = ["Name", "Date of Pickup", "Delivery Staff", "Request Type", "Folded JO"];
-        const headerRow = document.createElement("tr");
-        headers.forEach(h => {
-            const th = document.createElement("th");
-            th.textContent = h;
-            headerRow.appendChild(th);
-        });
-        tbody.appendChild(headerRow);
-
-        data.pickups.forEach(item => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${item.name}</td>
-                <td>${formatDate(item.dateofpickup)}</td>
-                <td>${item.DeliveryStaff || ""}</td>
-                <td>${item.request_type}</td>
-                <td>${item.FoldedJO || ""}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        table.appendChild(tbody);
-        container.innerHTML = "";
-        container.appendChild(table);
-
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = "<p class='text-danger'>Error loading pickup requests.</p>";
+    if (filteredPickups.length === 0) {
+        container.innerHTML = "<p>No pickup requests found.</p>";
+        return;
     }
+
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    const tbody = document.createElement("tbody");
+
+    // The headers must match the properties in the preloaded data objects
+    const displayHeaders = ["Name", "Date of Pickup", "Delivery Staff", "Request Type", "Folded JO"];
+
+    const headerRow = document.createElement("tr");
+    displayHeaders.forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        headerRow.appendChild(th);
+    });
+    tbody.appendChild(headerRow);
+
+    filteredPickups.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${item.name || ""}</td>
+            <td>${formatDate(item.dateofpickup)}</td>
+            <td>${item.deliveryStaff || ""}</td>
+            <td>${item.requestType || ""}</td>
+            <td>${item.FoldedJO || ""}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    container.innerHTML = "";
+    container.appendChild(table);
 }
 
 // Hide the table when Walang Log or Search is clicked
@@ -967,9 +977,45 @@ document.querySelector(".button-container .btn").addEventListener("click", () =>
     document.getElementById("allPickupRequestsContainer").style.display = "none";
 });
 
+function addBagToField() {
+  const bagSelect = document.getElementById('bagNumberSelect');
+  const piecesInput = document.getElementById('piecesCount');
+  const mainBagsInput = document.getElementById('bags');
+
+  const selectedIndex = bagSelect.selectedIndex;
+  const bagValue = bagSelect.value;
+  const piecesValue = piecesInput.value;
+
+  // Validation: Ensure a bag is selected and pieces are entered
+  if (selectedIndex === 0 || !bagValue) {
+    alert("Please select a bag number.");
+    return;
+  }
+  if (!piecesValue) {
+    alert("Please enter the number of pieces.");
+    return;
+  }
+
+  // 1. Create the entry string
+  const entry = `${bagValue} - ${piecesValue} pcs`;
+
+  // 2. Append to the main "Number of Bags" field
+  if (mainBagsInput.value.trim() === "") {
+    mainBagsInput.value = entry;
+  } else {
+    mainBagsInput.value += "; " + entry;
+  }
+
+  // 3. Remove the selected bag from the dropdown
+  bagSelect.remove(selectedIndex);
+
+  // 4. Clear the pieces input and reset dropdown to placeholder
+  piecesInput.value = "";
+  bagSelect.selectedIndex = 0; 
+}
+
 </script>
 
 
 </body>
-
 </html>
