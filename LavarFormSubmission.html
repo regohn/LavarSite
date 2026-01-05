@@ -1,333 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lavar Tupi Form</title>
-  <link rel="stylesheet" href="lavarcss.css">
-  <style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lavar Tupi Form</title>
+<link rel="stylesheet" href="lavarcss.css">
+<style>
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-  background: #f2f2f7; /* iOS light gray */
-  margin: 0;
-  padding: 0;
-  color: #1c1c1e;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+background: #f2f2f7; /* iOS light gray */
+margin: 0;
+padding: 0;
+color: #1c1c1e;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
 }
 
 .container {
-  max-width: 600px;
-  margin: 2rem auto;
-  background: #fff;
-  padding: 2rem 1.5rem;
-  border-radius: 24px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+max-width: 600px;
+margin: 2rem auto;
+background: #fff;
+padding: 2rem 1.5rem;
+border-radius: 24px;
+box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
 h4 {
-  margin-bottom: 1.5rem;
-  font-size: 1.7rem;
-  font-weight: 600;
-  color: #000;
-  letter-spacing: -0.4px;
+margin-bottom: 1.5rem;
+font-size: 1.7rem;
+font-weight: 600;
+color: #000;
+letter-spacing: -0.4px;
 }
 
 a {
-  color: #007aff;
-  text-decoration: none;
-  font-weight: 600;
-  margin-right: 1rem;
-  font-size: 1rem;
+color: #007aff;
+text-decoration: none;
+font-weight: 600;
+margin-right: 1rem;
+font-size: 1rem;
 }
 
 a:hover {
-  text-decoration: underline;
+text-decoration: underline;
 }
 
 label, p {
-  display: block;
-  margin: 0 0 6px 0;
-  font-weight: 500;
-  font-size: 15px;
-  color: #3a3a3c;
+display: block;
+margin: 0 0 6px 0;
+font-weight: 500;
+font-size: 15px;
+color: #3a3a3c;
 }
 
 input[type="text"],
 input[type="date"],
 select {
-  width: 100%;
-  padding: 14px 16px;
-  margin-bottom: 1.5rem;
-  font-size: 17px;
-  border: 1px solid #d1d1d6;
-  border-radius: 16px;
-  background: #f9f9f9;
-  transition: border-color 0.3s ease;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
+width: 100%;
+padding: 14px 16px;
+margin-bottom: 1.5rem;
+font-size: 17px;
+border: 1px solid #d1d1d6;
+border-radius: 16px;
+background: #f9f9f9;
+transition: border-color 0.3s ease;
+-webkit-appearance: none;
+-moz-appearance: none;
+appearance: none;
 }
 
 input[type="text"]:focus,
 input[type="date"]:focus,
 select:focus {
-  outline: none;
-  border-color: #007aff;
-  background: #fff;
-  box-shadow: 0 0 5px rgba(0, 122, 255, 0.3);
+outline: none;
+border-color: #007aff;
+background: #fff;
+box-shadow: 0 0 5px rgba(0, 122, 255, 0.3);
 }
 
 #submit {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(180deg, #007aff, #005bb5);
-  color: white;
-  font-size: 18px;
-  font-weight: 600;
-  border: none;
-  border-radius: 24px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-  box-shadow: 0 4px 8px rgba(0,122,255,0.3);
+width: 100%;
+padding: 16px;
+background: linear-gradient(180deg, #007aff, #005bb5);
+color: white;
+font-size: 18px;
+font-weight: 600;
+border: none;
+border-radius: 24px;
+cursor: pointer;
+transition: background 0.3s ease;
+box-shadow: 0 4px 8px rgba(0,122,255,0.3);
 }
 
 #submit:hover {
-  background: linear-gradient(180deg, #005bb5, #003f7f);
+background: linear-gradient(180deg, #005bb5, #003f7f);
 }
 
 .btn {
-  padding: 12px 20px;
-  font-size: 16px;
-  border-radius: 24px;
-  border: none;
-  background-color: #efeff4;
-  color: #007aff;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: none;
-  transition: background-color 0.3s ease;
-  margin-top: 0.25rem;
+padding: 12px 20px;
+font-size: 16px;
+border-radius: 24px;
+border: none;
+background-color: #efeff4;
+color: #007aff;
+cursor: pointer;
+font-weight: 600;
+box-shadow: none;
+transition: background-color 0.3s ease;
+margin-top: 0.25rem;
 }
 
 .btn:hover {
-  background-color: #d1d1d6;
+background-color: #d1d1d6;
 }
 
 .mt-2 {
-  margin-top: 0.5rem;
+margin-top: 0.5rem;
 }
 .mt-3 {
-  margin-top: 1rem;
+margin-top: 1rem;
 }
 
 .text-danger {
-  color: #ff3b30;
-  font-weight: 600;
+color: #ff3b30;
+font-weight: 600;
 }
 
 .bg-light {
-  background-color: #f2f2f7;
+background-color: #f2f2f7;
 }
 
 .border {
-  border: 1px solid #d1d1d6;
+border: 1px solid #d1d1d6;
 }
 
 .rounded {
-  border-radius: 16px;
+border-radius: 16px;
 }
 
 .p-3 {
-  padding: 1rem;
+padding: 1rem;
 }
 
 .list-group {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+list-style: none;
+padding: 0;
+margin: 0;
 }
 
 .list-group-item {
-  padding: 12px 16px;
-  border-bottom: 1px solid #d1d1d6;
-  display: flex;
-  justify-content: space-between;
-  font-size: 15px;
-  color: #1c1c1e;
+padding: 12px 16px;
+border-bottom: 1px solid #d1d1d6;
+display: flex;
+justify-content: space-between;
+font-size: 15px;
+color: #1c1c1e;
 }
 
 .list-group-item:last-child {
-  border-bottom: none;
+border-bottom: none;
 }
 
 /* Custom styles for the modal */
 .modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top */
-    left: 0;
-    top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-    justify-content: center;
-    align-items: center;
+display: none; /* Hidden by default */
+position: fixed; /* Stay in place */
+z-index: 1000; /* Sit on top */
+left: 0;
+top: 0;
+width: 100%; /* Full width */
+height: 100%; /* Full height */
+overflow: auto; /* Enable scroll if needed */
+background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+justify-content: center;
+align-items: center;
 }
 
 .modal-content {
-    background-color: #fefefe;
-    margin: auto;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 500px;
-    position: relative;
+background-color: #fefefe;
+margin: auto;
+padding: 20px;
+border-radius: 10px;
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+width: 90%;
+max-width: 500px;
+position: relative;
 }
 
 .close-button {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    position: absolute;
-    top: 10px;
-    right: 20px;
+color: #aaa;
+float: right;
+font-size: 28px;
+font-weight: bold;
+position: absolute;
+top: 10px;
+right: 20px;
 }
 
 .close-button:hover,
 .close-button:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
+color: black;
+text-decoration: none;
+cursor: pointer;
 }
 
 /* Base hidden class for button */
 #reportButton {
-  display: none; /* Hidden by default */
+display: none; /* Hidden by default */
 }
 
-  /* Existing styles here... */
+/* Existing styles here... */
 #walangLogDataContainer {
-  width: fit-content;
-  padding: 10px;
-  height: auto;
-  max-height: none;
-  margin-left: auto;
-  margin-right: auto;
+width: fit-content;
+padding: 10px;
+height: auto;
+max-height: none;
+margin-left: auto;
+margin-right: auto;
 }
 
 #walangLogDataContainer table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 14px;
-  border: none; /* Removed the border from the entire table */
-  border-radius: 8px; /* Optional: keeps the rounded corners on the container */
+border-collapse: collapse;
+width: 100%;
+font-size: 14px;
+border: none; /* Removed the border from the entire table */
+border-radius: 8px; /* Optional: keeps the rounded corners on the container */
 }
 
 /* Remove all borders from th and td */
 #walangLogDataContainer th,
 #walangLogDataContainer td {
-  white-space: nowrap;
-  padding: 4px 8px; /* Vertical and horizontal spacing */
-  text-align: left;
-  border: none; /* Removed the border from the cells */
+white-space: nowrap;
+padding: 4px 8px; /* Vertical and horizontal spacing */
+text-align: left;
+border: none; /* Removed the border from the cells */
 }
 
 
 #allPickupRequestsContainer table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 14px;
-  border: none;
-  border-radius: 8px;
+border-collapse: collapse;
+width: 100%;
+font-size: 14px;
+border: none;
+border-radius: 8px;
 }
 
 #allPickupRequestsContainer th,
 #allPickupRequestsContainer td {
-  white-space: nowrap;
-  padding: 4px 8px;
-  text-align: left;
-  border: none;
+white-space: nowrap;
+padding: 4px 8px;
+text-align: left;
+border: none;
 }
 
 #allPickupRequestsContainer tr {
-  border-bottom: none;
+border-bottom: none;
 }
 
 
 /* Remove the row border */
 #walangLogDataContainer tr {
-  border-bottom: none;
+border-bottom: none;
 }
 
 /* New style for clickable JO# */
 .jo-clickable {
-    cursor: pointer;
-    color: #007aff; /* Blue like other links */
-    text-decoration: underline;
+cursor: pointer;
+color: #007aff; /* Blue like other links */
+text-decoration: underline;
 }
 .jo-clickable:hover {
-    text-decoration: none; /* Remove underline on hover for a subtle effect */
+text-decoration: none; /* Remove underline on hover for a subtle effect */
 }
 
-/* Styling for the smaller bag detail selector */
-.bag-detail-container {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.small-input {
-  padding: 8px 12px !important; /* Smaller than standard 14px */
-  font-size: 14px !important;    /* Smaller than standard 17px */
-  margin-bottom: 0 !important;
-  height: 40px;
-}
-
-.btn-ok {
-  padding: 8px 16px;
-  background: #34c759; /* iOS Green */
-  color: white;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  height: 40px;
-}
-
-.btn-ok:hover {
-  background: #28a745;
-}
-  </style>
+</style>
 </head>
 <body>
 
-  <div class="container">
-    <div id="joResult" class="border rounded p-3 mt-3 bg-light" style="display:none;"></div>
+<div class="container">
+<div id="joResult" class="border rounded p-3 mt-3 bg-light" style="display:none;"></div>
 
-    <form method="post" action="" name="contact-form">
-    <h4>LAVAR FOLDS SUBMISSIONS</h4>
-    <a href="pickuprequestsummary.html"> Requests Summary </a> |
-    <a href="pickuprequest.html"> Request Forms </a> |
-    <a href="pickup.html"> Pickup </a>  |
-    <a href="delivery.html"> Delivery </a> |
-    <a href="deliverysummary.html"> DVS </a> |
-    <a href="LavarFormSubmission.html"> Fold  </a> <br>
-  <br>
+<form method="post" action="" name="contact-form">
+<h4>LAVAR FOLDS SUBMISSIONS</h4>
+<a href="pickuprequestsummary.html"> Requests Summary </a> |
+<a href="pickuprequest.html"> Request Forms </a> |
+<a href="pickup.html"> Pickup </a>  |
+<a href="delivery.html"> Delivery </a> |
+<a href="deliverysummary.html"> DVS </a> |
+<a href="LavarFormSubmission.html"> Fold  </a> <br>
+<br>
 <div class="form-group">
-  <label for="joSearch">Search Fold JO/Mga di pa nalolog</label>
-  <input type="text" id="joSearch" name="JO NUMBER" placeholder="Enter JO number (e.g. 04065)" />
+<label for="joSearch">Search Fold JO/Mga di pa nalolog</label>
+<input type="text" id="joSearch" name="JO NUMBER" placeholder="Enter JO number (e.g. 04065)" />
 </div>
 
 <div class="button-container">
-    <button type="button" class="btn" onclick="searchFoldJO();">Search</button>
-    <button type="button" class="btn" id="toggleWalangLogData">"Walang Log"</button>
-    <button id="showAllPickupBtn" class="btn" style="display:none;" onclick="showallpickuprequest()">Show All Pickup Requests</button>
+<button type="button" class="btn" onclick="searchFoldJO();">Search</button>
+<button type="button" class="btn" id="toggleWalangLogData">"Walang Log"</button>
+<button id="showAllPickupBtn" class="btn" style="display:none;" onclick="showallpickuprequest()">Show All Pickup Requests</button>
 </div>
 
 <div id="allPickupRequestsContainer" class="border rounded mt-3 bg-light" style="display:none;"></div>
@@ -336,257 +307,264 @@ select:focus {
 <br>
 
 
-    <div id="foldJoResult" class="border rounded p-3 mt-3 bg-light" style="display:none;"><br></div>
-      <div >
-    <label for="pickupDropdown">Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
-   </div>
-    <input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" />
-    <label for="" style="font-size: 10px;">Customer Name || Date of Pickup/Drop-Off || Delivery Staff</label>
+<div id="foldJoResult" class="border rounded p-3 mt-3 bg-light" style="display:none;"><br></div>
+<div >
+<label for="pickupDropdown">Select Recent Pickup/Drop - from Request Lists for Pick/Drop-off</label>
+</div>
+<input type="hidden" id="PickupUID" name="PickupUID" placeholder="UID will appear here" />
+<label for="" style="font-size: 10px;">Customer Name || Date of Pickup/Drop-Off || Delivery Staff</label>
 
-    <button id="reportButton" class="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105" style="display: none;">
-        Report Missing Pickup - send email to Sir Will
-    </button>
+<button id="reportButton" class="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105" style="display: none;">
+Report Missing Pickup - send email to Sir Will
+</button>
 
-    <select id="pickupDropdown" name="Recent Pickup" class="form-control" required>
-      <option value="">-- Select Pickup --</option>
-    </select>
+<select id="pickupDropdown" name="Recent Pickup" class="form-control" required>
+<option value="">-- Select Pickup --</option>
+</select>
 
-      <input type="text" id="customername" name="customername" placeholder="" >
-      <label for="folder">Name of Folder</label>
-      <select name="NAME OF FOLDER" id="folder" required>
-        <option value="">--Select Folder Name--</option>
-        <option value="NIDA">NIDA</option>
+<input type="text" id="customername" name="customername" placeholder="" >
+<label for="folder">Name of Folder</label>
+<select name="NAME OF FOLDER" id="folder" required>
+<option value="">--Select Folder Name--</option>
+<option value="NIDA">NIDA</option>
         <option value="JENNELYN">JENNELYN</option>
-        <option value="JERCY">JERCY</option>
-        <option value="NORI">NORI</option>
-      </select>
-      <input type="text" id="jo-number" name="JO NUMBER" placeholder="JO NUMBER" hidden>
+        <option value="JERCY">MIA</option>
+<option value="JERCY">JERCY</option>
+        <option value="JENNELYN">JENNELYN</option>
+        
+<option value="NORI">NORI</option>
+</select>
+<input type="text" id="jo-number" name="JO NUMBER" placeholder="JO NUMBER" hidden>
 
-      <div id="joResultFolded" style="display: none; margin-top: 10px; padding: 10px; background-color: #f0f0f0;"></div>
-          <label for="datefold">Petsa ng Pagtupi</label>
-          <input type="date" id="Date of Fold" name="Date of Fold" required>
+<div id="joResultFolded" style="display: none; margin-top: 10px; padding: 10px; background-color: #f0f0f0;"></div>
+<label for="datefold">Petsa ng Pagtupi</label>
+<input type="date" id="Date of Fold" name="Date of Fold" required>
 
-          <label for="Time of Folds">Mga Oras ng Pagtupi</label>
-          <input type="text" id="Time of Folds" name="Time of Folds" placeholder="Time of Folds" required>
+<label for="Time of Folds">Mga Oras ng Pagtupi</label>
+<input type="text" id="Time of Folds" name="Time of Folds" placeholder="Time of Folds" required>
 
-          <label for="bags">Number of Bags</label>
-<div class="bag-detail-container">
-  <select id="bagNumberSelect" class="small-input">
-    <option value="" disabled selected>Select Bag</option>
-    <option value="Bag 1">Bag 1</option>
-    <option value="Bag 2">Bag 2</option>
-    <option value="Bag 3">Bag 3</option>
-    <option value="Bag 4">Bag 4</option>
-    <option value="Bag 5">Bag 5</option>
-    <option value="Bag 6">Bag 6</option>
-    <option value="Bag 7">Bag 7</option>
-    <option value="Bag 8">Bag 8</option>
-  </select>
+<label for="bags">Number of Bags</label>
+<input type="text" id="bags" name="NUMBER OF BAGS" placeholder="NUMBER OF BAGS" required>
 
-  <input type="number" id="piecesCount" class="small-input" placeholder="Pcs" style="width: 80px;">
-  
-  <button type="button" class="btn-ok" onclick="addBagToField()">OK</button>
+<label for="comments">Comments / Name of Customer</label>
+<br>
+<input type="text" id="Comments" name="Comments" placeholder="Comments" required>
+<input type="submit" value="Submit" id="submit">
+</form>
+
+
+
+<div id="reportModal" class="modal">
+<div class="modal-content">
+<span class="close-button">&times;</span>
+<h2 class="2xl font-bold mb-4 text-gray-800">Report Missing Pickup Data</h2>
+<p class="mb-4 text-gray-700">You are about to report that no pickup data was found for the following details:</p>
+<p class="mb-2 text-gray-800"><strong>JO Number:</strong> <span id="modalJoNumber"></span></p>
+<p class="mb-4 text-gray-800"><strong>Name:</strong> <span id="modalName"></span></p>
+<p class="text-sm text-gray-600 mb-6">This action will log the details for review. Are you sure you want to proceed?</p>
+<div class="flex justify-end space-x-4">
+<button id="cancelReportButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">Cancel</button>
+<button id="confirmReportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">Confirm Report</button>
+</div>
+</div>
 </div>
 
 
-          <input type="text" id="bags" name="NUMBER OF BAGS" placeholder="NUMBER OF BAGS" required>
-
-          <label for="comments">Comments / Name of Customer</label>
-          <br>
-          <input type="text" id="Comments" name="Comments" placeholder="Comments" required>
-        <input type="submit" value="Submit" id="submit">
-      </form>
-
-
-
-    <div id="reportModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 class="2xl font-bold mb-4 text-gray-800">Report Missing Pickup Data</h2>
-            <p class="mb-4 text-gray-700">You are about to report that no pickup data was found for the following details:</p>
-            <p class="mb-2 text-gray-800"><strong>JO Number:</strong> <span id="modalJoNumber"></span></p>
-            <p class="mb-4 text-gray-800"><strong>Name:</strong> <span id="modalName"></span></p>
-            <p class="text-sm text-gray-600 mb-6">This action will log the details for review. Are you sure you want to proceed?</p>
-            <div class="flex justify-end space-x-4">
-                <button id="cancelReportButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">Cancel</button>
-                <button id="confirmReportButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">Confirm Report</button>
-            </div>
-        </div>
-    </div>
-
-
-  <script>
-    // Global variable to hold all pickup data preloaded from the Apps Script
-    // The Apps Script will inject the JSON data here via the template engine.
-    const allPreloadedPickups = <?!= preloadedPickups ?> || [];
-    console.log(`Preloaded ${allPreloadedPickups.length} pickup records.`);
-    
-    //FoldFormSearchJO
- const foldJOWebAppURL = "https://script.google.com/macros/s/AKfycbxyEZI2rcBljv0Yi9-uiVLwH8hkdXahm4KhwCzOx3scYEGTGjSUouPyvI8aGOsDd22R/exec";
- let currentCustomerName = "";  // Global variable to store the name found in searchFoldJO
- let currentJoNumber = ""; // Global variable to store the JO number
- let currentDateCreated = ""; // New global variable to store the date created
+<script>
+//FoldFormSearchJO
+const foldJOWebAppURL = "https://script.google.com/macros/s/AKfycbxyEZI2rcBljv0Yi9-uiVLwH8hkdXahm4KhwCzOx3scYEGTGjSUouPyvI8aGOsDd22R/exec";
+let currentCustomerName = "";  // Global variable to store the name found in searchFoldJO
+let currentJoNumber = ""; // Global variable to store the JO number
+let currentDateCreated = ""; // New global variable to store the date created
 
 async function searchFoldJO() {
-  const input = document.getElementById("joSearch").value.trim();
-  const resultDiv = document.getElementById("foldJoResult");
-  const dropdown = document.getElementById("pickupDropdown");
-  const reportButton = document.getElementById("reportButton"); // Get reference to the button
+const input = document.getElementById("joSearch").value.trim();
+const resultDiv = document.getElementById("foldJoResult");
+const dropdown = document.getElementById("pickupDropdown");
+const reportButton = document.getElementById("reportButton"); // Get reference to the button
 
-  dropdown.innerHTML = '<option value="">-- Select Pickup --</option>'; // Clear previous options
-  // Ensure the report button is hidden at the start of a new search
-  reportButton.style.display = 'none'; // Directly set inline style to hide
+dropdown.innerHTML = '<option value="">-- Select Pickup --</option>'; // Clear previous options
+// Ensure the report button is hidden at the start of a new search
+reportButton.style.display = 'none'; // Directly set inline style to hide
 
-  console.log("searchFoldJO started for JO:", input);
-
-
-  if (!input) {
-    resultDiv.style.display = "none";
-    console.log("No JO input, hiding result div.");
-    return;
-  }
-
-  resultDiv.innerHTML = "Searching...";
-  resultDiv.style.display = "block";
-
-  try {
-    const response = await fetch(`${foldJOWebAppURL}?jo=${encodeURIComponent(input)}`);
-    const data = await response.json();
-    console.log("Response from foldJOWebAppURL:", data);
+console.log("searchFoldJO started for JO:", input);
 
 
-    if (data.error || !data.match) {
-      resultDiv.innerHTML = `<div class="text-danger">JO #${input} not found.</div>`;
-      currentJoNumber = input; // Store the JO number even if not found
-      currentCustomerName = ""; // Clear customer name
-      currentDateCreated = ""; // Clear date created
-      console.log("JO not found or error in foldJOWebAppURL. currentCustomerName cleared, currentJoNumber set.");
-      loadPickupDropdown(); // Still call to update pickup dropdown and potentially show report button
-      return;
-    }
+if (!input) {
+resultDiv.style.display = "none";
+console.log("No JO input, hiding result div.");
+return;
+}
 
-    const joData = data.match;
-    const headers = ["Date Created", "JO", "Customer Name", "Amount"];
+resultDiv.innerHTML = "Searching...";
+resultDiv.style.display = "block";
 
-    let html = `<ul class="list-group">`;
-    headers.forEach((header, index) => {
-      let value = joData[index] || "";
-
-      if (header === "Date Created") {
-        currentDateCreated = value; // Store the raw date string
-        value = formatDateTime(value); // Format for display
-      }
-
-      if (header === "JO") { // Assuming "JO" is the header for the JO number
-        currentJoNumber = value;
-      }
-
-      if (header === "Customer Name") {
-        const customerInput = document.getElementById("customername");
-        if (customerInput) customerInput.value = value;
-        currentCustomerName = value.trim();  // set global variable (keep original case for customername field)
-        showShowAllPickupBtn(); // <-- show the button when customer is found
-        loadPickupDropdown();
-      }
-      html += `
-        <li class="list-group-item d-flex justify-content-between">
-          <strong>${header}</strong>
-          <span>${value}</span>
-        </li>`;
-    });
-    html += `</ul>`;
-
-    resultDiv.innerHTML = html;
-
-    // Optionally set JO number field here if needed
-    const joIndex = headers.indexOf("JO#");
-    if (joIndex !== -1) {
-      document.getElementById("jo-number").value = joData[joIndex] || "";
-    }
-    console.log("JO data found. currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber, "currentDateCreated:", currentDateCreated);
+try {
+const response = await fetch(`${foldJOWebAppURL}?jo=${encodeURIComponent(input)}`);
+const data = await response.json();
+console.log("Response from foldJOWebAppURL:", data);
 
 
+if (data.error || !data.match) {
+resultDiv.innerHTML = `<div class="text-danger">JO #${input} not found.</div>`;
+currentJoNumber = input; // Store the JO number even if not found
+currentCustomerName = ""; // Clear customer name
+currentDateCreated = ""; // Clear date created
+console.log("JO not found or error in foldJOWebAppURL. currentCustomerName cleared, currentJoNumber set.");
+loadPickupDropdown(); // Still call to update pickup dropdown and potentially show report button
+return;
+}
 
-  } catch (err) {
-    resultDiv.innerHTML = `<div class="text-danger">Error fetching JO: ${err.message}</div>`;
-    currentJoNumber = input; // Store the JO number even on error
-    currentCustomerName = ""; // Clear customer name on error
-    currentDateCreated = ""; // Clear date created on error
-    console.error("Error in searchFoldJO:", err);
-    loadPickupDropdown(); // Still call to update pickup dropdown and potentially show report button
-  }
+const joData = data.match;
+const headers = ["Date Created", "JO", "Customer Name", "Amount"];
+
+let html = `<ul class="list-group">`;
+headers.forEach((header, index) => {
+let value = joData[index] || "";
+
+if (header === "Date Created") {
+currentDateCreated = value; // Store the raw date string
+value = formatDateTime(value); // Format for display
+}
+
+if (header === "JO") { // Assuming "JO" is the header for the JO number
+currentJoNumber = value;
+}
+
+if (header === "Customer Name") {
+const customerInput = document.getElementById("customername");
+if (customerInput) customerInput.value = value;
+currentCustomerName = value.trim().toLowerCase();  // set global variable
+showShowAllPickupBtn(); // <-- show the button when customer is found
+loadPickupDropdown();
+}
+html += `
+       <li class="list-group-item d-flex justify-content-between">
+         <strong>${header}</strong>
+         <span>${value}</span>
+       </li>`;
+});
+html += `</ul>`;
+
+resultDiv.innerHTML = html;
+
+// Optionally set JO number field here if needed
+const joIndex = headers.indexOf("JO#");
+if (joIndex !== -1) {
+document.getElementById("jo-number").value = joData[joIndex] || "";
+}
+console.log("JO data found. currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber, "currentDateCreated:", currentDateCreated);
+
+
+
+} catch (err) {
+resultDiv.innerHTML = `<div class="text-danger">Error fetching JO: ${err.message}</div>`;
+currentJoNumber = input; // Store the JO number even on error
+currentCustomerName = ""; // Clear customer name on error
+currentDateCreated = ""; // Clear date created on error
+console.error("Error in searchFoldJO:", err);
+loadPickupDropdown(); // Still call to update pickup dropdown and potentially show report button
+}
 }
 
 
 
-    function formatDateTime(dateString) {
-      const date = new Date(dateString);
-      if (isNaN(date)) return dateString;
-      const options = {
-        year: "numeric", month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit", hour12: true
-      };
-      return new Intl.DateTimeFormat("en-US", options).format(date);
-    }
+function formatDateTime(dateString) {
+const date = new Date(dateString);
+if (isNaN(date)) return dateString;
+const options = {
+year: "numeric", month: "2-digit", day: "2-digit",
+hour: "2-digit", minute: "2-digit", hour12: true
+};
+return new Intl.DateTimeFormat("en-US", options).format(date);
+}
 
-    // New Web App URL for reporting missing pickups
+//FoldFormSearchPickups
+// This URL will now need the 'name' parameter for filtering
+const pickupWebAppURL = "https://script.google.com/macros/s/AKfycbz_gvAtAjY3ecsNhm6fjBDli-Uu4Uq6OxKWDH5b3rZDLkUHGfWKrLB6FWDLE2N5HKoB/exec";
+// New Web App URL for reporting missing pickups
 const reportMissingPickupWebAppURL = "https://script.google.com/macros/s/AKfycbzvyovjIfgl2Uc8RUOdkiEoHNVmEa6dBwLS3dcMB3cMXsQe-QSK8DMe_0EpNhyaR8Nm/exec"; // <<< IMPORTANT: REPLACE WITH YOUR DEPLOYED SCRIPT URL
 
 function formatDate(input) {
-  const d = new Date(input);
-  return d.toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric'
-  });
+const d = new Date(input);
+return d.toLocaleDateString('en-US', {
+month: 'short', day: 'numeric', year: 'numeric'
+});
 }
 
-// --- UPDATED loadPickupDropdown to use local data ---
 async function loadPickupDropdown() {
-  const dropdown = document.getElementById("pickupDropdown");
-  const reportButton = document.getElementById("reportButton");
-  dropdown.innerHTML = '<option value="">-- Select Pickup --</option>';
-  reportButton.style.display = 'none';
+const dropdown = document.getElementById("pickupDropdown");
+const reportButton = document.getElementById("reportButton"); // Get reference to the button
+dropdown.innerHTML = '<option value="">-- Select Pickup --</option>'; // Clear previous options
 
-  console.log("loadPickupDropdown called (Local Data). currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber);
+// Ensure button is hidden before evaluating conditions
+reportButton.style.display = 'none'; // Directly set inline style to hide
 
-  if (!currentCustomerName) {
-      const option = document.createElement("option");
-      option.disabled = true;
-      option.textContent = "No customer name found for pickup search.";
-      dropdown.appendChild(option);
-      if (currentJoNumber) {
-          reportButton.style.display = 'block';
-      }
-      return;
-  }
+console.log("loadPickupDropdown called. currentCustomerName:", currentCustomerName, "currentJoNumber:", currentJoNumber);
 
-  // Use the local preloaded data
-  const customerNameLower = currentCustomerName.trim().toLowerCase();
-  const matchingPickups = allPreloadedPickups.filter(item => {
-      // Ensure the 'name' property exists and is a string before trimming/lowercasing
-      const pickupName = item.name && typeof item.name === 'string' ? item.name.trim().toLowerCase() : "";
-      return pickupName === customerNameLower;
-  });
+if (!currentCustomerName) {
+const option = document.createElement("option");
+option.disabled = true;
+option.textContent = "No customer name found for pickup search.";
+dropdown.appendChild(option);
+// If no customer name, still allow reporting if JO was searched
+if (currentJoNumber) {
+console.log("Showing report button because no customer name but JO found.");
+reportButton.style.display = 'block'; // Directly set inline style to show
+}
+return;
+}
 
+try {
+// Fetch pickup data, passing the currentCustomerName as a query parameter
+const response = await fetch(`${pickupWebAppURL}?name=${encodeURIComponent(currentCustomerName)}`);
+const data = await response.json();
+console.log("Response from pickupWebAppURL:", data); // Log the response data
 
-  if (matchingPickups.length > 0) {
-      matchingPickups.forEach(item => {
-          // Construct the label using the columns available in the preloaded data
-          // item.name, item.dateofpickup, item.pickuplocation, item.deliveryStaff, item.requestType, item.UID
-          const label = `${item.name || ''} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation || ''} || ${item.deliveryStaff || ''} || ${item.requestType || ''} | ${item.UID || ''}`;
-          const option = document.createElement("option");
-          option.value = label;
-          option.textContent = label;
-          dropdown.appendChild(option);
-      });
-      console.log("Matching pickups found (Local Data). Match count:", matchingPickups.length);
-  } else {
-      console.log("No matching pickups found (Local Data).");
-      const option = document.createElement("option");
-      option.disabled = true;
-      option.textContent = "No matching pickups found";
-      dropdown.appendChild(option);
-      reportButton.style.display = 'block';
-  }
+let matchCount = 0;
+
+if (data.result && data.result.length > 0) {
+data.result.forEach(item => {
+const pickupName = item.name?.trim().toLowerCase() || "";
+
+// The backend script already filters by name, so we just iterate through results
+const label = `${item.name} || ${formatDate(item.dateofpickup)} || ${item.pickuplocation} || ${item.deliveryStaff} || ${item.requestType} | ${item.UID}`; // Removed "UID-" prefix
+const option = document.createElement("option");
+option.value = label;
+option.textContent = label;
+dropdown.appendChild(option);
+matchCount++;
+});
+console.log("Matching pickups found. Match count:", matchCount);
+} else if (data.error) { // Explicitly check for the 'error' property from your backend
+console.log("Backend reported an error:", data.error);
+const option = document.createElement("option");
+option.disabled = true;
+option.textContent = "No matching pickups found"; // Display the desired message
+dropdown.appendChild(option);
+console.log("Showing report button because backend reported no matches/error.");
+reportButton.style.display = 'block'; // Directly set inline style to show
+} else { // Fallback if data.result is empty/undefined and no explicit error
+console.log("No matching pickups found (data.result empty/undefined and no explicit error).");
+const option = document.createElement("option");
+option.disabled = true;
+option.textContent = "No matching pickups found";
+dropdown.appendChild(option);
+console.log("Showing report button because matchCount is 0.");
+reportButton.style.display = 'block'; // Directly set inline style to show
+}
+
+} catch (error) {
+console.error("Failed to load pickup data:", error);
+const option = document.createElement("option");
+option.disabled = true;
+option.textContent = "Error loading pickups";
+dropdown.appendChild(option);
+console.log("Showing report button because of fetch error.");
+reportButton.style.display = 'block'; // Directly set inline style to show
+}
+console.log("currentCustomerName =", currentCustomerName);
+console.log("currentJoNumber =", currentJoNumber);
 }
 
 
@@ -594,67 +572,67 @@ async function loadPickupDropdown() {
 //https://script.google.com/macros/s/AKfycbwXHl1Pp9_JX93hamXEduNQJNHCumC3P-tCI2EVD0g_-P5SGP_zVFUmBwi-g2AaHmIboA/exec
 
 document.forms["contact-form"].addEventListener("submit", async function(e) {
-  e.preventDefault();
+e.preventDefault();
 
-  const form = e.target;
-  const formData = new FormData(form);
+const form = e.target;
+const formData = new FormData(form);
 
-  // Try to find submit button (button or input)
-  let submitButton = form.querySelector('button[type="submit"]') || form.querySelector('input[type="submit"]');
-  let originalButtonText;
+// Try to find submit button (button or input)
+let submitButton = form.querySelector('button[type="submit"]') || form.querySelector('input[type="submit"]');
+let originalButtonText;
 
 
-  if (submitButton) {
-    submitButton.disabled = true;
-    originalButtonText = submitButton.textContent || submitButton.value;
-    if (submitButton.tagName === "BUTTON") {
-      submitButton.textContent = "Submitting...";
-    } else {
-      submitButton.value = "Submitting...";
-    }
-  }
+if (submitButton) {
+submitButton.disabled = true;
+originalButtonText = submitButton.textContent || submitButton.value;
+if (submitButton.tagName === "BUTTON") {
+submitButton.textContent = "Submitting...";
+} else {
+submitButton.value = "Submitting...";
+}
+}
 
-  const data = {
-    "JO NUMBER": formData.get("JO NUMBER"),
-    "NUMBER OF BAGS": formData.get("NUMBER OF BAGS"),
-    "NAME OF FOLDER": formData.get("NAME OF FOLDER"),
-    "Time of Folds": formData.get("Time of Folds"),
-    "Comments": formData.get("Comments"),
-    "Date of Fold": formData.get("Date of Fold"),
-    "PickupUID": formData.get("PickupUID")
-  };
+const data = {
+"JO NUMBER": formData.get("JO NUMBER"),
+"NUMBER OF BAGS": formData.get("NUMBER OF BAGS"),
+"NAME OF FOLDER": formData.get("NAME OF FOLDER"),
+"Time of Folds": formData.get("Time of Folds"),
+"Comments": formData.get("Comments"),
+"Date of Fold": formData.get("Date of Fold"),
+"PickupUID": formData.get("PickupUID")
+};
 
-  try {
-      //NewFormFoldsSubmit
-    const response = await fetch("https://script.google.com/macros/s/AKfycbwXHl1Pp9_JX93hamXEduNQJNHCumC3P-tCI2EVD0g_-P5SGP_zVFUmBwi-g2AaHmIboA/exec", {
-      method: "POST",
-      body: new URLSearchParams(data),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      }
-    });
+try {
+//NewFormFoldsSubmit
+const response = await fetch("https://script.google.com/macros/s/AKfycbwXHl1Pp9_JX93hamXEduNQJNHCumC3P-tCI2EVD0g_-P5SGP_zVFUmBwi-g2AaHmIboA/exec", {
+method: "POST",
+body: new URLSearchParams(data),
+headers: {
+"Content-Type": "application/x-www-form-urlencoded"
+}
+});
 
-    const resultText = await response.text();
+const resultText = await response.text();
 
-    if (resultText.trim() === "Success") {
-      alert("Submission successful!");
-      location.reload();
-    } else {
-      alert("Submission failed: " + resultText);
-    }
-  } catch (error) {
-    console.error("Submit error:", error);
-    alert("Submission failed. Please try again.");
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      if (submitButton.tagName === "BUTTON") {
-        submitButton.textContent = originalButtonText;
-      } else {
-        submitButton.value = originalButtonText;
-      }
-    }
-  }
+if (resultText.trim() === "Success") {
+alert("Submission successful!");
+location.reload();
+} else {
+alert("Submission failed: " + resultText);
+}
+} catch (error) {
+console.error("Submit error:", error);
+alert("Submission failed. Please try again.");
+} finally {
+if (submitButton) {
+submitButton.disabled = false;
+if (submitButton.tagName === "BUTTON") {
+submitButton.textContent = originalButtonText;
+} else {
+submitButton.value = originalButtonText;
+}
+}
+}
 });
 
 
@@ -671,121 +649,121 @@ const customerNameInput = document.getElementById('customername'); // Assuming c
 
 // Event listener for the report button to open the modal
 reportButton.addEventListener('click', () => {
-    modalJoNumber.textContent = joSearchInput.value.trim(); // Use joSearch for JO number
-    modalName.textContent = customerNameInput.value.trim(); // Use customername for the name
-    reportModal.style.display = 'flex'; // Show the modal
+modalJoNumber.textContent = joSearchInput.value.trim(); // Use joSearch for JO number
+modalName.textContent = customerNameInput.value.trim(); // Use customername for the name
+reportModal.style.display = 'flex'; // Show the modal
 });
 
 // Event listener for the close button of the modal
 closeButton.addEventListener('click', () => {
-    reportModal.style.display = 'none'; // Hide the modal
+reportModal.style.display = 'none'; // Hide the modal
 });
 
 // Event listener for the cancel button in the modal
 cancelReportButton.addEventListener('click', () => {
-    reportModal.style.display = 'none'; // Hide the modal
+reportModal.style.display = 'none'; // Hide the modal
 });
 
 // Event listener for the confirm report button in the modal
 confirmReportButton.addEventListener('click', async () => {
-    const joToReport = modalJoNumber.textContent;
-    const nameToReport = modalName.textContent;
-    const dateCreatedToReport = currentDateCreated; // Get the date created
+const joToReport = modalJoNumber.textContent;
+const nameToReport = modalName.textContent;
+const dateCreatedToReport = currentDateCreated; // Get the date created
 
-    if (!joToReport || !nameToReport) {
-        alert("Cannot report: JO Number or Name is missing.");
-        return;
-    }
+if (!joToReport || !nameToReport) {
+alert("Cannot report: JO Number or Name is missing.");
+return;
+}
 
-    try {
-        const response = await fetch(reportMissingPickupWebAppURL, {
-            method: 'POST',
-            body: new URLSearchParams({
-                jo: joToReport,
-                name: nameToReport,
-                dateCreated: dateCreatedToReport // Pass the date created
-            }),
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        });
+try {
+const response = await fetch(reportMissingPickupWebAppURL, {
+method: 'POST',
+body: new URLSearchParams({
+jo: joToReport,
+name: nameToReport,
+dateCreated: dateCreatedToReport // Pass the date created
+}),
+headers: {
+'Content-Type': 'application/x-www-form-urlencoded'
+}
+});
 
-        const result = await response.text();
-        // Check if the result includes the success string from the backend script
-        if (result.includes("Report submitted successfully! (Email Sent)")) {
-            alert("Email Sent"); // Display only "Email Sent"
-            // Enhancement: Disable the report button and change text
-            reportButton.disabled = true;
-            reportButton.textContent = "Email Sent";
-        } else {
-            alert(result); // Display the exact error message from the backend
-        }
-    } catch (error) {
-        console.error("Error submitting report:", error);
-        alert("An error occurred while submitting the report. Please try again.");
-    } finally {
-        reportModal.style.display = 'none'; // Hide the modal after submission attempt
-    }
+const result = await response.text();
+// Check if the result includes the success string from the backend script
+if (result.includes("Report submitted successfully! (Email Sent)")) {
+alert("Email Sent"); // Display only "Email Sent"
+// Enhancement: Disable the report button and change text
+reportButton.disabled = true;
+reportButton.textContent = "Email Sent";
+} else {
+alert(result); // Display the exact error message from the backend
+}
+} catch (error) {
+console.error("Error submitting report:", error);
+alert("An error occurred while submitting the report. Please try again.");
+} finally {
+reportModal.style.display = 'none'; // Hide the modal after submission attempt
+}
 });
 
 
 </script>
 <script>
-  window.addEventListener("DOMContentLoaded", () => {
-    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-    document.getElementById("Date of Fold").value = today; // Corrected ID from "Date Of Fold" to "Date of Fold"
-  });
+window.addEventListener("DOMContentLoaded", () => {
+const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+document.getElementById("Date of Fold").value = today; // Corrected ID from "Date Of Fold" to "Date of Fold"
+});
 document.getElementById("pickupDropdown").addEventListener("change", function () {
-  const selectedValue = this.value;
-  // Updated regex to correctly extract UID which starts with "UID-"
-  const uidMatch = selectedValue.match(/UID-[\w-]+/);
+const selectedValue = this.value;
+// Updated regex to correctly extract UID which starts with "UID-"
+const uidMatch = selectedValue.match(/UID-[\w-]+/);
 
-  if (uidMatch) {
-    document.getElementById("PickupUID").value = uidMatch[0]; // Set the UID in the input
-  } else {
-    document.getElementById("PickupUID").value = ""; // Clear if UID not found
-  }
+if (uidMatch) {
+document.getElementById("PickupUID").value = uidMatch[0]; // Set the UID in the input
+} else {
+document.getElementById("PickupUID").value = ""; // Clear if UID not found
+}
 });
 
 //searchForFoldedJO
-  async function fetchJOInfoFolder(joNumber) {
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbbyHz5ij5C0Iw9PWMQfk1W-rAYMZxQ0jrzst-C-emrQve_kUeo4_FSrsOsCmQi39z8C8zw/exec";
+async function fetchJOInfoFolder(joNumber) {
+const webAppUrl = "https://script.google.com/macros/s/AKfycbbyHz5ij5C0Iw9PWMQfk1W-rAYMZxQ0jrzst-C-emrQve_kUeo4_FSrsOsCmQi39z8C8zw/exec";
 
-    if (!joNumber) {
-      alert("Please enter a JO number.");
-      return;
-    }
+if (!joNumber) {
+alert("Please enter a JO number.");
+return;
+}
 
-    try {
-      const response = await fetch(`${webAppUrl}?jo=${encodeURIComponent(joNumber)}`);
-      const text = await response.text();
-      console.log("Response:", text);
+try {
+const response = await fetch(`${webAppUrl}?jo=${encodeURIComponent(joNumber)}`);
+const text = await response.text();
+console.log("Response:", text);
 
-      try {
-        const data = JSON.parse(text);
-        const formattedG = new Date(data.G).toLocaleString();
-        const formattedM = new Date(data.M).toLocaleString();
+try {
+const data = JSON.parse(text);
+const formattedG = new Date(data.G).toLocaleString();
+const formattedM = new Date(data.M).toLocaleString();
 
-        const resultDiv = document.getElementById("joResultFolded");
-        resultDiv.style.display = "block";
+const resultDiv = document.getElementById("joResultFolded");
+resultDiv.style.display = "block";
 
-        resultDiv.innerHTML = `
-          <strong>JO#:</strong> ${data.JO}<br>
-          <strong>Folder:</strong> ${data.D}<br>
-          <strong>Time of Fold:</strong> ${formattedG}<br>
-          <strong>Customer Name:</strong> ${data.J}<br>
-          <strong>Date JO# Created:</strong> ${formattedM}
-        `;
-      } catch (e) {
-        //document.getElementById("joResultFolded").style.display = "block";
-        //document.getElementById("joResultFolded").innerHTML = `<span style="color: red;">JO# not found.</span>`;
-      }
-    } catch (error) {
-      console.error("Fetch failed:", error);
-      document.getElementById("joResultFolded").style.display = "block";
-      document.getElementById("joResultFolded").innerHTML = `<span style="color: red;">Error fetching JO data.</span>`;
-    }
-  }
+resultDiv.innerHTML = `
+         <strong>JO#:</strong> ${data.JO}<br>
+         <strong>Folder:</strong> ${data.D}<br>
+         <strong>Time of Fold:</strong> ${formattedG}<br>
+         <strong>Customer Name:</strong> ${data.J}<br>
+         <strong>Date JO# Created:</strong> ${formattedM}
+       `;
+} catch (e) {
+//document.getElementById("joResultFolded").style.display = "block";
+//document.getElementById("joResultFolded").innerHTML = `<span style="color: red;">JO# not found.</span>`;
+}
+} catch (error) {
+console.error("Fetch failed:", error);
+document.getElementById("joResultFolded").style.display = "block";
+document.getElementById("joResultFolded").innerHTML = `<span style="color: red;">Error fetching JO data.</span>`;
+}
+}
 
 
 
@@ -793,229 +771,207 @@ document.getElementById("pickupDropdown").addEventListener("change", function ()
 </script>
 
 <script>
-    // --- New script for the "Walang Log" table ---
-    // REPLACE THIS URL with the one you got from deploying your Apps Script web app
-    const APPS_SCRIPT_WEB_APP_URL_WALANG_LOG = 'https://script.google.com/macros/s/AKfycbwm_1X4HD_FoJv0CWf-OEwidJ-iLGjLDFPxrEkMGtoXdS0ANgcLpOT5lkuMuj0HnOQz/exec';
+// --- New script for the "Walang Log" table ---
+// REPLACE THIS URL with the one you got from deploying your Apps Script web app
+const APPS_SCRIPT_WEB_APP_URL_WALANG_LOG = 'https://script.google.com/macros/s/AKfycbwm_1X4HD_FoJv0CWf-OEwidJ-iLGjLDFPxrEkMGtoXdS0ANgcLpOT5lkuMuj0HnOQz/exec';
 
-    const toggleWalangLogDataLink = document.getElementById('toggleWalangLogData');
-    const walangLogDataContainer = document.getElementById('walangLogDataContainer');
-
-
-    async function fetchAndRenderWalangLogTable() {
-        try {
-            // Show a loading message
-            walangLogDataContainer.innerHTML = '<p>Loading data...</p>';
-            walangLogDataContainer.style.display = 'block';
-
-            const response = await fetch(APPS_SCRIPT_WEB_APP_URL_WALANG_LOG);
-            const result = await response.json();
-
-            if (result.error) {
-                walangLogDataContainer.innerHTML = `<p class="text-danger">Error from server: ${result.error}</p>`;
-                return;
-            }
-
-            const dataRows = result.data;
-
-            if (!dataRows || dataRows.length === 0) {
-                walangLogDataContainer.innerHTML = '<p>No data found in the specified range.</p>';
-                return;
-            }
-
-            const table = document.createElement('table');
-            table.style.width = '100%';
-            const tableBody = document.createElement('tbody');
-
-            // Define headers explicitly as they are not part of the C4:F100 range
-            const headers = ["Pickup Request Date","Date Created JO", "JO#", "Customer Name", "Amount"];
-            const headerRow = document.createElement('tr');
-            headers.forEach(headerText => {
-                const th = document.createElement('th');
-                th.textContent = headerText.trim();
-                headerRow.appendChild(th);
-            });
-            tableBody.appendChild(headerRow);
-
-            // Process the data rows - Skip the first row if it's a header
-            dataRows.slice(1).forEach(rowData => {
-                const tr = document.createElement('tr');
-                rowData.forEach((cellData, index) => { // Added index to get header for the column
-                    const td = document.createElement('td');
-                    // Check if this is the 'JO#' column (index 1 based on headers array)
-                    if (index === headers.indexOf("JO#")) {
-                        td.classList.add('jo-clickable');
-                        td.setAttribute('data-jo-number', cellData);
-                    }
-                    // Basic formatting for Date Created JO if it's the first column
-                    if (headers[index] === "Date Created JO" && cellData) {
-                        try {
-                            const date = new Date(cellData);
-                            if (!isNaN(date.getTime())) { // Use getTime() for robust check
-                                td.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-                            } else {
-                                td.textContent = cellData; // Fallback if not a valid date
-                            }
-                        } catch (e) {
-                            td.textContent = cellData; // Fallback for parsing errors
-                        }
-                    } else {
-                        td.textContent = cellData;
-                    }
-                    tr.appendChild(td);
-                });
-                tableBody.appendChild(tr);
-            });
-
-            table.appendChild(tableBody);
-            walangLogDataContainer.innerHTML = ''; // Clear loading message
-            walangLogDataContainer.appendChild(table);
-            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"';
-        } catch (error) {
-            console.error('Error fetching or processing Walang Log data:', error);
-            walangLogDataContainer.innerHTML = '<p class="text-danger">Error loading data. Please check the Apps Script URL and deployment permissions.</p>';
-            toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
-        }
-    }
-
-    function toggleWalangLogVisibility() {
-        if (walangLogDataContainer.style.display === 'none' || walangLogDataContainer.style.display === '') {
-            fetchAndRenderWalangLogTable();
-            walangLogDataContainer.style.display = 'block';
-            toggleWalangLogDataLink.textContent = 'Hide "Walang Log"';
-        } else {
-            walangLogDataContainer.style.display = 'none';
-            toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
-        }
-    }
-
-    toggleWalangLogDataLink.addEventListener('click', toggleWalangLogVisibility);
-
-    // Event listener for clicking on JO# within walangLogDataContainer
-    walangLogDataContainer.addEventListener('click', (event) => {
-        const clickedElement = event.target;
-        // Check if the clicked element is a clickable JO#
-        if (clickedElement.classList.contains('jo-clickable')) {
-            const joNumber = clickedElement.getAttribute('data-jo-number');
-            if (joNumber) {
-                // Remove '#' before putting it in the input field
-                const cleanJoNumber = joNumber.replace('#', '');
-                document.getElementById('joSearch').value = cleanJoNumber;
-                searchFoldJO(); // Trigger the search function
-                // Optionally hide the walangLogDataContainer after a JO# is selected
-                walangLogDataContainer.style.display = 'none';
-                toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
-            }
-        }
-    });
+const toggleWalangLogDataLink = document.getElementById('toggleWalangLogData');
+const walangLogDataContainer = document.getElementById('walangLogDataContainer');
 
 
-// --- UPDATED showallpickuprequest to use local data ---
+async function fetchAndRenderWalangLogTable() {
+try {
+// Show a loading message
+walangLogDataContainer.innerHTML = '<p>Loading data...</p>';
+walangLogDataContainer.style.display = 'block';
+
+const response = await fetch(APPS_SCRIPT_WEB_APP_URL_WALANG_LOG);
+const result = await response.json();
+
+if (result.error) {
+walangLogDataContainer.innerHTML = `<p class="text-danger">Error from server: ${result.error}</p>`;
+return;
+}
+
+const dataRows = result.data;
+
+if (!dataRows || dataRows.length === 0) {
+walangLogDataContainer.innerHTML = '<p>No data found in the specified range.</p>';
+return;
+}
+
+const table = document.createElement('table');
+table.style.width = '100%';
+const tableBody = document.createElement('tbody');
+
+// Define headers explicitly as they are not part of the C4:F100 range
+const headers = ["Date Created JO", "JO#", "Customer Name", "Amount"];
+const headerRow = document.createElement('tr');
+headers.forEach(headerText => {
+const th = document.createElement('th');
+th.textContent = headerText.trim();
+headerRow.appendChild(th);
+});
+tableBody.appendChild(headerRow);
+
+// Process the data rows - Skip the first row if it's a header
+dataRows.slice(1).forEach(rowData => {
+const tr = document.createElement('tr');
+rowData.forEach((cellData, index) => { // Added index to get header for the column
+const td = document.createElement('td');
+// Check if this is the 'JO#' column (index 1 based on headers array)
+if (index === headers.indexOf("JO#")) {
+td.classList.add('jo-clickable');
+td.setAttribute('data-jo-number', cellData);
+}
+// Basic formatting for Date Created JO if it's the first column
+if (headers[index] === "Date Created JO" && cellData) {
+try {
+const date = new Date(cellData);
+if (!isNaN(date.getTime())) { // Use getTime() for robust check
+td.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+} else {
+td.textContent = cellData; // Fallback if not a valid date
+}
+} catch (e) {
+td.textContent = cellData; // Fallback for parsing errors
+}
+} else {
+td.textContent = cellData;
+}
+tr.appendChild(td);
+});
+tableBody.appendChild(tr);
+});
+
+table.appendChild(tableBody);
+walangLogDataContainer.innerHTML = ''; // Clear loading message
+walangLogDataContainer.appendChild(table);
+toggleWalangLogDataLink.textContent = 'Hide "Walang Log"';
+} catch (error) {
+console.error('Error fetching or processing Walang Log data:', error);
+walangLogDataContainer.innerHTML = '<p class="text-danger">Error loading data. Please check the Apps Script URL and deployment permissions.</p>';
+toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
+}
+}
+
+function toggleWalangLogVisibility() {
+if (walangLogDataContainer.style.display === 'none' || walangLogDataContainer.style.display === '') {
+fetchAndRenderWalangLogTable();
+walangLogDataContainer.style.display = 'block';
+toggleWalangLogDataLink.textContent = 'Hide "Walang Log"';
+} else {
+walangLogDataContainer.style.display = 'none';
+toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
+}
+}
+
+toggleWalangLogDataLink.addEventListener('click', toggleWalangLogVisibility);
+
+// Event listener for clicking on JO# within walangLogDataContainer
+walangLogDataContainer.addEventListener('click', (event) => {
+const clickedElement = event.target;
+// Check if the clicked element is a clickable JO#
+if (clickedElement.classList.contains('jo-clickable')) {
+const joNumber = clickedElement.getAttribute('data-jo-number');
+if (joNumber) {
+// Remove '#' before putting it in the input field
+const cleanJoNumber = joNumber.replace('#', '');
+document.getElementById('joSearch').value = cleanJoNumber;
+searchFoldJO(); // Trigger the search function
+// Optionally hide the walangLogDataContainer after a JO# is selected
+walangLogDataContainer.style.display = 'none';
+toggleWalangLogDataLink.textContent = 'Show "Walang Log"';
+}
+}
+});
+
+
+const showAllPickupWebAppURL = "https://script.google.com/macros/s/AKfycbzCe2UevQp2bUZMF6B3_Da-m34AQ2FaORncFHTWvOa0vkEpMQQyhtTpaqy-nsYm70uM/exec"; // replace with your actual deployed URL
+
+function showShowAllPickupBtn() {
+document.getElementById("showAllPickupBtn").style.display = "inline-block";
+}
+
 async function showallpickuprequest() {
-    const container = document.getElementById("allPickupRequestsContainer");
-    container.style.display = "none";
-    container.innerHTML = "";
+const container = document.getElementById("allPickupRequestsContainer");
+container.style.display = "none";
+container.innerHTML = "";
 
-    // currentCustomerName is set by searchFoldJO
-    if (!currentCustomerName) {
-        alert("No customer name found.");
-        return;
-    }
+// get customer name from foldJoResult div
+let customerName = "";
+const foldResult = document.getElementById("foldJoResult");
+if (foldResult && foldResult.innerText) {
+const match = foldResult.innerText.match(/Customer Name\s*(.+)/i);
+if (match) {
+customerName = match[1].trim();
+}
+}
 
-    container.innerHTML = "<p>Loading pickup requests...</p>";
-    container.style.display = "block";
+if (!customerName) {
+alert("No customer name found.");
+return;
+}
 
-    // Use the local preloaded data
-    const customerNameLower = currentCustomerName.trim().toLowerCase();
-    const filteredPickups = allPreloadedPickups.filter(item => {
-        // Ensure the 'name' property exists and is a string before trimming/lowercasing
-        const pickupName = item.name && typeof item.name === 'string' ? item.name.trim().toLowerCase() : "";
-        return pickupName === customerNameLower;
-    });
+container.innerHTML = "<p>Loading pickup requests...</p>";
+container.style.display = "block";
 
-    if (filteredPickups.length === 0) {
-        container.innerHTML = "<p>No pickup requests found.</p>";
-        return;
-    }
+try {
+const res = await fetch(`${showAllPickupWebAppURL}?name=${encodeURIComponent(customerName)}`);
+const data = await res.json();
 
-    const table = document.createElement("table");
-    table.style.width = "100%";
-    const tbody = document.createElement("tbody");
+if (data.error || !data.pickups || data.pickups.length === 0) {
+container.innerHTML = "<p>No pickup requests found.</p>";
+return;
+}
 
-    // The headers must match the properties in the preloaded data objects
-    const displayHeaders = ["Name", "Date of Pickup", "Delivery Staff", "Request Type", "Folded JO"];
+const table = document.createElement("table");
+table.style.width = "100%";
+const tbody = document.createElement("tbody");
 
-    const headerRow = document.createElement("tr");
-    displayHeaders.forEach(h => {
-        const th = document.createElement("th");
-        th.textContent = h;
-        headerRow.appendChild(th);
-    });
-    tbody.appendChild(headerRow);
+const headers = ["Name", "Date of Pickup", "Delivery Staff", "Request Type", "Folded JO"];
+const headerRow = document.createElement("tr");
+headers.forEach(h => {
+const th = document.createElement("th");
+th.textContent = h;
+headerRow.appendChild(th);
+});
+tbody.appendChild(headerRow);
 
-    filteredPickups.forEach(item => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${item.name || ""}</td>
-            <td>${formatDate(item.dateofpickup)}</td>
-            <td>${item.deliveryStaff || ""}</td>
-            <td>${item.requestType || ""}</td>
-            <td>${item.FoldedJO || ""}</td>
-        `;
-        tbody.appendChild(tr);
-    });
+data.pickups.forEach(item => {
+const tr = document.createElement("tr");
+tr.innerHTML = `
+               <td>${item.name}</td>
+               <td>${formatDate(item.dateofpickup)}</td>
+               <td>${item.DeliveryStaff || ""}</td>
+               <td>${item.request_type}</td>
+               <td>${item.FoldedJO || ""}</td>
+           `;
+tbody.appendChild(tr);
+});
 
-    table.appendChild(tbody);
-    container.innerHTML = "";
-    container.appendChild(table);
+table.appendChild(tbody);
+container.innerHTML = "";
+container.appendChild(table);
+
+} catch (err) {
+console.error(err);
+container.innerHTML = "<p class='text-danger'>Error loading pickup requests.</p>";
+}
 }
 
 // Hide the table when Walang Log or Search is clicked
 document.getElementById("toggleWalangLogData").addEventListener("click", () => {
-    document.getElementById("allPickupRequestsContainer").style.display = "none";
+document.getElementById("allPickupRequestsContainer").style.display = "none";
 });
 document.querySelector(".button-container .btn").addEventListener("click", () => {
-    document.getElementById("allPickupRequestsContainer").style.display = "none";
+document.getElementById("allPickupRequestsContainer").style.display = "none";
 });
-
-function addBagToField() {
-  const bagSelect = document.getElementById('bagNumberSelect');
-  const piecesInput = document.getElementById('piecesCount');
-  const mainBagsInput = document.getElementById('bags');
-
-  const selectedIndex = bagSelect.selectedIndex;
-  const bagValue = bagSelect.value;
-  const piecesValue = piecesInput.value;
-
-  // Validation: Ensure a bag is selected and pieces are entered
-  if (selectedIndex === 0 || !bagValue) {
-    alert("Please select a bag number.");
-    return;
-  }
-  if (!piecesValue) {
-    alert("Please enter the number of pieces.");
-    return;
-  }
-
-  // 1. Create the entry string
-  const entry = `${bagValue} - ${piecesValue} pcs`;
-
-  // 2. Append to the main "Number of Bags" field
-  if (mainBagsInput.value.trim() === "") {
-    mainBagsInput.value = entry;
-  } else {
-    mainBagsInput.value += "; " + entry;
-  }
-
-  // 3. Remove the selected bag from the dropdown
-  bagSelect.remove(selectedIndex);
-
-  // 4. Clear the pieces input and reset dropdown to placeholder
-  piecesInput.value = "";
-  bagSelect.selectedIndex = 0; 
-}
 
 </script>
 
 
 </body>
+</html>
+
 </html>
