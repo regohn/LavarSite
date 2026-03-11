@@ -981,6 +981,7 @@ document.getElementById("allPickupRequestsContainer").style.display = "none";
 let bagCount = 0;
 const itemTypes = ["Bed Sheet", "Pillow Case", "Towel", "Blanket", "Socks", "Tshirt/Sando", "Pants", "Jacket", "Underwear","Others"];
 
+// 3. Updated addBag to listen for time changes
 function addBag() {
     bagCount++;
     const container = document.getElementById('bagContainer');
@@ -995,7 +996,7 @@ function addBag() {
                 <div style="font-size: 13px; color: #007aff; background: #e5f1ff; padding: 2px 8px; border-radius: 10px; font-weight: 600;">
                     <span id="bag-total-${bagCount}">0</span> pcs
                 </div>
-                <input type="time" class="bag-time" value="${new Date().toTimeString().slice(0,5)}" 
+                <input type="time" class="bag-time" onchange="bundleToBucket()" value="${new Date().toTimeString().slice(0,5)}" 
                     style="width: auto; margin: 0; padding: 4px; border: 1px solid #d1d1d6; border-radius: 8px; font-size: 13px;">
             </div>
         </div>
@@ -1019,7 +1020,7 @@ function addBag() {
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
             <button type="button" class="btn text-danger" style="font-size: 11px; background: transparent; border:none;" onclick="removeBag(${bagCount})">Remove Bag</button>
-            <button type="button" class="btn" style="background-color: #34c759; color: white; font-size: 12px; padding: 5px 15px;" onclick="addSpecificBagToBucket(${bagCount})">Add to Bucket</button>
+            <span style="font-size: 11px; color: #8e8e93;">Auto-saving to summary...</span>
         </div>
     `;
     bagDiv.innerHTML = itemsHtml;
@@ -1034,8 +1035,8 @@ function updateItem(bID, item, val) {
     let newVal = Math.max(0, current + val);
     el.innerText = newVal;
     
-    // This line makes it auto-update the bag total
     calculateBagTotal(bID);
+    bundleToBucket(); // <--- Added for auto-update
 }
 
 function calculateBagTotal(bID) {
@@ -1048,10 +1049,12 @@ function calculateBagTotal(bID) {
     document.getElementById(`bag-total-${bID}`).innerText = total;
 }
 
+// 2. Updated removeBag to trigger auto-summary
 function removeBag(id) {
     const element = document.getElementById(`bag-${id}`);
     if(element) element.remove();
     updateTotalBagCount();
+    bundleToBucket(); // <--- Added for auto-update
 }
 
 function updateTotalBagCount() {
@@ -1059,6 +1062,7 @@ function updateTotalBagCount() {
     document.getElementById('bags').value = bags;
 }
 
+// 4. Ensure bundleToBucket is robust
 function bundleToBucket() {
     const bags = document.querySelectorAll('.bag-entry');
     let summaryParts = [];
@@ -1074,6 +1078,7 @@ function bundleToBucket() {
         items.forEach(span => {
             const qty = parseInt(span.innerText);
             if (qty > 0) {
+                // Reconstruct item name from ID: count-ID-ItemName
                 const itemName = span.id.split('-').slice(2).join('-');
                 itemParts.push(`${qty} ${itemName}`);
                 bagRunningTotal += qty;
