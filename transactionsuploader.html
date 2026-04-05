@@ -200,6 +200,38 @@
     showFileName("media1", "media1Name");
     showFileName("media2", "media2Name");
     showFileName("media3", "media3Name");
+
+
+    // Function to load unique transactions from Google Sheet
+    async function loadTransactionSuggestions() {
+      const datalist = document.getElementById("transactionSuggestions");
+      try {
+        const response = await fetch(`${scriptURL}?action=getTransactions`);
+        const suggestions = await response.json();
+        
+        // Clear existing options and add new ones
+        datalist.innerHTML = "";
+        suggestions.forEach(item => {
+          const option = document.createElement("option");
+          option.value = item;
+          datalist.appendChild(option);
+        });
+        console.log("Suggestions loaded:", suggestions.length);
+      } catch (err) {
+        console.error("Could not load suggestions:", err);
+      }
+    }
+    
+    // Update your existing window.onload to include this
+    window.onload = function() {
+      // 1. Set default date
+      const dateInput = document.getElementsByName("Date")[0];
+      const today = new Date().toISOString().split('T')[0];
+      if(dateInput) dateInput.value = today;
+    
+      // 2. Load the searchable suggestions
+      loadTransactionSuggestions();
+    };    
   </script>
 </body>
 </html>
