@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expenses Submission</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
       background-color: #f2f2f7;
@@ -125,15 +126,20 @@
   </div>
 
   <script>
-
-  // Set default date to today
-  window.onload = function() {
-    const dateInput = document.getElementsByName("Date")[0];
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.value = today;
-  };    
     const scriptURL = "https://script.google.com/macros/s/AKfycbwc1YQVDvH07gYkCJf4SWtTnlydG5i-qdfq9ToYEVQukaheQm4ftMmiGZflZ44MInUM/exec";
 
+    // SINGLE window.onload handler
+    window.onload = function() {
+      // 1. Set default date to today
+      const dateInput = document.getElementsByName("Date")[0];
+      const today = new Date().toISOString().split('T')[0];
+      if(dateInput) dateInput.value = today;
+      
+      // 2. Load the searchable suggestions
+      loadTransactionSuggestions();
+    };    
+
+    // Form Submission Logic
     document.getElementById("expenseForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const form = e.target;
@@ -165,6 +171,11 @@
         status.textContent = msg;
         status.style.color = "#28a745";
         form.reset();
+        
+        // Reset the date to today after form clear
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementsByName("Date")[0].value = today;
+
         // Clear media names after reset
         document.getElementById("media1Name").textContent = "";
         document.getElementById("media2Name").textContent = "";
@@ -201,37 +212,22 @@
     showFileName("media2", "media2Name");
     showFileName("media3", "media3Name");
 
-
-    // Function to load unique transactions from Google Sheet
     async function loadTransactionSuggestions() {
       const datalist = document.getElementById("transactionSuggestions");
       try {
         const response = await fetch(`${scriptURL}?action=getTransactions`);
         const suggestions = await response.json();
         
-        // Clear existing options and add new ones
         datalist.innerHTML = "";
         suggestions.forEach(item => {
           const option = document.createElement("option");
           option.value = item;
           datalist.appendChild(option);
         });
-        console.log("Suggestions loaded:", suggestions.length);
       } catch (err) {
         console.error("Could not load suggestions:", err);
       }
     }
-    
-    // Update your existing window.onload to include this
-    window.onload = function() {
-      // 1. Set default date
-      const dateInput = document.getElementsByName("Date")[0];
-      const today = new Date().toISOString().split('T')[0];
-      if(dateInput) dateInput.value = today;
-    
-      // 2. Load the searchable suggestions
-      loadTransactionSuggestions();
-    };    
   </script>
 </body>
 </html>
