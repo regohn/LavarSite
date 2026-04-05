@@ -47,7 +47,7 @@
         <span class="text-gray-700 text-sm">Business Entity</span>
         <div class="flex gap-4">
           <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="radio" name="BusinessEntity" value="Lavar Laundry" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+            <input type="radio" name="BusinessEntity" value="Lavar Laundry" required checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
             <span class="text-sm text-gray-700">Lavar Laundry</span>
           </label>
           <label class="flex items-center space-x-2 cursor-pointer">
@@ -124,6 +124,13 @@
   </div>
 
   <script>
+
+  // Set default date to today
+  window.onload = function() {
+    const dateInput = document.getElementsByName("Date")[0];
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+  };    
     const scriptURL = "https://script.google.com/macros/s/AKfycbwc1YQVDvH07gYkCJf4SWtTnlydG5i-qdfq9ToYEVQukaheQm4ftMmiGZflZ44MInUM/exec";
 
     document.getElementById("expenseForm").addEventListener("submit", async function (e) {
