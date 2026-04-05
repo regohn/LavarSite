@@ -60,7 +60,8 @@
       <!-- Transaction Details -->
       <label class="block">
         <span class="text-gray-700 text-sm">Transaction</span>
-        <input type="text" name="Transaction" placeholder="e.g. Purchase of items" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
+        <input type="text" name="Transaction" id="transactionInput" list="transactionSuggestions" placeholder="e.g. Purchase of items" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
+        <datalist id="transactionSuggestions"></datalist>
       </label>
 
       <label class="block">
