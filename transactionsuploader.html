@@ -33,13 +33,31 @@
 <body class="p-4 flex justify-center items-center min-h-screen">
   <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
     <h2 class="text-center text-2xl font-semibold mb-6 text-blue-600">Submit Expense</h2>
+    
     <form id="expenseForm" class="space-y-4">
-
+      
+      <!-- Date Selection -->
       <label class="block">
         <span class="text-gray-700 text-sm">Date</span>
         <input type="date" name="Date" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
       </label>
 
+      <!-- Business Entity Selection -->
+      <div class="space-y-2">
+        <span class="text-gray-700 text-sm">Business Entity</span>
+        <div class="flex gap-4">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="radio" name="BusinessEntity" value="Lavar Laundry" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Lavar Laundry</span>
+          </label>
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="radio" name="BusinessEntity" value="Willed Trucking" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Willed Trucking</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Transaction Details -->
       <label class="block">
         <span class="text-gray-700 text-sm">Transaction</span>
         <input type="text" name="Transaction" placeholder="e.g. Purchase of items" required class="mt-1 w-full px-3 py-2 border rounded-xl focus:ring-blue-500 focus:border-blue-500">
@@ -79,23 +97,23 @@
       </label>
 
       <!-- Media Inputs -->
-<label class="block">
-  <span class="file-label">Upload Media 1</span>
-  <input type="file" name="Media1" accept="image/*" id="media1">
-  <span id="media1Name" class="text-sm text-gray-600 block mt-1"></span>
-</label>
+      <label class="block">
+        <span class="file-label">Upload Media 1</span>
+        <input type="file" name="Media1" accept="image/*" id="media1">
+        <span id="media1Name" class="text-sm text-gray-600 block mt-1"></span>
+      </label>
 
-<label class="block">
-  <span class="file-label">Upload Media 2</span>
-  <input type="file" name="Media2" accept="image/*" id="media2">
-  <span id="media2Name" class="text-sm text-gray-600 block mt-1"></span>
-</label>
+      <label class="block">
+        <span class="file-label">Upload Media 2</span>
+        <input type="file" name="Media2" accept="image/*" id="media2">
+        <span id="media2Name" class="text-sm text-gray-600 block mt-1"></span>
+      </label>
 
-<label class="block">
-  <span class="file-label">Upload Media 3</span>
-  <input type="file" name="Media3" accept="image/*" id="media3">
-  <span id="media3Name" class="text-sm text-gray-600 block mt-1"></span>
-</label>
+      <label class="block">
+        <span class="file-label">Upload Media 3</span>
+        <input type="file" name="Media3" accept="image/*" id="media3">
+        <span id="media3Name" class="text-sm text-gray-600 block mt-1"></span>
+      </label>
 
       <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-2xl shadow-md hover:bg-blue-700">
         Submit
@@ -139,6 +157,10 @@
         status.textContent = msg;
         status.style.color = "#28a745";
         form.reset();
+        // Clear media names after reset
+        document.getElementById("media1Name").textContent = "";
+        document.getElementById("media2Name").textContent = "";
+        document.getElementById("media3Name").textContent = "";
       })
       .catch(err => {
         status.textContent = "Error: " + err.message;
@@ -155,24 +177,21 @@
       });
     }
 
-    // Show selected file names
-function showFileName(inputId, spanId) {
-  const input = document.getElementById(inputId);
-  const span = document.getElementById(spanId);
-  input.addEventListener("change", () => {
-    if (input.files.length > 0) {
-      span.textContent = input.files[0].name;
-    } else {
-      span.textContent = "";
+    function showFileName(inputId, spanId) {
+      const input = document.getElementById(inputId);
+      const span = document.getElementById(spanId);
+      input.addEventListener("change", () => {
+        if (input.files.length > 0) {
+          span.textContent = input.files[0].name;
+        } else {
+          span.textContent = "";
+        }
+      });
     }
-  });
-}
 
-// Attach events to Media inputs
-showFileName("media1", "media1Name");
-showFileName("media2", "media2Name");
-showFileName("media3", "media3Name");
-
+    showFileName("media1", "media1Name");
+    showFileName("media2", "media2Name");
+    showFileName("media3", "media3Name");
   </script>
 </body>
 </html>
