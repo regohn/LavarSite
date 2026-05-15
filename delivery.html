@@ -176,7 +176,9 @@
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="G-Cash" value="G-Cash">
                     <label class="form-check-label" for="G-Cash">G-Cash</label>
-                    <input type="text" id="gcashInfo" name="gcashInfo" placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />                    
+                    <input type="text" id="gcashInfo" name="gcashInfo" placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />
+                    <span id="gcashLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
+                    
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="Others" value="Other Online Payment">
@@ -576,11 +578,57 @@
     }
   }
 
+// --- DATABASE CONFIGURATION ---
+  const dbName = "LavarDB";
+  const storeName = "GcashRefs";
+
   /**
-   * Entry Point
+   * Fetches Gcash refs from Google Sheets and saves them to Chrome IndexedDB
+   */
+  async function preloadGcashData() {
+    try {
+      console.log("Fetching Gcash data...");
+      const response = await fetch(`${requestScriptURL}?action=getGcash`);
+      const dataList = await response.json();
+
+      // Explicitly handle database opening and versioning
+      const request = indexedDB.open(dbName, 1);
+
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(storeName)) {
+          db.createObjectStore(storeName, { keyPath: "id", autoIncrement: true });
+        }
+      };
+
+      request.onsuccess = (event) => {
+        const db = event.target.result;
+        const transaction = db.transaction(storeName, "readwrite");
+        const store = transaction.objectStore(storeName);
+        
+        store.clear().onsuccess = () => {
+          dataList.forEach(item => {
+            store.add({ 
+              reference: item.ref, 
+              extra1: item.colAF, 
+              extra2: item.colAG, 
+              extra3: item.colAH,
+              timestamp: new Date().toISOString() 
+            });
+          });
+          console.log(`Preload Successful: ${dataList.length} rows stored.`);
+        };
+      };
+    } catch (err) {
+      console.error("Preload Failed:", err);
+    }
+  }
+
+  /**
+   * Your Updated Entry Point
    */
   window.onload = function() {
-    // Set current date to Manila Timezone by default
+    // 1. Set current date to Manila Timezone by default
     const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
     const dateSpan = document.getElementById("currentDate");
     if (dateSpan) {
@@ -588,11 +636,82 @@
       loadJODropdown(manilaDate);
     }
     
-    // Start the background sync loop
+    // 2. NEW: Trigger the Gcash preload immediately on load
+    preloadGcashData();
+
+    // 3. Start the background sync loop
     setInterval(processQueue, 5000); 
-  };
+  }
+
+let gcashLookupTimer;
+
+document.getElementById('gcashInfo').addEventListener('input', function() {
+  const userInput = this.value.trim();
+  const msgElement = document.getElementById('gcashLookupMsg');
+  
+  // Find the button that says exactly "Submit"
+  const submitBtn = Array.from(document.querySelectorAll('button')).find(btn => 
+    btn.textContent.trim() === 'Submit' || btn.value === 'Submit'
+  );
+  
+  clearTimeout(gcashLookupTimer);
+  msgElement.innerText = "";
+
+  // If input is cleared, enable button and stop
+  if (userInput.length === 0) {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = "1";
+      submitBtn.style.cursor = "pointer";
+    }
+    return;
+  }
+
+  // Wait 1 second after typing stops
+  gcashLookupTimer = setTimeout(() => {
+    const request = indexedDB.open(dbName, 1);
+
+    request.onsuccess = (event) => {
+      const db = event.target.result;
+      const transaction = db.transaction(storeName, "readonly");
+      const store = transaction.objectStore(storeName);
+      const getAllRequest = store.getAll();
+
+      getAllRequest.onsuccess = () => {
+        const records = getAllRequest.result;
+        const match = records.find(item => item.reference === userInput);
+
+        if (match) {
+          // MATCH FOUND: Show error and DISABLE button
+          msgElement.style.color = "#d9534f"; 
+          msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.extra2} | ${match.extra3} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
+          
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = "0.5";
+            submitBtn.style.cursor = "not-allowed";
+          }
+        } else {
+          // NO MATCH: Show success and ENABLE button
+          msgElement.style.color = "#28a745";
+          msgElement.innerText = "✅ Reference number is available";
+          
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = "1";
+            submitBtn.style.cursor = "pointer";
+          }
+          
+          // Clear green message after 3 seconds
+          setTimeout(() => { 
+            if(msgElement.innerText.includes("available")) msgElement.innerText = ""; 
+          }, 3000);
+        }
+      };
+    };
+  }, 1000);
+});
 </script>
 </body>
 
 </html>
-
