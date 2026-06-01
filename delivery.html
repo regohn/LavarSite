@@ -24,8 +24,8 @@
 
       .button-container {
         display: flex;
-        gap: 5px; /* Adds space between the buttons */
-        align-items: center; /* Aligns buttons vertically if they have different heights */
+        gap: 5px; 
+        align-items: center; 
       }
 
       button {
@@ -42,7 +42,6 @@
         background-color: #45a049;
       }      
 
-      /* Queue Status Styles */
       #queueStatus {
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;
@@ -50,7 +49,7 @@
         padding: 10px;
         margin-bottom: 20px;
         font-size: 12px;
-        display: none; /* Hidden when empty */
+        display: none; 
       }
       .queue-item-info {
         color: #007bff;
@@ -62,7 +61,6 @@
 
     <div class="container">
       <div class="form-container">
-        <!-- Visual Queue Indicator -->
         <div id="queueStatus">
           <div><strong>Pending Uploads:</strong> <span id="queueCount">0</span></div>
           <div id="nextUploadInfo" style="margin-top: 5px;"></div>
@@ -131,7 +129,6 @@
               />
             </div>
           
-            <!-- JO Dropdown -->
             <select class="form-control mb-2" id="joDropdown" onchange="loadDeliveryData()">
               <option value="">Select Requested JO# for Delivery</option>
             </select>   
@@ -178,7 +175,6 @@
                     <label class="form-check-label" for="G-Cash">G-Cash</label>
                     <input type="text" id="gcashInfo" name="gcashInfo" placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />
                     <span id="gcashLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
-                    
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="Others" value="Other Online Payment">
@@ -227,491 +223,769 @@
           <button id="mainsubmitbutton" type="submit" class="btn btn-primary btn-block">Submit</button>
         </form>
       </div>
+
+<div class="form-container" id="GcashrefLookup" style="margin-top: 30px; margin-bottom: 50px; max-width: 550px;">
+        <h5 class="text-center mb-3 text-secondary">Associate Gcash Ref# to JO#</h5>
+        <form id="gcash-association-form">
+          <div class="form-group">
+            <label for="lookupGcashRef">Gcash Ref#</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="lookupGcashRef" 
+              name="lookupGcashRef" 
+              placeholder="Enter 6-Digit Ref#" 
+              required
+            />
+            <small id="lookupStatusMsg" class="form-text mt-1 font-weight-bold"></small>
+          </div>
+
+          <div id="lookupTableWrapper" class="table-responsive mt-2 mb-3" style="display: none;">
+            <p class="text-muted mb-1" style="font-size: 11px;"><strong>Currently Linked Orders for this GCash payment:</strong></p>
+            <table class="table table-sm table-bordered bg-white" style="font-size: 11px; text-align: center;">
+              <thead class="thead-light">
+                <tr>
+                  <th>JO</th>
+                  <th>Timestamp</th>
+                  <th>CustomerName</th>
+                  <th>PaymentType</th>
+                </tr>
+              </thead>
+              <tbody id="lookupTableBody">
+                </tbody>
+            </table>
+          </div>
+
+          <div class="form-group">
+            <label for="lookupJoNum">JO# to Associate</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="lookupJoNum" 
+              name="lookupJoNum" 
+              placeholder="Enter New Job Order Number to Link" 
+              required
+            />
+            <small id="joLookupStatusMsg" class="form-text mt-1 font-weight-bold"></small>
+          </div>
+
+          <div id="joLookupTableWrapper" class="table-responsive mt-2 mb-3" style="display: none;">
+            <p class="text-muted mb-1" style="font-size: 11px;"><strong>Existing Delivery log details for this JO#:</strong></p>
+            <table class="table table-sm table-bordered bg-white" style="font-size: 11px; text-align: center;">
+              <thead class="thead-light">
+                <tr>
+                  <th>GCash Ref#</th>
+                  <th>JO</th> <th>CustomerName</th>
+                  <th>PaymentType</th>
+                </tr>
+              </thead>
+              <tbody id="joLookupTableBody">
+                </tbody>
+            </table>
+          </div>
+
+          <button id="lookupSubmitButton" type="submit" class="btn btn-secondary btn-block">Associate Reference</button>
+        </form>
+      </div>
     </div>
 
-<script>
-  // Configuration
-  const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
-  const requestScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
-  
-  // Element references
-  const form = document.getElementById("submit-to-google-sheet");
-  const JOsearchField = document.getElementById("JOsearch");
-  const JOresult = document.getElementById("JOresult");
-  const searchButton = document.getElementById("searchButton");
-  const joDropdown = document.getElementById("joDropdown");
+    <script>
+      // 1. Centralized Script URLs Setup
+// --- ORIGINAL SETUP VARIABLES (DO NOT CHANGE THESE) ---
+const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
+const requestScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
 
-  // Queue State
-  let uploadQueue = [];
-  let isUploading = false;
+// --- NEW ISOLATED VARIABLE FOR BOTTOM LOOKUP ONLY ---
+const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";      
+      // Element references
+      const form = document.getElementById("submit-to-google-sheet");
+      const JOsearchField = document.getElementById("JOsearch");
+      const JOresult = document.getElementById("JOresult");
+      const searchButton = document.getElementById("searchButton");
+      const joDropdown = document.getElementById("joDropdown");
 
-  /**
-   * Helper: Extracts ID from Drive URL and returns a thumbnail link
-   */
-  function getDriveThumbnail(url) {
-    if (!url) return "";
-    const match = url.match(/[-\w]{25,}/);
-    return match ? `https://drive.google.com/thumbnail?id=${match[0]}` : "";
-  }
+      // Queue State
+      let uploadQueue = [];
+      let isUploading = false;
 
-  /**
-   * Update the visual queue UI at the top
-   */
-  function updateQueueUI() {
-    const queueStatus = document.getElementById("queueStatus");
-    const queueCount = document.getElementById("queueCount");
-    const nextUploadInfo = document.getElementById("nextUploadInfo");
+      // Real-time lookup elements
+      let associationLookupTimer;
+      const lookupGcashField = document.getElementById('lookupGcashRef');
+      const lookupStatusMsg = document.getElementById('lookupStatusMsg');
+      const lookupTableWrapper = document.getElementById('lookupTableWrapper');
+      const lookupTableBody = document.getElementById('lookupTableBody');
 
-    if (uploadQueue.length > 0) {
-      queueStatus.style.display = "block";
-      queueCount.innerText = uploadQueue.length;
-      
-      const current = uploadQueue[0];
-      nextUploadInfo.innerHTML = `Next: <span class="queue-item-info">${current.JOR}</span> - <span class="queue-item-info">${current.CustomerName}</span>`;
-    } else {
-      queueStatus.style.display = "none";
-    }
-  }
-
-  /**
-   * Search functionality: Fetches details from Google Sheet master list
-   */
-  searchButton.addEventListener("click", async function () {
-    const joNumber = JOsearchField.value.trim();
-    
-    // Reset specific form fields and display
-    document.getElementById("DeliveryStaff").value = "";
-    document.getElementById("Comments").value = "";
-    JOresult.innerHTML = ""; 
-
-    if (!joNumber) {
-      JOresult.innerHTML = "<span class='text-warning'>Please enter a JO number.</span>";
-      return;
-    }
-
-    JOresult.innerHTML = "Searching...";
-
-    try {
-      const response = await fetch(`${scriptURL}?JO=${joNumber}`);
-      const data = await response.json();
-
-      if (data.result === "not found") {
-        JOresult.innerHTML = "<span class='text-danger'>Di Pa Na Log ng Mga Nagtupi. Tawagan sila at ipalog.</span>";
-        return;
+      /**
+       * Helper: Extracts ID from Drive URL and returns a thumbnail link
+       */
+      function getDriveThumbnail(url) {
+        if (!url) return "";
+        const match = url.match(/[-\w]{25,}/);
+        return match ? `https://drive.google.com/thumbnail?id=${match[0]}` : "";
       }
 
-      // Restore the original thumbnail display logic
-      let picturesHTML = "";
-      ["Picture1", "Picture2", "Picture3"].forEach((pic, i) => {
-        if (data[pic]) {
-          picturesHTML += `
-            <div class="mt-2">
-              <table border="0">
-                <tr>
-                  <td>${pic}:</td>
-                  <td>
-                    <a href="${data[pic]}" target="_blank">
-                      <img id="pic${i + 1}img" src="${getDriveThumbnail(data[pic])}" style="height: 60px; margin: 5px; border-radius: 5px;" />
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </div>`;
-        }
-      });
+      /**
+       * Update the visual queue UI at the top
+       */
+      function updateQueueUI() {
+        const queueStatus = document.getElementById("queueStatus");
+        const queueCount = document.getElementById("queueCount");
+        const nextUploadInfo = document.getElementById("nextUploadInfo");
 
-      const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
-
-      // Restore original result formatting
-      JOresult.innerHTML = `
-        <div style="font-size: 11px; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
-          <br><strong>Customer Name:</strong> ${data.value} <br>
-          <strong>JO#:</strong> ${data.JO} <br>
-          <strong>No. of Bags:</strong> ${data.colC} <br>
-          <strong>Total Amount:</strong> ${data.colK} <br>
-          <strong>Folder:</strong> ${data.colD} <br>
-          <strong>Details:</strong> ${data.colE} <br><br>
-          <strong>Delivered By:</strong> ${data.DeliveryStaff || ''} <br>
-          <strong>Comments:</strong> ${data.Comments || ''} <br>
-          <strong>Date of Delivery:</strong> ${formattedDeliveryDatetime} <br>
-          <strong>Delivery ID:</strong> ${data.UniqueID || ''} 
-          ${picturesHTML}
-          <input type="hidden" id="UniqueID_hidden" name="UniqueID" value="${data.UniqueID || ''}">
-        </div>`;
-
-      // Prefill hidden fields for submission
-      document.getElementById("JOR").value = data.JO;
-      document.getElementById("CustomerName").value = data.value;
-      
-      // Handle "Update" state if already delivered
-      if (data.DeliveryStaff && data.DeliveryStaff.trim()) {
-        document.getElementById("mainsubmitbutton").innerText = "Update";
-        document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
-        document.getElementById("Comments").value = data.Comments;
-      } else {
-        document.getElementById("mainsubmitbutton").innerText = "SUBMIT";
-      }
-    } catch (error) {
-      console.error("Search Error:", error);
-      JOresult.innerHTML = "<span class='text-danger'>Error connecting to server. Try again.</span>";
-    }
-  });
-
-  /**
-   * Reset form state
-   */
-  function clearForm() {
-    form.reset();
-    JOresult.innerHTML = "";
-    document.getElementById("JOR").value = "";
-    document.getElementById("CustomerName").value = "";
-    document.getElementById("gcashInfo").style.display = "none";
-    document.getElementById("mainsubmitbutton").disabled = false;
-    document.getElementById("mainsubmitbutton").innerText = "Submit";
-    JOsearchField.value = "";
-  }
-
-  /**
-   * Date formatting helper
-   */
-  function formatDateTime(isoString) {
-    if (!isoString) return "N/A";
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return isoString;
-    return date.toLocaleString("en-US", {
-      month: "2-digit", day: "2-digit", year: "numeric",
-      hour: "2-digit", minute: "2-digit", hour12: true
-    });
-  }
-
-  /**
-   * Date navigation chevrons
-   */
-  function changeDate(offsetDays) {
-    const currentDateEl = document.getElementById("currentDate");
-    const currentDate = new Date(currentDateEl.innerText);
-    currentDate.setDate(currentDate.getDate() + offsetDays);
-    const formatted = currentDate.toISOString().split("T")[0];
-    currentDateEl.innerText = formatted;
-    loadJODropdown(formatted);
-  }
-
-  /**
-   * Fetches scheduled requests for a specific date
-   */
-  async function loadJODropdown(passedDate) {
-    const dropdown = document.getElementById("joDropdown");
-    dropdown.innerHTML = '<option value="">Searching for requests...</option>';
-    try {
-      const url = `${requestScriptURL}?date=${encodeURIComponent(passedDate)}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      dropdown.innerHTML = '<option value="">Select Requested JO# for Delivery</option>';
-      if (!Array.isArray(data) || data.length === 0) {
-        const opt = document.createElement("option");
-        opt.textContent = "No JOs found for this date";
-        opt.value = "";
-        dropdown.appendChild(opt);
-        return;
-      }
-      data.forEach(item => {
-        if (item["Del JO#"]) {
-          const option = document.createElement("option");
-          option.value = item["Del JO#"];
-          option.textContent = `${item["Del JO#"]} || ${item.name}`;
-          dropdown.appendChild(option);
-        }
-      });
-    } catch (err) {
-      console.error("Dropdown Load Error:", err);
-      dropdown.innerHTML = '<option value="">Error loading JOs</option>';
-    }
-  }
-
-  /**
-   * Triggered when a dropdown item is selected
-   */
-  function loadDeliveryData() {
-    const selectedValue = joDropdown.value;
-    if (selectedValue) {
-      JOsearchField.value = selectedValue;
-      searchButton.click();
-    }
-  }
-
-  /**
-   * Visibility toggle for GCash reference field
-   */
-  function toggleGcashInput() {
-    const gcashRadio = document.getElementById("G-Cash");
-    const gcashInfo = document.getElementById("gcashInfo");
-    if (gcashRadio && gcashRadio.checked) {
-      gcashInfo.style.display = "inline-block";
-      gcashInfo.required = true;
-    } else {
-      if (gcashInfo) {
-        gcashInfo.style.display = "none";
-        gcashInfo.value = "";
-        gcashInfo.required = false;
-      }
-    }
-  }
-
-  // Attach GCash listeners
-  document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
-    radio.addEventListener('change', toggleGcashInput);
-  });
-
-  /**
-   * Helper: Converts File object to Base64 string for transmission
-   */
-  function readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  /**
-   * Submission: Validates form and pushes to queue
-   */
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-    // Core validation
-    const JOR = document.getElementById("JOR").value;
-    if (!JOR || JOR.trim() === "") {
-      swal("Missing JO#", "Please search and select a Job Order first.", "warning");
-      return;
-    }
-
-    // GCash validation
-    const paymentType = document.querySelector('input[name="PaymentType"]:checked')?.value;
-    const gcashInfo = document.getElementById("gcashInfo");
-    if (paymentType === "G-Cash" && gcashInfo.style.display !== "none") {
-      if (!/^\d{6}$/.test(gcashInfo.value.trim())) {
-        swal("Invalid G-Cash", "Reference # must be exactly 6 digits.", "warning");
-        return;
-      }
-    }
-
-    const submitBtn = document.getElementById("mainsubmitbutton");
-    submitBtn.disabled = true;
-    submitBtn.innerText = "Queueing...";
-
-    const formData = new FormData(form);
-    const data = {};
-
-    // Process fields and files
-    const filePromises = [];
-    formData.forEach((value, key) => {
-      if (value instanceof File && value.size > 0) {
-        const promise = readFileAsBase64(value).then(b64 => ({ key, value: b64 }));
-        filePromises.push(promise);
-      } else if (!(value instanceof File)) {
-        data[key] = value;
-      }
-    });
-
-    try {
-      const resolvedFiles = await Promise.all(filePromises);
-      resolvedFiles.forEach(f => data[f.key] = f.value);
-      
-      // Remove the submitted JO from the dropdown immediately
-      const dropdownValue = joDropdown.value;
-      if (dropdownValue === JOR) {
-        const optionToRemove = joDropdown.querySelector(`option[value="${JOR}"]`);
-        if (optionToRemove) {
-          optionToRemove.remove();
-        }
-      }
-
-      // Push to upload queue
-      uploadQueue.push(data);
-      updateQueueUI();
-      
-      swal("Success", "Delivery details have been queued.", "success");
-      clearForm();
-    } catch (err) {
-      console.error("Queue Error:", err);
-      swal("Error", "There was an error processing your photos.", "error");
-      submitBtn.disabled = false;
-      submitBtn.innerText = "Submit";
-    }
-  });
-
-  /**
-   * Background process: Sends queued data to Google Apps Script
-   */
-  async function processQueue() {
-    // Only proceed if not already uploading, queue has items, and device is online
-    if (isUploading || uploadQueue.length === 0 || !navigator.onLine) return;
-    
-    isUploading = true;
-    updateQueueUI();
-    const currentData = uploadQueue[0];
-
-    try {
-      // Use URLSearchParams for POST body to match Apps Script e.parameter handling
-      const params = new URLSearchParams();
-      for (const key in currentData) params.append(key, currentData[key]);
-
-      // mode: 'no-cors' allows the request to complete despite redirect issues
-      await fetch(scriptURL, {
-        method: "POST",
-        mode: "no-cors",
-        body: params.toString(),
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
-      });
-
-      // Shift successful item out of queue
-      uploadQueue.shift();
-      console.log("Queue Update: Upload successful. " + uploadQueue.length + " items remaining.");
-    } catch (err) {
-      console.error("Background Queue Error:", err);
-    } finally {
-      isUploading = false;
-      updateQueueUI();
-    }
-  }
-
-// --- DATABASE CONFIGURATION ---
-  const dbName = "LavarDB";
-  const storeName = "GcashRefs";
-
-  /**
-   * Fetches Gcash refs from Google Sheets and saves them to Chrome IndexedDB
-   */
-  async function preloadGcashData() {
-    try {
-      console.log("Fetching Gcash data...");
-      const response = await fetch(`${requestScriptURL}?action=getGcash`);
-      const dataList = await response.json();
-
-      // Explicitly handle database opening and versioning
-      const request = indexedDB.open(dbName, 1);
-
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains(storeName)) {
-          db.createObjectStore(storeName, { keyPath: "id", autoIncrement: true });
-        }
-      };
-
-      request.onsuccess = (event) => {
-        const db = event.target.result;
-        const transaction = db.transaction(storeName, "readwrite");
-        const store = transaction.objectStore(storeName);
-        
-        store.clear().onsuccess = () => {
-          dataList.forEach(item => {
-            store.add({ 
-              reference: item.ref, 
-              extra1: item.colAF, 
-              extra2: item.colAG, 
-              extra3: item.colAH,
-              timestamp: new Date().toISOString() 
-            });
-          });
-          console.log(`Preload Successful: ${dataList.length} rows stored.`);
-        };
-      };
-    } catch (err) {
-      console.error("Preload Failed:", err);
-    }
-  }
-
-  /**
-   * Your Updated Entry Point
-   */
-  window.onload = function() {
-    // 1. Set current date to Manila Timezone by default
-    const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
-    const dateSpan = document.getElementById("currentDate");
-    if (dateSpan) {
-      dateSpan.innerText = manilaDate;
-      loadJODropdown(manilaDate);
-    }
-    
-    // 2. NEW: Trigger the Gcash preload immediately on load
-    preloadGcashData();
-
-    // 3. Start the background sync loop
-    setInterval(processQueue, 5000); 
-  }
-
-let gcashLookupTimer;
-
-document.getElementById('gcashInfo').addEventListener('input', function() {
-  const userInput = this.value.trim();
-  const msgElement = document.getElementById('gcashLookupMsg');
-  
-  // Find the button that says exactly "Submit"
-  const submitBtn = Array.from(document.querySelectorAll('button')).find(btn => 
-    btn.textContent.trim() === 'Submit' || btn.value === 'Submit'
-  );
-  
-  clearTimeout(gcashLookupTimer);
-  msgElement.innerText = "";
-
-  // If input is cleared, enable button and stop
-  if (userInput.length === 0) {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.style.opacity = "1";
-      submitBtn.style.cursor = "pointer";
-    }
-    return;
-  }
-
-  // Wait 1 second after typing stops
-  gcashLookupTimer = setTimeout(() => {
-    const request = indexedDB.open(dbName, 1);
-
-    request.onsuccess = (event) => {
-      const db = event.target.result;
-      const transaction = db.transaction(storeName, "readonly");
-      const store = transaction.objectStore(storeName);
-      const getAllRequest = store.getAll();
-
-      getAllRequest.onsuccess = () => {
-        const records = getAllRequest.result;
-        const match = records.find(item => item.reference === userInput);
-
-        if (match) {
-          // MATCH FOUND: Show error and DISABLE button
-          msgElement.style.color = "#d9534f"; 
-          msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.extra2} | ${match.extra3} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
+        if (uploadQueue.length > 0) {
+          queueStatus.style.display = "block";
+          queueCount.innerText = uploadQueue.length;
           
-          if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = "0.5";
-            submitBtn.style.cursor = "not-allowed";
-          }
+          const current = uploadQueue[0];
+          nextUploadInfo.innerHTML = `Next: <span class="queue-item-info">${current.JOR}</span> - <span class="queue-item-info">${current.CustomerName}</span>`;
         } else {
-          // NO MATCH: Show success and ENABLE button
-          msgElement.style.color = "#28a745";
-          msgElement.innerText = "✅ Reference number is available";
+          queueStatus.style.display = "none";
+        }
+      }
+
+      /**
+       * Search functionality: Fetches details from Google Sheet master list
+       */
+      searchButton.addEventListener("click", async function () {
+        const joNumber = JOsearchField.value.trim();
+        
+        document.getElementById("DeliveryStaff").value = "";
+        document.getElementById("Comments").value = "";
+        JOresult.innerHTML = ""; 
+
+        if (!joNumber) {
+          JOresult.innerHTML = "<span class='text-warning'>Please enter a JO number.</span>";
+          return;
+        }
+
+        JOresult.innerHTML = "Searching...";
+
+        try {
+          const response = await fetch(`${scriptURL}?JO=${joNumber}`);
+          const data = await response.json();
+
+          if (data.result === "not found") {
+            JOresult.innerHTML = "<span class='text-danger'>Di Pa Na Log ng Mga Nagtupi. Tawagan sila at ipalog.</span>";
+            return;
+          }
+
+          let picturesHTML = "";
+          ["Picture1", "Picture2", "Picture3"].forEach((pic, i) => {
+            if (data[pic]) {
+              picturesHTML += `
+                <div class="mt-2">
+                  <table border="0">
+                    <tr>
+                      <td>${pic}:</td>
+                      <td>
+                        <a href="${data[pic]}" target="_blank">
+                          <img id="pic${i + 1}img" src="${getDriveThumbnail(data[pic])}" style="height: 60px; margin: 5px; border-radius: 5px;" />
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>`;
+            }
+          });
+
+          const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
+
+          JOresult.innerHTML = `
+            <div style="font-size: 11px; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
+              <br><strong>Customer Name:</strong> ${data.value} <br>
+              <strong>JO#:</strong> ${data.JO} <br>
+              <strong>No. of Bags:</strong> ${data.colC} <br>
+              <strong>Total Amount:</strong> ${data.colK} <br>
+              <strong>Folder:</strong> ${data.colD} <br>
+              <strong>Details:</strong> ${data.colE} <br><br>
+              <strong>Delivered By:</strong> ${data.DeliveryStaff || ''} <br>
+              <strong>Comments:</strong> ${data.Comments || ''} <br>
+              <strong>Date of Delivery:</strong> ${formattedDeliveryDatetime} <br>
+              <strong>Delivery ID:</strong> ${data.UniqueID || ''} 
+              ${picturesHTML}
+              <input type="hidden" id="UniqueID_hidden" name="UniqueID" value="${data.UniqueID || ''}">
+            </div>`;
+
+          document.getElementById("JOR").value = data.JO;
+          document.getElementById("CustomerName").value = data.value;
           
+          if (data.DeliveryStaff && data.DeliveryStaff.trim()) {
+            document.getElementById("mainsubmitbutton").innerText = "Update";
+            document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
+            document.getElementById("Comments").value = data.Comments;
+          } else {
+            document.getElementById("mainsubmitbutton").innerText = "SUBMIT";
+          }
+        } catch (error) {
+          console.error("Search Error:", error);
+          JOresult.innerHTML = "<span class='text-danger'>Error connecting to server. Try again.</span>";
+        }
+      });
+
+      /**
+       * Reset form state
+       */
+      function clearForm() {
+        form.reset();
+        JOresult.innerHTML = "";
+        document.getElementById("JOR").value = "";
+        document.getElementById("CustomerName").value = "";
+        document.getElementById("gcashInfo").style.display = "none";
+        document.getElementById("mainsubmitbutton").disabled = false;
+        document.getElementById("mainsubmitbutton").innerText = "Submit";
+        JOsearchField.value = "";
+      }
+
+      /**
+       * Date formatting helper
+       */
+      function formatDateTime(isoString) {
+        if (!isoString) return "N/A";
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return isoString;
+        return date.toLocaleString("en-US", {
+          month: "2-digit", day: "2-digit", year: "numeric",
+          hour: "2-digit", minute: "2-digit", hour12: true
+        });
+      }
+
+      /**
+       * Date navigation chevrons
+       */
+      function changeDate(offsetDays) {
+        const currentDateEl = document.getElementById("currentDate");
+        const currentDate = new Date(currentDateEl.innerText);
+        currentDate.setDate(currentDate.getDate() + offsetDays);
+        const formatted = currentDate.toISOString().split("T")[0];
+        currentDateEl.innerText = formatted;
+        loadJODropdown(formatted);
+      }
+
+      /**
+       * Fetches scheduled requests for a specific date
+       */
+      async function loadJODropdown(passedDate) {
+        const dropdown = document.getElementById("joDropdown");
+        dropdown.innerHTML = '<option value="">Searching for requests...</option>';
+        try {
+          const url = `${requestScriptURL}?date=${encodeURIComponent(passedDate)}`;
+          const response = await fetch(url);
+          const data = await response.json();
+          
+          dropdown.innerHTML = '<option value="">Select Requested JO# for Delivery</option>';
+          if (!Array.isArray(data) || data.length === 0) {
+            const opt = document.createElement("option");
+            opt.textContent = "No JOs found for this date";
+            opt.value = "";
+            dropdown.appendChild(opt);
+            return;
+          }
+          data.forEach(item => {
+            if (item["Del JO#"]) {
+              const option = document.createElement("option");
+              option.value = item["Del JO#"];
+              option.textContent = `${item["Del JO#"]} || ${item.name}`;
+              dropdown.appendChild(option);
+            }
+          });
+        } catch (err) {
+          console.error("Dropdown Load Error:", err);
+          dropdown.innerHTML = '<option value="">Error loading JOs</option>';
+        }
+      }
+
+      /**
+       * Triggered when a dropdown item is selected
+       */
+      function loadDeliveryData() {
+        const selectedValue = joDropdown.value;
+        if (selectedValue) {
+          JOsearchField.value = selectedValue;
+          searchButton.click();
+        }
+      }
+
+      /**
+       * Visibility toggle for GCash reference field
+       */
+      function toggleGcashInput() {
+        const gcashRadio = document.getElementById("G-Cash");
+        const gcashInfo = document.getElementById("gcashInfo");
+        if (gcashRadio && gcashRadio.checked) {
+          gcashInfo.style.display = "inline-block";
+          gcashInfo.required = true;
+        } else {
+          if (gcashInfo) {
+            gcashInfo.style.display = "none";
+            gcashInfo.value = "";
+            gcashInfo.required = false;
+          }
+        }
+      }
+
+      document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
+        radio.addEventListener('change', toggleGcashInput);
+      });
+
+      function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      /**
+       * Submission: Validates form and pushes to queue
+       */
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const JOR = document.getElementById("JOR").value;
+        if (!JOR || JOR.trim() === "") {
+          swal("Missing JO#", "Please search and select a Job Order first.", "warning");
+          return;
+        }
+
+        const paymentType = document.querySelector('input[name="PaymentType"]:checked')?.value;
+        const gcashInfo = document.getElementById("gcashInfo");
+        if (paymentType === "G-Cash" && gcashInfo.style.display !== "none") {
+          if (!/^\d{6}$/.test(gcashInfo.value.trim())) {
+            swal("Invalid G-Cash", "Reference # must be exactly 6 digits.", "warning");
+            return;
+          }
+        }
+
+        const submitBtn = document.getElementById("mainsubmitbutton");
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Queueing...";
+
+        const formData = new FormData(form);
+        const data = {};
+
+        const filePromises = [];
+        formData.forEach((value, key) => {
+          if (value instanceof File && value.size > 0) {
+            const promise = readFileAsBase64(value).then(b64 => ({ key, value: b64 }));
+            filePromises.push(promise);
+          } else if (!(value instanceof File)) {
+            data[key] = value;
+          }
+        });
+
+        try {
+          const resolvedFiles = await Promise.all(filePromises);
+          resolvedFiles.forEach(f => data[f.key] = f.value);
+          
+          const dropdownValue = joDropdown.value;
+          if (dropdownValue === JOR) {
+            const optionToRemove = joDropdown.querySelector(`option[value="${JOR}"]`);
+            if (optionToRemove) {
+              optionToRemove.remove();
+            }
+          }
+
+          uploadQueue.push(data);
+          updateQueueUI();
+          
+          swal("Success", "Delivery details have been queued.", "success");
+          clearForm();
+        } catch (err) {
+          console.error("Queue Error:", err);
+          swal("Error", "There was an error processing your photos.", "error");
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Submit";
+        }
+      });
+
+      /**
+       * Background process: Sends queued data to Google Apps Script
+       */
+      async function processQueue() {
+        if (isUploading || uploadQueue.length === 0 || !navigator.onLine) return;
+        
+        isUploading = true;
+        updateQueueUI();
+        const currentData = uploadQueue[0];
+
+        try {
+          const params = new URLSearchParams();
+          for (const key in currentData) params.append(key, currentData[key]);
+
+          await fetch(scriptURL, {
+            method: "POST",
+            mode: "no-cors",
+            body: params.toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+          });
+
+          uploadQueue.shift();
+          console.log("Queue Update: Upload successful. " + uploadQueue.length + " items remaining.");
+        } catch (err) {
+          console.error("Background Queue Error:", err);
+        } finally {
+          isUploading = false;
+          updateQueueUI();
+        }
+      }
+
+      // --- DATABASE CONFIGURATION FOR REFS ---
+      const dbName = "LavarDB";
+      const storeName = "GcashRefs";
+
+      async function preloadGcashData() {
+        try {
+          console.log("Fetching Gcash data...");
+          const response = await fetch(`${requestScriptURL}?action=getGcash`);
+          const dataList = await response.json();
+
+          const request = indexedDB.open(dbName, 1);
+
+          request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(storeName)) {
+              db.createObjectStore(storeName, { keyPath: "id", autoIncrement: true });
+            }
+          };
+
+          request.onsuccess = (event) => {
+            const db = event.target.result;
+            const transaction = db.transaction(storeName, "readwrite");
+            const store = transaction.objectStore(storeName);
+            
+            store.clear().onsuccess = () => {
+              dataList.forEach(item => {
+                store.add({ 
+                  reference: item.ref, 
+                  extra1: item.colAF, 
+                  extra2: item.colAG, 
+                  extra3: item.colAH,
+                  timestamp: new Date().toISOString() 
+                });
+              });
+              console.log(`Preload Successful: ${dataList.length} rows stored.`);
+            };
+          };
+        } catch (err) {
+          console.error("Preload Failed:", err);
+        }
+      }
+
+      // --- APP ENTRY POINT ---
+      window.onload = function() {
+        const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+        const dateSpan = document.getElementById("currentDate");
+        if (dateSpan) {
+          dateSpan.innerText = manilaDate;
+          loadJODropdown(manilaDate);
+        }
+        
+        preloadGcashData();
+        setInterval(processQueue, 5000); 
+      }
+
+      // Main upper form GCash available checker loop
+      let gcashLookupTimer;
+      document.getElementById('gcashInfo').addEventListener('input', function() {
+        const userInput = this.value.trim();
+        const msgElement = document.getElementById('gcashLookupMsg');
+        
+        const submitBtn = Array.from(document.querySelectorAll('button')).find(btn => 
+          btn.textContent.trim() === 'Submit' || btn.value === 'Submit'
+        );
+        
+        clearTimeout(gcashLookupTimer);
+        msgElement.innerText = "";
+
+        if (userInput.length === 0) {
           if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.style.opacity = "1";
             submitBtn.style.cursor = "pointer";
           }
-          
-          // Clear green message after 3 seconds
-          setTimeout(() => { 
-            if(msgElement.innerText.includes("available")) msgElement.innerText = ""; 
-          }, 3000);
+          return;
         }
-      };
-    };
-  }, 1000);
-});
-</script>
-</body>
 
+        gcashLookupTimer = setTimeout(() => {
+          const request = indexedDB.open(dbName, 1);
+
+          request.onsuccess = (event) => {
+            const db = event.target.result;
+            const transaction = db.transaction(storeName, "readonly");
+            const store = transaction.objectStore(storeName);
+            const getAllRequest = store.getAll();
+
+            getAllRequest.onsuccess = () => {
+              const records = getAllRequest.result;
+              const match = records.find(item => item.reference === userInput);
+
+              if (match) {
+                msgElement.style.color = "#d9534f"; 
+                msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.extra2} | ${match.extra3} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
+                
+                if (submitBtn) {
+                  submitBtn.disabled = true;
+                  submitBtn.style.opacity = "0.5";
+                  submitBtn.style.cursor = "not-allowed";
+                }
+              } else {
+                msgElement.style.color = "#28a745";
+                msgElement.innerText = "✅ Reference number is available";
+                
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.style.opacity = "1";
+                  submitBtn.style.cursor = "pointer";
+                }
+                
+                setTimeout(() => { 
+                  if(msgElement.innerText.includes("available")) msgElement.innerText = ""; 
+                }, 3000);
+              }
+            };
+          };
+        }, 1000);
+      });
+
+      /**
+       * NEW ASSIGNMENTS: Triggers the AJAX query to the Apps Script backend to verify payment data
+       */
+      async function triggerGcashVerification() {
+        const gcashRef = lookupGcashField.value.trim();
+
+        lookupStatusMsg.innerText = "";
+        lookupTableBody.innerHTML = "";
+        lookupTableWrapper.style.display = "none";
+
+        if (gcashRef.length === 0) return;
+
+        if (!/^\d{6}$/.test(gcashRef)) {
+          lookupStatusMsg.style.color = "#d9534f";
+          lookupStatusMsg.innerText = "⚠️ Reference # must be exactly 6 digits.";
+          return;
+        }
+
+        lookupStatusMsg.style.color = "#007bff";
+        lookupStatusMsg.innerText = "Searching Delivery database...";
+
+        try {
+          const response = await fetch(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(gcashRef)}`);
+          const resultData = await response.json();
+
+          if (resultData.result === "success") {
+            lookupStatusMsg.style.color = "#28a745";
+            lookupStatusMsg.innerText = `✅ Found ${resultData.data.length} match(es). Verify details below before linking:`;
+            
+            resultData.data.forEach(item => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td><strong>${item.jor}</strong></td>
+                <td>${item.timestamp}</td>
+                <td>${item.customerName}</td>
+                <td><span class="badge badge-info">${item.paymentType}</span></td>
+              `;
+              lookupTableBody.appendChild(row);
+            });
+            
+            lookupTableWrapper.style.display = "block";
+          } else if (resultData.result === "not_found") {
+            lookupStatusMsg.style.color = "#a94442";
+            lookupStatusMsg.innerText = "❌ This GCash reference hasn't been logged in any delivery sheet yet.";
+          } else {
+            lookupStatusMsg.style.color = "#d9534f";
+            lookupStatusMsg.innerText = "⚠️ Error reading database metadata.";
+          }
+        } catch (err) {
+          console.error("Lookup pipeline error:", err);
+          lookupStatusMsg.style.color = "#d9534f";
+          lookupStatusMsg.innerText = "📡 Server communication failure.";
+        }
+      }
+      // Listen for bottom lookup form interactions (Stable 1-second delay after typing stops)
+      lookupGcashField.addEventListener('input', function() {
+        clearTimeout(associationLookupTimer);
+        associationLookupTimer = setTimeout(triggerGcashVerification, 1000);
+      });
+
+/**
+       * Handle submission of the multi-association process safely via GET
+       */
+      document.getElementById("gcash-association-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        
+        // Fetch values using explicit element IDs
+        const gcashRef = document.getElementById("lookupGcashRef").value.trim();
+        const joNum = document.getElementById("lookupJoNum").value.trim();
+        const submitBtn = document.getElementById("lookupSubmitButton");
+
+        if (!/^\d{6}$/.test(gcashRef)) {
+          swal("Invalid G-Cash", "Reference # must be exactly 6 digits.", "warning");
+          return;
+        }
+
+        if (!joNum) {
+          swal("Missing JO#", "Please enter a valid Job Order Number to link.", "warning");
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Processing Update...";
+
+        try {
+          // Fixed: Uses all-lowercase "action=associateGcash" to match your Apps Script doGet route
+          const targetUrl = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(gcashRef)}&lookupJoNum=${encodeURIComponent(joNum)}`;
+
+          // Switched to GET method to clear cross-origin security bottlenecks
+          const response = await fetch(targetUrl, { method: "GET" });
+          const resultData = await response.json();
+
+          if (resultData.result === "success") {
+            // Updated popup text to confirm the real GCash number association mapping
+            swal("Success", `JO# ${joNum} has been successfully updated with GCash Ref# ${gcashRef}!`, "success");
+            
+            // Clear views cleanly
+            this.reset();
+            document.getElementById("lookupTableBody").innerHTML = "";
+            document.getElementById("lookupTableWrapper").style.display = "none";
+            document.getElementById("lookupStatusMsg").innerText = "";
+            
+            document.getElementById("joLookupTableBody").innerHTML = "";
+            document.getElementById("joLookupTableWrapper").style.display = "none";
+            document.getElementById("joLookupStatusMsg").innerText = "";
+          } else {
+            swal("Database Error", "⚠️ " + resultData.message, "error");
+          }
+          
+        } catch (err) {
+          console.error("Association Error:", err);
+          swal("Error", "Could not complete the database update row overwrite.", "error");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Associate Reference";
+        }
+      });
+
+
+// New real-time JO lookup elements
+      let joAssociationLookupTimer;
+      const lookupJoField = document.getElementById('lookupJoNum');
+      const joLookupStatusMsg = document.getElementById('joLookupStatusMsg');
+      const joLookupTableWrapper = document.getElementById('joLookupTableWrapper');
+      const joLookupTableBody = document.getElementById('joLookupTableBody');
+
+      /**
+       * Triggers the AJAX query to the Apps Script backend to verify JO data
+       */
+      async function triggerJoVerification() {
+        const joNum = lookupJoField.value.trim();
+
+        joLookupStatusMsg.innerText = "";
+        joLookupTableBody.innerHTML = "";
+        joLookupTableWrapper.style.display = "none";
+
+        if (joNum.length === 0) return;
+
+        joLookupStatusMsg.style.color = "#007bff";
+        joLookupStatusMsg.innerText = "Searching Delivery database for JO#...";
+
+        try {
+          // Send request to your decoupled gcashLookupScriptURL link
+          const response = await fetch(`${gcashLookupScriptURL}?action=lookupJoDetails&joNum=${encodeURIComponent(joNum)}`);
+          const resultData = await response.json();
+
+          if (resultData.result === "success") {
+            joLookupStatusMsg.style.color = "#28a745";
+            joLookupStatusMsg.innerText = `✅ Found record for this JO#. Verify existing payment logs below:`;
+            
+            resultData.data.forEach(item => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td><strong>${item.gcashRef || 'None'}</strong></td>
+                <td>${item.timestamp}</td>
+                <td>${item.customerName}</td>
+                <td><span class="badge badge-info">${item.paymentType}</span></td>
+              `;
+              joLookupTableBody.appendChild(row);
+            });
+            
+            joLookupTableWrapper.style.display = "block";
+          } else if (resultData.result === "not_found") {
+            joLookupStatusMsg.style.color = "#6c757d";
+            joLookupStatusMsg.innerText = "ℹ️ This JO# has no active logs in the delivery tab yet.";
+          } else {
+            joLookupStatusMsg.style.color = "#d9534f";
+            joLookupStatusMsg.innerText = "⚠️ " + resultData.message;
+          }
+        } catch (err) {
+          console.error("JO Lookup error:", err);
+          joLookupStatusMsg.style.color = "#d9534f";
+          joLookupStatusMsg.innerText = "📡 Server communication failure.";
+        }
+      }
+
+      // Stable 1-second delay execution listener for the JO field input
+      lookupJoField.addEventListener('input', function() {
+        clearTimeout(joAssociationLookupTimer);
+        joAssociationLookupTimer = setTimeout(triggerJoVerification, 1000);
+      });      
+
+/**
+ * Finds the target JO# in Column A of the Delivery tab, overwrites Column N to '000000',
+ * and saves the multi-payment exception to your master audit log.
+ */
+function handleGcashAssociation(gcashRef, joNum) {
+  try {
+    if (!gcashRef || !joNum) {
+      return ContentService.createTextOutput(JSON.stringify({ result: "error", message: "Missing required inputs." })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var ss = SpreadsheetApp.openById("1j6_dUObTmC479ol5FNQ-JjozhBVbQXM6ZMM5Vf96MO8");
+    var sheet = ss.getSheetByName("Delivery");
+    
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({ result: "error", message: "Sheet tab 'Delivery' not found." })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var data = sheet.getDataRange().getValues();
+    var targetJo = Number(joNum.trim());
+    var rowUpdated = false;
+    
+    // 1. Scan Column A (index 0) for the target JO number
+    for (var i = 1; i < data.length; i++) {
+      var rowJoNum = Number(data[i][0]);
+      
+      if (!isNaN(rowJoNum) && rowJoNum === targetJo) {
+        // Column N is index 13 (A=1, N=14 in sheet terms)
+        // Overwrite cell value to '000000' to signify Delivered but Unpaid/Reset
+        sheet.getRange(i + 1, 14).setValue("000000");
+        rowUpdated = true;
+        break; // Stop loop once match is updated
+      }
+    }
+    
+    if (!rowUpdated) {
+      return ContentService.createTextOutput(JSON.stringify({ result: "error", message: "Target JO# not found in Delivery sheet logs." })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // 2. LOG THE ASSOCIATION EVENT SEPARATELY (Optional tracking tab safety valve)
+    // This logs the original GCash reference mapping rule so "Sir Will" can audit it later.
+    var externalSs = SpreadsheetApp.openById("1PHoO3BshSXkv7ExXPiT3DfpTLADzCbSp3Aa0qkZT8W0");
+    var mappingSheet = externalSs.getSheetByName("GcashMultiMapping");
+    if (!mappingSheet) {
+      mappingSheet = externalSs.insertSheet("GcashMultiMapping");
+      mappingSheet.appendRow(["Timestamp", "Original GCash Ref#", "Associated JO#", "Status"]);
+    }
+    var timestamp = Utilities.formatDate(new Date(), "GMT+8", "MM/dd/yy HH:mm:ss");
+    mappingSheet.appendRow([timestamp, gcashRef, joNum, "Reset to Unpaid (000000)"]);
+
+    return ContentService.createTextOutput(JSON.stringify({ result: "success", message: "JO updated to 000000 and mapped successfully!" }))
+                         .setMimeType(ContentService.MimeType.JSON);
+                         
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ result: "error", message: err.message })).setMimeType(ContentService.MimeType.JSON);
+  }
+}      
+    </script>
+  </body>
 </html>
