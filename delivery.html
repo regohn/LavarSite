@@ -179,6 +179,8 @@
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="Others" value="Other Online Payment">
                     <label class="form-check-label" for="Others">Other Online Payment</label>
+                    <input type="text" id="otherOnlineInfo" name="otherOnlineInfo" placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />
+                    <span id="otherOnlineLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="UnPaid" value="Unpaid">
@@ -407,6 +409,9 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
         document.getElementById("JOR").value = "";
         document.getElementById("CustomerName").value = "";
         document.getElementById("gcashInfo").style.display = "none";
+        document.getElementById("otherOnlineInfo").style.display = "none";
+        document.getElementById("gcashLookupMsg").innerText = "";
+        document.getElementById("otherOnlineLookupMsg").innerText = "";
         document.getElementById("mainsubmitbutton").disabled = false;
         document.getElementById("mainsubmitbutton").innerText = "Submit";
         JOsearchField.value = "";
@@ -482,25 +487,44 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
       }
 
       /**
-       * Visibility toggle for GCash reference field
+       * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
        */
-      function toggleGcashInput() {
+      function togglePaymentRefInputs() {
         const gcashRadio = document.getElementById("G-Cash");
+        const othersRadio = document.getElementById("Others");
         const gcashInfo = document.getElementById("gcashInfo");
+        const otherOnlineInfo = document.getElementById("otherOnlineInfo");
+        const gcashLookupMsg = document.getElementById("gcashLookupMsg");
+        const otherOnlineLookupMsg = document.getElementById("otherOnlineLookupMsg");
+
         if (gcashRadio && gcashRadio.checked) {
           gcashInfo.style.display = "inline-block";
           gcashInfo.required = true;
+          otherOnlineInfo.style.display = "none";
+          otherOnlineInfo.value = "";
+          otherOnlineInfo.required = false;
+          otherOnlineLookupMsg.innerText = "";
+        } else if (othersRadio && othersRadio.checked) {
+          otherOnlineInfo.style.display = "inline-block";
+          otherOnlineInfo.required = true;
+          gcashInfo.style.display = "none";
+          gcashInfo.value = "";
+          gcashInfo.required = false;
+          gcashLookupMsg.innerText = "";
         } else {
-          if (gcashInfo) {
-            gcashInfo.style.display = "none";
-            gcashInfo.value = "";
-            gcashInfo.required = false;
-          }
+          gcashInfo.style.display = "none";
+          gcashInfo.value = "";
+          gcashInfo.required = false;
+          gcashLookupMsg.innerText = "";
+          otherOnlineInfo.style.display = "none";
+          otherOnlineInfo.value = "";
+          otherOnlineInfo.required = false;
+          otherOnlineLookupMsg.innerText = "";
         }
       }
 
       document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
-        radio.addEventListener('change', toggleGcashInput);
+        radio.addEventListener('change', togglePaymentRefInputs);
       });
 
       function readFileAsBase64(file) {
@@ -525,10 +549,14 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
         }
 
         const paymentType = document.querySelector('input[name="PaymentType"]:checked')?.value;
-        const gcashInfo = document.getElementById("gcashInfo");
-        if (paymentType === "G-Cash" && gcashInfo.style.display !== "none") {
-          if (!/^\d{6}$/.test(gcashInfo.value.trim())) {
-            swal("Invalid G-Cash", "Reference # must be exactly 6 digits.", "warning");
+        const paymentRefFields = {
+          "G-Cash": document.getElementById("gcashInfo"),
+          "Other Online Payment": document.getElementById("otherOnlineInfo")
+        };
+        const paymentRefField = paymentRefFields[paymentType];
+        if (paymentRefField && paymentRefField.style.display !== "none") {
+          if (!/^\d{6}$/.test(paymentRefField.value.trim())) {
+            swal("Invalid Reference #", "Reference # must be exactly 6 digits.", "warning");
             return;
           }
         }
@@ -553,6 +581,11 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
         try {
           const resolvedFiles = await Promise.all(filePromises);
           resolvedFiles.forEach(f => data[f.key] = f.value);
+
+          if (paymentType === "Other Online Payment") {
+            data.gcashInfo = document.getElementById("otherOnlineInfo").value.trim();
+            delete data.otherOnlineInfo;
+          }
           
           const dropdownValue = joDropdown.value;
           if (dropdownValue === JOR) {
@@ -606,47 +639,6 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
         }
       }
 
-      // --- DATABASE CONFIGURATION FOR REFS ---
-      const dbName = "LavarDB";
-      const storeName = "GcashRefs";
-
-      async function preloadGcashData() {
-        try {
-          console.log("Fetching Gcash data...");
-          const response = await fetch(`${requestScriptURL}?action=getGcash`);
-          const dataList = await response.json();
-
-          const request = indexedDB.open(dbName, 1);
-
-          request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(storeName)) {
-              db.createObjectStore(storeName, { keyPath: "id", autoIncrement: true });
-            }
-          };
-
-          request.onsuccess = (event) => {
-            const db = event.target.result;
-            const transaction = db.transaction(storeName, "readwrite");
-            const store = transaction.objectStore(storeName);
-            
-            store.clear().onsuccess = () => {
-              dataList.forEach(item => {
-                store.add({ 
-                  reference: item.ref, 
-                  extra1: item.colAF, 
-                  extra2: item.colAG, 
-                  extra3: item.colAH,
-                  timestamp: new Date().toISOString() 
-                });
-              });
-              console.log(`Preload Successful: ${dataList.length} rows stored.`);
-            };
-          };
-        } catch (err) {
-          console.error("Preload Failed:", err);
-        }
-      }
 
       // --- APP ENTRY POINT ---
       window.onload = function() {
@@ -657,72 +649,93 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
           loadJODropdown(manilaDate);
         }
         
-        preloadGcashData();
         setInterval(processQueue, 5000); 
       }
 
-      // Main upper form GCash available checker loop
-      let gcashLookupTimer;
-      document.getElementById('gcashInfo').addEventListener('input', function() {
-        const userInput = this.value.trim();
-        const msgElement = document.getElementById('gcashLookupMsg');
-        
-        const submitBtn = Array.from(document.querySelectorAll('button')).find(btn => 
-          btn.textContent.trim() === 'Submit' || btn.value === 'Submit'
-        );
-        
-        clearTimeout(gcashLookupTimer);
-        msgElement.innerText = "";
+      // Main upper form payment ref duplicate checker (G-Cash & Other Online Payment)
+      // Uses a live lookup against the Apps Script backend so results are always current,
+      // instead of the old IndexedDB cache which could miss newly added entries.
+      const paymentRefLookupTimers = {};
 
-        if (userInput.length === 0) {
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = "1";
-            submitBtn.style.cursor = "pointer";
+      function setupPaymentRefValidation(inputId, msgElementId) {
+        document.getElementById(inputId).addEventListener('input', function() {
+          const userInput = this.value.trim();
+          const msgElement = document.getElementById(msgElementId);
+          const submitBtn = document.getElementById("mainsubmitbutton");
+
+          clearTimeout(paymentRefLookupTimers[inputId]);
+          msgElement.innerText = "";
+
+          if (userInput.length === 0) {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.style.opacity = "1";
+              submitBtn.style.cursor = "pointer";
+            }
+            return;
           }
-          return;
-        }
 
-        gcashLookupTimer = setTimeout(() => {
-          const request = indexedDB.open(dbName, 1);
+          // Only fire lookup once exactly 6 digits are entered
+          if (!/^\d{6}$/.test(userInput)) return;
 
-          request.onsuccess = (event) => {
-            const db = event.target.result;
-            const transaction = db.transaction(storeName, "readonly");
-            const store = transaction.objectStore(storeName);
-            const getAllRequest = store.getAll();
+          paymentRefLookupTimers[inputId] = setTimeout(async () => {
+            msgElement.style.color = "#007bff";
+            msgElement.innerText = "Checking reference number...";
 
-            getAllRequest.onsuccess = () => {
-              const records = getAllRequest.result;
-              const match = records.find(item => item.reference === userInput);
+            try {
+              const response = await fetch(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(userInput)}`);
+              const resultData = await response.json();
 
-              if (match) {
-                msgElement.style.color = "#d9534f"; 
-                msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.extra2} | ${match.extra3} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
-                
+              if (resultData.result === "success") {
+                // Found in Delivery sheet Column N — already used
+                const match = resultData.data[0];
+                msgElement.style.color = "#d9534f";
+                msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.jor} | ${match.customerName} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
+
                 if (submitBtn) {
                   submitBtn.disabled = true;
                   submitBtn.style.opacity = "0.5";
                   submitBtn.style.cursor = "not-allowed";
                 }
-              } else {
+              } else if (resultData.result === "not_found") {
+                // Not in Delivery sheet — safe to use
                 msgElement.style.color = "#28a745";
                 msgElement.innerText = "✅ Reference number is available";
-                
+
                 if (submitBtn) {
                   submitBtn.disabled = false;
                   submitBtn.style.opacity = "1";
                   submitBtn.style.cursor = "pointer";
                 }
-                
-                setTimeout(() => { 
-                  if(msgElement.innerText.includes("available")) msgElement.innerText = ""; 
+
+                setTimeout(() => {
+                  if (msgElement.innerText.includes("available")) msgElement.innerText = "";
                 }, 3000);
+              } else {
+                msgElement.style.color = "#d9534f";
+                msgElement.innerText = "⚠️ Could not verify. Proceed with caution.";
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.style.opacity = "1";
+                  submitBtn.style.cursor = "pointer";
+                }
               }
-            };
-          };
-        }, 1000);
-      });
+            } catch (err) {
+              console.error("Ref lookup error:", err);
+              msgElement.style.color = "#d9534f";
+              msgElement.innerText = "📡 Could not connect to server. Proceed with caution.";
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+                submitBtn.style.cursor = "pointer";
+              }
+            }
+          }, 1000);
+        });
+      }
+
+      setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg');
+      setupPaymentRefValidation('otherOnlineInfo', 'otherOnlineLookupMsg');
 
       /**
        * NEW ASSIGNMENTS: Triggers the AJAX query to the Apps Script backend to verify payment data
