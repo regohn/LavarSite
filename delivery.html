@@ -179,7 +179,7 @@
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="Others" value="Other Online Payment">
                     <label class="form-check-label" for="Others">Other Online Payment</label>
-                    <input type="text" id="otherOnlineInfo" name="otherOnlineInfo" placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />
+                    <input type="text" id="otherOnlineInfo" name="otherOnlineInfo" placeholder="Enter Reference# (letters/numbers)" style="display:none; width:150px; margin-left:10px;" />
                     <span id="otherOnlineLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
                   </div>
                   <div class="form-check">
@@ -549,14 +549,22 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
         }
 
         const paymentType = document.querySelector('input[name="PaymentType"]:checked')?.value;
-        const paymentRefFields = {
-          "G-Cash": document.getElementById("gcashInfo"),
-          "Other Online Payment": document.getElementById("otherOnlineInfo")
+        const paymentRefValidators = {
+          "G-Cash": {
+            field: document.getElementById("gcashInfo"),
+            pattern: /^\d{6}$/,
+            msg: "G-Cash Reference # must be exactly 6 digits."
+          },
+          "Other Online Payment": {
+            field: document.getElementById("otherOnlineInfo"),
+            pattern: /^[A-Za-z0-9]{4,20}$/,
+            msg: "Reference # must be 4–20 letters/numbers."
+          }
         };
-        const paymentRefField = paymentRefFields[paymentType];
-        if (paymentRefField && paymentRefField.style.display !== "none") {
-          if (!/^\d{6}$/.test(paymentRefField.value.trim())) {
-            swal("Invalid Reference #", "Reference # must be exactly 6 digits.", "warning");
+        const validator = paymentRefValidators[paymentType];
+        if (validator && validator.field.style.display !== "none") {
+          if (!validator.pattern.test(validator.field.value.trim())) {
+            swal("Invalid Reference #", validator.msg, "warning");
             return;
           }
         }
@@ -657,7 +665,10 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
       // instead of the old IndexedDB cache which could miss newly added entries.
       const paymentRefLookupTimers = {};
 
-      function setupPaymentRefValidation(inputId, msgElementId) {
+      function setupPaymentRefValidation(inputId, msgElementId, mode) {
+        // mode: 'numeric' (G-Cash, exactly 6 digits) or 'alphanumeric' (Other Online, 4-20 chars)
+        const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,20}$/ : /^\d{6}$/;
+
         document.getElementById(inputId).addEventListener('input', function() {
           const userInput = this.value.trim();
           const msgElement = document.getElementById(msgElementId);
@@ -675,8 +686,8 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
             return;
           }
 
-          // Only fire lookup once exactly 6 digits are entered
-          if (!/^\d{6}$/.test(userInput)) return;
+          // Only fire lookup once the pattern is fully matched
+          if (!pattern.test(userInput)) return;
 
           paymentRefLookupTimers[inputId] = setTimeout(async () => {
             msgElement.style.color = "#007bff";
@@ -732,8 +743,8 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
         });
       }
 
-      setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg');
-      setupPaymentRefValidation('otherOnlineInfo', 'otherOnlineLookupMsg');
+      setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'numeric');
+      setupPaymentRefValidation('otherOnlineInfo', 'otherOnlineLookupMsg', 'alphanumeric');
 
       /**
        * NEW ASSIGNMENTS: Triggers the AJAX query to the Apps Script backend to verify payment data
