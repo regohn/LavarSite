@@ -172,15 +172,13 @@
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="G-Cash" value="G-Cash">
-                    <label class="form-check-label" for="G-Cash">G-Cash</label>
-                    <input type="text" id="gcashInfo" name="gcashInfo" placeholder="Enter 6-Digit Ref#" style="display:none; width:150px; margin-left:10px;" />
+                    <label class="form-check-label" for="G-Cash">G-Cash / Other Online Banking</label>
+                    
+                    <input type="text" id="gcashInfo" name="gcashInfo" readonly style="display:none; width:140px; margin-left:10px; background-color: #e9ecef; border: 1px solid #ced4da; color: #495057;" />
+                    
+                    <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*" capture="environment" disabled />
+                    
                     <span id="gcashLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="PaymentType" id="Others" value="Other Online Payment">
-                    <label class="form-check-label" for="Others">Other Online Payment</label>
-                    <input type="text" id="otherOnlineInfo" name="otherOnlineInfo" placeholder="Enter Reference# (letters/numbers)" style="display:none; width:150px; margin-left:10px;" />
-                    <span id="otherOnlineLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="UnPaid" value="Unpaid">
@@ -207,10 +205,10 @@
             ></textarea>
           </div>
 
-          <div class="form-group mt-2">
-            <label for="media">Upload First Picture</label>
-            <input class="form-control-file" type="file" name="media" id="media" />
-          </div>
+        <div class="form-group mt-2" id="originalMediaRow">
+          <label for="media">Upload First Picture</label>
+          <input class="form-control-file" type="file" name="media" id="media" />
+        </div>
 
           <div class="form-group mt-2">
             <label for="media2">Upload Second Picture</label>
@@ -401,20 +399,39 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
       });
 
       /**
+/**
        * Reset form state
        */
-      function clearForm() {
+/**
+       * Reset form state
+       */
+function clearForm() {
         form.reset();
         JOresult.innerHTML = "";
         document.getElementById("JOR").value = "";
         document.getElementById("CustomerName").value = "";
         document.getElementById("gcashInfo").style.display = "none";
-        document.getElementById("otherOnlineInfo").style.display = "none";
         document.getElementById("gcashLookupMsg").innerText = "";
-        document.getElementById("otherOnlineLookupMsg").innerText = "";
         document.getElementById("mainsubmitbutton").disabled = false;
         document.getElementById("mainsubmitbutton").innerText = "Submit";
         JOsearchField.value = "";
+
+        // Crucial: Reset radio button value baseline configuration for fresh submissions
+        document.getElementById("G-Cash").value = "G-Cash";
+
+        // Reset dynamic visibility states back to standard defaults
+        const gcashMedia = document.getElementById("gcashMedia");
+        const originalMediaRow = document.getElementById("originalMediaRow");
+        const originalMediaInput = document.getElementById("media");
+
+        if (gcashMedia) {
+          gcashMedia.style.display = "none";
+          gcashMedia.disabled = true;
+        }
+        if (originalMediaRow && originalMediaInput) {
+          originalMediaRow.style.display = "block";
+          originalMediaInput.disabled = false;
+        }
       }
 
       /**
@@ -489,40 +506,89 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
       /**
        * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
        */
-      function togglePaymentRefInputs() {
+/**
+       * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
+       */
+/**
+       * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
+       */
+/**
+       * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
+       */
+function togglePaymentRefInputs() {
         const gcashRadio = document.getElementById("G-Cash");
-        const othersRadio = document.getElementById("Others");
         const gcashInfo = document.getElementById("gcashInfo");
-        const otherOnlineInfo = document.getElementById("otherOnlineInfo");
         const gcashLookupMsg = document.getElementById("gcashLookupMsg");
-        const otherOnlineLookupMsg = document.getElementById("otherOnlineLookupMsg");
+
+        // Target file components
+        const gcashMedia = document.getElementById("gcashMedia");
+        const originalMediaRow = document.getElementById("originalMediaRow");
+        const originalMediaInput = document.getElementById("media");
 
         if (gcashRadio && gcashRadio.checked) {
           gcashInfo.style.display = "inline-block";
           gcashInfo.required = true;
-          otherOnlineInfo.style.display = "none";
-          otherOnlineInfo.value = "";
-          otherOnlineInfo.required = false;
-          otherOnlineLookupMsg.innerText = "";
-        } else if (othersRadio && othersRadio.checked) {
-          otherOnlineInfo.style.display = "inline-block";
-          otherOnlineInfo.required = true;
-          gcashInfo.style.display = "none";
-          gcashInfo.value = "";
-          gcashInfo.required = false;
-          gcashLookupMsg.innerText = "";
+
+          if (gcashMedia) {
+            gcashMedia.style.display = "inline-block";
+            gcashMedia.disabled = false;
+          }
+          if (originalMediaRow && originalMediaInput) {
+            originalMediaRow.style.display = "none";
+            originalMediaInput.disabled = true;
+          }
         } else {
+          // Reset baseline parameters when selecting away from payment forms
+          if (gcashRadio) gcashRadio.value = "G-Cash";
           gcashInfo.style.display = "none";
           gcashInfo.value = "";
           gcashInfo.required = false;
           gcashLookupMsg.innerText = "";
-          otherOnlineInfo.style.display = "none";
-          otherOnlineInfo.value = "";
-          otherOnlineInfo.required = false;
-          otherOnlineLookupMsg.innerText = "";
+
+          if (gcashMedia) {
+            gcashMedia.style.display = "none";
+            gcashMedia.disabled = true;
+            gcashMedia.value = "";
+          }
+          if (originalMediaRow && originalMediaInput) {
+            originalMediaRow.style.display = "block";
+            originalMediaInput.disabled = false;
+          }
         }
       }
 
+      /**
+       * Reset form state
+       */
+      function clearForm() {
+        form.reset();
+        JOresult.innerHTML = "";
+        document.getElementById("JOR").value = "";
+        document.getElementById("CustomerName").value = "";
+        document.getElementById("gcashInfo").style.display = "none";
+        document.getElementById("gcashLookupMsg").innerText = "";
+        document.getElementById("mainsubmitbutton").disabled = false;
+        document.getElementById("mainsubmitbutton").innerText = "Submit";
+        JOsearchField.value = "";
+
+        // Reset the classified radio value back to its default before next use
+        const gcashRadioReset = document.getElementById("G-Cash");
+        if (gcashRadioReset) gcashRadioReset.value = "G-Cash";
+
+        // Reset all file nodes
+        const gcashMedia = document.getElementById("gcashMedia");
+        const originalMediaRow = document.getElementById("originalMediaRow");
+        const originalMediaInput = document.getElementById("media");
+
+        if (gcashMedia) {
+          gcashMedia.style.display = "none";
+          gcashMedia.disabled = true;
+        }
+        if (originalMediaRow && originalMediaInput) {
+          originalMediaRow.style.display = "block";
+          originalMediaInput.disabled = false;
+        }
+      }
       document.querySelectorAll('input[name="PaymentType"]').forEach(radio => {
         radio.addEventListener('change', togglePaymentRefInputs);
       });
@@ -535,6 +601,89 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
           reader.readAsDataURL(file);
         });
       }
+
+// --- GEMINI 2.5 OCR AUTOMATION FOR DUAL ONLINE SCANNING & CLASSIFICATION ---
+      document.getElementById("gcashMedia").addEventListener("change", async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const gcashLookupMsg = document.getElementById("gcashLookupMsg");
+        const gcashInfoField = document.getElementById("gcashInfo");
+        const submitBtn = document.getElementById("mainsubmitbutton");
+
+        gcashLookupMsg.style.color = "#007bff";
+        gcashLookupMsg.innerText = "⏳ Gemini AI is identifying and parsing receipt layout...";
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.style.opacity = "0.5";
+          submitBtn.innerText = "AI Processing...";
+        }
+
+        try {
+          const base64Data = await readFileAsBase64(file);
+          const mimeType = file.type || "image/jpeg";
+
+          // Routed through the secure Apps Script backend — key stays server-side in Script Properties
+          const payload = new URLSearchParams();
+          payload.append("action", "analyzeGcash");
+          payload.append("base64Data", base64Data);
+          payload.append("mimeType", mimeType);
+
+          const response = await fetch(scriptURL, {
+            method: "POST",
+            body: payload,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+          });
+
+          if (!response.ok) throw new Error("Backend connection error encountered.");
+
+          const parsedReceipt = await response.json();
+
+          if (parsedReceipt.error) {
+            throw new Error(parsedReceipt.error);
+          }
+
+          if (parsedReceipt && parsedReceipt.shortRefNo) {
+            gcashInfoField.value = parsedReceipt.shortRefNo;
+            
+            // DYNAMIC CLASSIFICATION: Remaps the radio element value before submission reads it
+            const classifiedType = parsedReceipt.paymentType || "G-Cash";
+            document.getElementById("G-Cash").value = classifiedType;
+            
+            gcashLookupMsg.style.color = "#28a745";
+            gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${parsedReceipt.shortRefNo} | Amt: ₱${parsedReceipt.amount}`;
+            
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.style.opacity = "1";
+              submitBtn.innerText = "Submit";
+            }
+
+            // Fire input duplicate checker instantly
+            gcashInfoField.dispatchEvent(new Event("input"));
+            
+          } else {
+            throw new Error("Failed to capture short transaction code pattern from the target photo.");
+          }
+
+        } catch (err) {
+          console.error("Gemini Extraction Failure Chain:", err);
+          
+          gcashLookupMsg.style.color = "#d9534f";
+          gcashLookupMsg.innerText = "❌ AI could not read the screenshot cleanly. Please re-upload or ensure the transaction image is clear.";
+          gcashInfoField.value = "";
+          document.getElementById("G-Cash").value = "G-Cash";
+          
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = "1";
+            submitBtn.innerText = "Submit";
+          }
+        }
+      });
+
+
+
 
       /**
        * Submission: Validates form and pushes to queue
@@ -555,8 +704,8 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
             pattern: /^\d{6}$/,
             msg: "G-Cash Reference # must be exactly 6 digits."
           },
-          "Other Online Payment": {
-            field: document.getElementById("otherOnlineInfo"),
+          "Other Online Banking": {
+            field: document.getElementById("gcashInfo"),
             pattern: /^[A-Za-z0-9]{4,20}$/,
             msg: "Reference # must be 4–20 letters/numbers."
           }
@@ -590,11 +739,6 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
           const resolvedFiles = await Promise.all(filePromises);
           resolvedFiles.forEach(f => data[f.key] = f.value);
 
-          if (paymentType === "Other Online Payment") {
-            data.gcashInfo = document.getElementById("otherOnlineInfo").value.trim();
-            delete data.otherOnlineInfo;
-          }
-          
           const dropdownValue = joDropdown.value;
           if (dropdownValue === JOR) {
             const optionToRemove = joDropdown.querySelector(`option[value="${JOR}"]`);
@@ -743,8 +887,7 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
         });
       }
 
-      setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'numeric');
-      setupPaymentRefValidation('otherOnlineInfo', 'otherOnlineLookupMsg', 'alphanumeric');
+      setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
       /**
        * NEW ASSIGNMENTS: Triggers the AJAX query to the Apps Script backend to verify payment data
