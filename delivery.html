@@ -178,6 +178,7 @@
 
                     <input type="hidden" id="GcashTransAmount" name="GcashTransAmount" value="" />
                     <input type="hidden" id="TransactionDate" name="TransactionDate" value="" />
+                    <input type="hidden" id="AmountMismatchFlag" name="AmountMismatchFlag" value="" />
                     
                     <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*" capture="environment" disabled />
                     
@@ -276,6 +277,10 @@ const requestScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq
 
 // --- NEW ISOLATED VARIABLE FOR BOTTOM LOOKUP ONLY ---
 const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";      
+
+// Tracks the currently loaded JO's total amount so it can be cross-checked
+// against the scanned payment amount from a GCash/bank receipt.
+let currentJOAmount = null;
       // Element references
       const form = document.getElementById("submit-to-google-sheet");
       const JOsearchField = document.getElementById("JOsearch");
@@ -387,6 +392,9 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
 
           document.getElementById("JOR").value = data.JO;
           document.getElementById("CustomerName").value = data.value;
+
+          // Parse the JO's total amount for later cross-checking against scanned receipts
+          currentJOAmount = parseFloat(String(data.colK).replace(/[^0-9.]/g, "")) || null;
           
           if (data.DeliveryStaff && data.DeliveryStaff.trim()) {
             document.getElementById("mainsubmitbutton").innerText = "Update";
@@ -579,6 +587,8 @@ function togglePaymentRefInputs() {
         if (gcashRadioReset) gcashRadioReset.value = "G-Cash";
         document.getElementById("GcashTransAmount").value = "";
         document.getElementById("TransactionDate").value = "";
+        document.getElementById("AmountMismatchFlag").value = "";
+        currentJOAmount = null;
 
         // Reset all file nodes
         const gcashMedia = document.getElementById("gcashMedia");
@@ -675,6 +685,43 @@ function togglePaymentRefInputs() {
         throw new Error(lastErrorMsg);
       }
 
+      // Cross-checks a scanned receipt amount against the currently loaded JO's total
+      // amount. Never blocks submission — just flags the row for manual audit and
+      // gives the user a heads-up that it'll be reported.
+      // The marker text always starts with a fixed keyword (UNDERPAID / OVERPAID) so
+      // it can be found with a simple XLOOKUP/SEARCH formula, e.g.:
+      //   =XLOOKUP("UNDERPAID*", L2:L1000, L2:L1000, "", 2)   (wildcard match mode)
+      //   or =FILTER(A2:L1000, ISNUMBER(SEARCH("UNDERPAID", L2:L1000)))
+      function evaluateAmountMismatch(scannedAmount) {
+        const mismatchField = document.getElementById("AmountMismatchFlag");
+        const scanned = parseFloat(scannedAmount);
+
+        if (!currentJOAmount || isNaN(scanned)) {
+          mismatchField.value = "";
+          return false;
+        }
+
+        const isMismatch = Math.abs(scanned - currentJOAmount) > 0.01;
+
+        if (isMismatch) {
+          const isUnderpaid = scanned < currentJOAmount;
+          const tag = isUnderpaid ? "UNDERPAID" : "OVERPAID";
+          const diff = Math.abs(scanned - currentJOAmount).toFixed(2);
+
+          mismatchField.value = `${tag}: Scanned \u20b1${scanned.toFixed(2)} vs JO \u20b1${currentJOAmount.toFixed(2)} (${isUnderpaid ? "Short" : "Excess"} \u20b1${diff})`;
+
+          swal(
+            "Amount Mismatch",
+            `The scanned payment (\u20b1${scanned.toFixed(2)}) is ${isUnderpaid ? "LESS than" : "MORE than"} this JO's total amount (\u20b1${currentJOAmount.toFixed(2)}) \u2014 ${isUnderpaid ? "short" : "excess"} by \u20b1${diff}. You may still submit \u2014 this will be flagged and reported to Sir Will for review.`,
+            "warning"
+          );
+        } else {
+          mismatchField.value = "";
+        }
+
+        return isMismatch;
+      }
+
 // --- GEMINI 2.5 OCR AUTOMATION FOR DUAL ONLINE SCANNING & CLASSIFICATION ---
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
@@ -712,9 +759,15 @@ function togglePaymentRefInputs() {
             // Save the AI-read amount and transaction date so they get submitted with the form
             document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
             document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
+
+            // Cross-check the scanned amount against the JO's total amount
+            const amountMismatched = evaluateAmountMismatch(parsedReceipt.amount);
             
             gcashLookupMsg.style.color = "#28a745";
             gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${parsedReceipt.shortRefNo} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
+            if (amountMismatched) {
+              gcashLookupMsg.innerText += " ⚠️ Amount does not match JO — flagged for review.";
+            }
             
             if (submitBtn) {
               submitBtn.disabled = false;
@@ -739,8 +792,14 @@ function togglePaymentRefInputs() {
             document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
             document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
 
+            // Cross-check the scanned amount against the JO's total amount
+            const amountMismatched = evaluateAmountMismatch(parsedReceipt.amount);
+
             gcashLookupMsg.style.color = "#e0a800";
             gcashLookupMsg.innerText = "⚠️ No reference number was visible in this screenshot. You may still submit — this will be flagged (" + placeholder + ") for manual verification.";
+            if (amountMismatched) {
+              gcashLookupMsg.innerText += " Amount also does not match JO — flagged for review.";
+            }
 
             if (submitBtn) {
               submitBtn.disabled = false;
@@ -758,6 +817,7 @@ function togglePaymentRefInputs() {
           document.getElementById("G-Cash").value = "G-Cash";
           document.getElementById("GcashTransAmount").value = "";
           document.getElementById("TransactionDate").value = "";
+          document.getElementById("AmountMismatchFlag").value = "";
           
           if (submitBtn) {
             submitBtn.disabled = false;
