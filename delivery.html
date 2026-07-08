@@ -183,7 +183,6 @@
                     <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*" capture="environment" disabled />
                     
                     <span id="gcashLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
-                    <span id="amountMismatchMsg" style="display:block; margin-top:3px; font-size: 0.85em; font-weight:bold;"></span>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="UnPaid" value="Unpaid">
@@ -589,7 +588,6 @@ function togglePaymentRefInputs() {
         document.getElementById("GcashTransAmount").value = "";
         document.getElementById("TransactionDate").value = "";
         document.getElementById("AmountMismatchFlag").value = "";
-        document.getElementById("amountMismatchMsg").innerText = "";
         currentJOAmount = null;
 
         // Reset all file nodes
@@ -689,20 +687,17 @@ function togglePaymentRefInputs() {
 
       // Cross-checks a scanned receipt amount against the currently loaded JO's total
       // amount. Never blocks submission — just flags the row for manual audit and
-      // shows an inline warning (own line, so it isn't overwritten by the duplicate
-      // reference checker that runs a moment later on the same message area).
+      // gives the user a heads-up that it'll be reported.
       // The marker text always starts with a fixed keyword (UNDERPAID / OVERPAID) so
       // it can be found with a simple XLOOKUP/SEARCH formula, e.g.:
       //   =XLOOKUP("UNDERPAID*", L2:L1000, L2:L1000, "", 2)   (wildcard match mode)
       //   or =FILTER(A2:L1000, ISNUMBER(SEARCH("UNDERPAID", L2:L1000)))
       function evaluateAmountMismatch(scannedAmount) {
         const mismatchField = document.getElementById("AmountMismatchFlag");
-        const mismatchMsgEl = document.getElementById("amountMismatchMsg");
         const scanned = parseFloat(scannedAmount);
 
         if (!currentJOAmount || isNaN(scanned)) {
           mismatchField.value = "";
-          mismatchMsgEl.innerText = "";
           return false;
         }
 
@@ -715,11 +710,13 @@ function togglePaymentRefInputs() {
 
           mismatchField.value = `${tag}: Scanned \u20b1${scanned.toFixed(2)} vs JO \u20b1${currentJOAmount.toFixed(2)} (${isUnderpaid ? "Short" : "Excess"} \u20b1${diff})`;
 
-          mismatchMsgEl.style.color = "#d9534f";
-          mismatchMsgEl.innerText = `\u26a0\ufe0f ${tag} by \u20b1${diff} \u2014 scanned \u20b1${scanned.toFixed(2)} vs JO total \u20b1${currentJOAmount.toFixed(2)}. Still submittable, but this will be flagged and reported to Sir Will.`;
+          swal(
+            "Amount Mismatch",
+            `The scanned payment (\u20b1${scanned.toFixed(2)}) is ${isUnderpaid ? "LESS than" : "MORE than"} this JO's total amount (\u20b1${currentJOAmount.toFixed(2)}) \u2014 ${isUnderpaid ? "short" : "excess"} by \u20b1${diff}. You may still submit \u2014 this will be flagged and reported to Sir Will for review.`,
+            "warning"
+          );
         } else {
           mismatchField.value = "";
-          mismatchMsgEl.innerText = "";
         }
 
         return isMismatch;
@@ -764,10 +761,13 @@ function togglePaymentRefInputs() {
             document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
 
             // Cross-check the scanned amount against the JO's total amount
-            evaluateAmountMismatch(parsedReceipt.amount);
+            const amountMismatched = evaluateAmountMismatch(parsedReceipt.amount);
             
             gcashLookupMsg.style.color = "#28a745";
             gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${parsedReceipt.shortRefNo} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
+            if (amountMismatched) {
+              gcashLookupMsg.innerText += " ⚠️ Amount does not match JO — flagged for review.";
+            }
             
             if (submitBtn) {
               submitBtn.disabled = false;
@@ -793,10 +793,13 @@ function togglePaymentRefInputs() {
             document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
 
             // Cross-check the scanned amount against the JO's total amount
-            evaluateAmountMismatch(parsedReceipt.amount);
+            const amountMismatched = evaluateAmountMismatch(parsedReceipt.amount);
 
             gcashLookupMsg.style.color = "#e0a800";
             gcashLookupMsg.innerText = "⚠️ No reference number was visible in this screenshot. You may still submit — this will be flagged (" + placeholder + ") for manual verification.";
+            if (amountMismatched) {
+              gcashLookupMsg.innerText += " Amount also does not match JO — flagged for review.";
+            }
 
             if (submitBtn) {
               submitBtn.disabled = false;
@@ -815,7 +818,6 @@ function togglePaymentRefInputs() {
           document.getElementById("GcashTransAmount").value = "";
           document.getElementById("TransactionDate").value = "";
           document.getElementById("AmountMismatchFlag").value = "";
-          document.getElementById("amountMismatchMsg").innerText = "";
           
           if (submitBtn) {
             submitBtn.disabled = false;
