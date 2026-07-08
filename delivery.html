@@ -607,6 +607,74 @@ function togglePaymentRefInputs() {
         });
       }
 
+      // Resizes/compresses a photo client-side before sending to the backend.
+      // Camera photos (3000px+, 1-5MB) slow the round trip and increase timeout risk;
+      // 1600px @ 0.85 JPEG quality is still plenty sharp for receipt text OCR.
+      function compressImageToBase64(file, maxDimension = 1600, quality = 0.85) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              let { width, height } = img;
+              if (width > height && width > maxDimension) {
+                height = Math.round(height * (maxDimension / width));
+                width = maxDimension;
+              } else if (height >= width && height > maxDimension) {
+                width = Math.round(width * (maxDimension / height));
+                height = maxDimension;
+              }
+              const canvas = document.createElement("canvas");
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL("image/jpeg", quality).split(",")[1]);
+            };
+            img.onerror = () => reject(new Error("Could not load the image for compression."));
+            img.src = e.target.result;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // Calls the backend OCR endpoint with automatic retry + exponential backoff.
+      // Covers transient network blips, GAS cold starts, and Gemini rate limits/hiccups
+      // without the user having to notice or manually re-upload.
+      async function analyzeGcashWithRetry(base64Data, mimeType, onAttempt, maxRetries = 3) {
+        let lastErrorMsg = "Unknown error";
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          if (onAttempt) onAttempt(attempt, maxRetries);
+          try {
+            const payload = new URLSearchParams();
+            payload.append("action", "analyzeGcash");
+            payload.append("base64Data", base64Data);
+            payload.append("mimeType", mimeType);
+
+            const response = await fetch(scriptURL, {
+              method: "POST",
+              body: payload,
+              headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            });
+
+            if (!response.ok) throw new Error(`Backend responded with status ${response.status}.`);
+
+            const parsedReceipt = await response.json();
+            if (parsedReceipt.error) throw new Error(parsedReceipt.error);
+
+            return parsedReceipt;
+          } catch (err) {
+            lastErrorMsg = err.message;
+            console.warn(`Gemini scan attempt ${attempt}/${maxRetries} failed:`, err.message);
+            if (attempt < maxRetries) {
+              await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+            }
+          }
+        }
+        throw new Error(lastErrorMsg);
+      }
+
 // --- GEMINI 2.5 OCR AUTOMATION FOR DUAL ONLINE SCANNING & CLASSIFICATION ---
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
@@ -625,28 +693,14 @@ function togglePaymentRefInputs() {
         }
 
         try {
-          const base64Data = await readFileAsBase64(file);
-          const mimeType = file.type || "image/jpeg";
+          const base64Data = await compressImageToBase64(file);
+          const mimeType = "image/jpeg"; // canvas output is always JPEG regardless of source format
 
-          // Routed through the secure Apps Script backend — key stays server-side in Script Properties
-          const payload = new URLSearchParams();
-          payload.append("action", "analyzeGcash");
-          payload.append("base64Data", base64Data);
-          payload.append("mimeType", mimeType);
-
-          const response = await fetch(scriptURL, {
-            method: "POST",
-            body: payload,
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
-          });
-
-          if (!response.ok) throw new Error("Backend connection error encountered.");
-
-          const parsedReceipt = await response.json();
-
-          if (parsedReceipt.error) {
-            throw new Error(parsedReceipt.error);
-          }
+          const parsedReceipt = await analyzeGcashWithRetry(base64Data, mimeType, (attempt, max) => {
+            gcashLookupMsg.innerText = attempt === 1
+              ? "⏳ Gemini AI is identifying and parsing receipt layout..."
+              : `⏳ Retry ${attempt}/${max}: re-attempting scan...`;
+          }, 3);
 
           if (parsedReceipt && parsedReceipt.shortRefNo) {
             gcashInfoField.value = parsedReceipt.shortRefNo;
@@ -672,14 +726,14 @@ function togglePaymentRefInputs() {
             gcashInfoField.dispatchEvent(new Event("input"));
             
           } else {
-            throw new Error("Failed to capture short transaction code pattern from the target photo.");
+            throw new Error("No reference number was visible in this screenshot. Make sure the 'Transaction details' / 'Reference No.' section is expanded and legible before capturing, then re-upload.");
           }
 
         } catch (err) {
           console.error("Gemini Extraction Failure Chain:", err);
           
           gcashLookupMsg.style.color = "#d9534f";
-          gcashLookupMsg.innerText = "❌ AI could not read the screenshot cleanly. Please re-upload or ensure the transaction image is clear.";
+          gcashLookupMsg.innerText = "❌ " + (err.message || "AI could not read the screenshot cleanly. Please re-upload or ensure the transaction image is clear.");
           gcashInfoField.value = "";
           document.getElementById("G-Cash").value = "G-Cash";
           document.getElementById("GcashTransAmount").value = "";
