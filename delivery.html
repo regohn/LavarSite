@@ -726,7 +726,27 @@ function togglePaymentRefInputs() {
             gcashInfoField.dispatchEvent(new Event("input"));
             
           } else {
-            throw new Error("No reference number was visible in this screenshot. Make sure the 'Transaction details' / 'Reference No.' section is expanded and legible before capturing, then re-upload.");
+            // No reference number was found on the receipt — don't block submission.
+            // Tag it with a unique placeholder (contains a hyphen, so it deliberately
+            // fails the strict alnum pattern and skips the duplicate-lookup fetch below)
+            // so it's obviously flagged for manual review in the sheet instead of silently
+            // colliding with a real reference number.
+            const placeholder = "NOREF-" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+            gcashInfoField.value = placeholder;
+
+            const classifiedType = parsedReceipt.paymentType || "G-Cash";
+            document.getElementById("G-Cash").value = classifiedType;
+            document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
+            document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
+
+            gcashLookupMsg.style.color = "#e0a800";
+            gcashLookupMsg.innerText = "⚠️ No reference number was visible in this screenshot. You may still submit — this will be flagged (" + placeholder + ") for manual verification.";
+
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.style.opacity = "1";
+              submitBtn.innerText = "Submit";
+            }
           }
 
         } catch (err) {
@@ -777,7 +797,9 @@ function togglePaymentRefInputs() {
         };
         const validator = paymentRefValidators[paymentType];
         if (validator && validator.field.style.display !== "none") {
-          if (!validator.pattern.test(validator.field.value.trim())) {
+          const refValue = validator.field.value.trim();
+          const isFlaggedNoRef = refValue.startsWith("NOREF-");
+          if (!isFlaggedNoRef && !validator.pattern.test(refValue)) {
             swal("Invalid Reference #", validator.msg, "warning");
             return;
           }
