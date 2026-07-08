@@ -175,6 +175,9 @@
                     <label class="form-check-label" for="G-Cash">G-Cash / Other Online Banking</label>
                     
                     <input type="text" id="gcashInfo" name="gcashInfo" readonly style="display:none; width:140px; margin-left:10px; background-color: #e9ecef; border: 1px solid #ced4da; color: #495057;" />
+
+                    <input type="hidden" id="GcashTransAmount" name="GcashTransAmount" value="" />
+                    <input type="hidden" id="TransactionDate" name="TransactionDate" value="" />
                     
                     <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*" capture="environment" disabled />
                     
@@ -574,6 +577,8 @@ function togglePaymentRefInputs() {
         // Reset the classified radio value back to its default before next use
         const gcashRadioReset = document.getElementById("G-Cash");
         if (gcashRadioReset) gcashRadioReset.value = "G-Cash";
+        document.getElementById("GcashTransAmount").value = "";
+        document.getElementById("TransactionDate").value = "";
 
         // Reset all file nodes
         const gcashMedia = document.getElementById("gcashMedia");
@@ -649,9 +654,13 @@ function togglePaymentRefInputs() {
             // DYNAMIC CLASSIFICATION: Remaps the radio element value before submission reads it
             const classifiedType = parsedReceipt.paymentType || "G-Cash";
             document.getElementById("G-Cash").value = classifiedType;
+
+            // Save the AI-read amount and transaction date so they get submitted with the form
+            document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
+            document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
             
             gcashLookupMsg.style.color = "#28a745";
-            gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${parsedReceipt.shortRefNo} | Amt: ₱${parsedReceipt.amount}`;
+            gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${parsedReceipt.shortRefNo} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
             
             if (submitBtn) {
               submitBtn.disabled = false;
@@ -673,6 +682,8 @@ function togglePaymentRefInputs() {
           gcashLookupMsg.innerText = "❌ AI could not read the screenshot cleanly. Please re-upload or ensure the transaction image is clear.";
           gcashInfoField.value = "";
           document.getElementById("G-Cash").value = "G-Cash";
+          document.getElementById("GcashTransAmount").value = "";
+          document.getElementById("TransactionDate").value = "";
           
           if (submitBtn) {
             submitBtn.disabled = false;
