@@ -180,7 +180,7 @@
                     <input type="hidden" id="TransactionDate" name="TransactionDate" value="" />
                     <input type="hidden" id="AmountMismatchFlag" name="AmountMismatchFlag" value="" />
                     
-                    <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*"  disabled />
+                    <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*" capture="environment" disabled />
                     
                     <span id="gcashLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
                     <span id="amountMismatchMsg" style="display:block; margin-top:3px; font-size: 0.85em; font-weight:bold;"></span>
@@ -651,6 +651,33 @@ function togglePaymentRefInputs() {
         });
       }
 
+      // Generic GET-and-parse-JSON helper with a timeout (so a hung request doesn't
+      // sit there indefinitely) and automatic retry with backoff. Used for every call
+      // to gcashLookupScriptURL (duplicate ref check, JO lookup, GCash-to-JO linking) —
+      // a single transient blip on any of those used to surface as a hard failure
+      // with no second attempt.
+      async function fetchJsonWithRetry(url, maxRetries = 3, timeoutMs = 12000) {
+        let lastError = new Error("Unknown error");
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          try {
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(timer);
+            if (!response.ok) throw new Error(`Server responded with status ${response.status}.`);
+            return await response.json();
+          } catch (err) {
+            clearTimeout(timer);
+            lastError = err.name === "AbortError" ? new Error("Request timed out.") : err;
+            console.warn(`Lookup attempt ${attempt}/${maxRetries} failed:`, lastError.message);
+            if (attempt < maxRetries) {
+              await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt - 1)));
+            }
+          }
+        }
+        throw lastError;
+      }
+
       // Calls the backend OCR endpoint with automatic retry + exponential backoff.
       // Covers transient network blips, GAS cold starts, and Gemini rate limits/hiccups
       // without the user having to notice or manually re-upload.
@@ -983,8 +1010,7 @@ function togglePaymentRefInputs() {
             msgElement.innerText = "Checking reference number...";
 
             try {
-              const response = await fetch(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(userInput)}`);
-              const resultData = await response.json();
+              const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(userInput)}`);
 
               if (resultData.result === "success") {
                 // Found in Delivery sheet Column N — already used
@@ -1021,7 +1047,7 @@ function togglePaymentRefInputs() {
             } catch (err) {
               console.error("Ref lookup error:", err);
               msgElement.style.color = "#d9534f";
-              msgElement.innerText = "📡 Could not connect to server. Proceed with caution.";
+              msgElement.innerText = "📡 Could not connect to server after 3 attempts. Proceed with caution.";
               if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.style.opacity = "1";
@@ -1056,8 +1082,7 @@ function togglePaymentRefInputs() {
         lookupStatusMsg.innerText = "Searching Delivery database...";
 
         try {
-          const response = await fetch(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(gcashRef)}`);
-          const resultData = await response.json();
+          const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(gcashRef)}`);
 
           if (resultData.result === "success") {
             lookupStatusMsg.style.color = "#28a745";
@@ -1158,8 +1183,7 @@ function togglePaymentRefInputs() {
         statusMsg.innerText = "Searching Delivery database for JO#...";
 
         try {
-          const response   = await fetch(`${gcashLookupScriptURL}?action=lookupJoDetails&joNum=${encodeURIComponent(joNum)}`);
-          const resultData = await response.json();
+          const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupJoDetails&joNum=${encodeURIComponent(joNum)}`);
 
           if (resultData.result === "success") {
             statusMsg.style.color = "#28a745";
@@ -1236,8 +1260,7 @@ function togglePaymentRefInputs() {
 
           try {
             const targetUrl  = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(gcashRef)}&lookupJoNum=${encodeURIComponent(joNum)}`;
-            const response   = await fetch(targetUrl, { method: "GET" });
-            const resultData = await response.json();
+            const resultData = await fetchJsonWithRetry(targetUrl);
 
             const statusEl = document.getElementById(`joLookupStatusMsg${slotIndex}`);
             if (resultData.result === "success") {
