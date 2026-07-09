@@ -288,6 +288,13 @@ let currentJOAmount = null;
 // Tracks the currently loaded JO's creation date (from the Combined master sheet)
 // so it can be cross-checked against the scanned receipt's transaction date.
 let currentJOCreatedDate = null;
+
+// Tracks an in-flight JO search as a Promise. If a user searches a JO# and
+// immediately uploads a screenshot before that search finishes, the OCR
+// handler awaits this instead of racing against it — otherwise currentJOAmount
+// / currentJOCreatedDate could still be null when the comparisons run, which
+// would silently skip the checks rather than actually validating anything.
+let joSearchInFlight = null;
       // Element references
       const form = document.getElementById("submit-to-google-sheet");
       const JOsearchField = document.getElementById("JOsearch");
@@ -339,10 +346,10 @@ let currentJOCreatedDate = null;
        */
       searchButton.addEventListener("click", async function () {
         const joNumber = JOsearchField.value.trim();
-        
+
         document.getElementById("DeliveryStaff").value = "";
         document.getElementById("Comments").value = "";
-        JOresult.innerHTML = ""; 
+        JOresult.innerHTML = "";
 
         if (!joNumber) {
           JOresult.innerHTML = "<span class='text-warning'>Please enter a JO number.</span>";
@@ -351,6 +358,14 @@ let currentJOCreatedDate = null;
 
         JOresult.innerHTML = "Searching...";
 
+        // Track this search as an in-flight promise so a concurrent screenshot
+        // scan can wait for it instead of racing against it (see joSearchInFlight above).
+        joSearchInFlight = performJOSearch(joNumber);
+        await joSearchInFlight;
+        joSearchInFlight = null;
+      });
+
+      async function performJOSearch(joNumber) {
         try {
           const response = await fetch(`${scriptURL}?JO=${joNumber}`);
           const data = await response.json();
@@ -380,11 +395,13 @@ let currentJOCreatedDate = null;
           });
 
           const formattedDeliveryDatetime = formatDateTime(data.DeliveryTimeStamp);
+          const formattedJOCreatedDate = data.JOCreatedDate ? formatDateTime(data.JOCreatedDate.replace(" ", "T")) : "N/A";
 
           JOresult.innerHTML = `
             <div style="font-size: 11px; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
               <br><strong>Customer Name:</strong> ${data.value} <br>
               <strong>JO#:</strong> ${data.JO} <br>
+              <strong>Created Date:</strong> ${formattedJOCreatedDate} <br>
               <strong>No. of Bags:</strong> ${data.colC} <br>
               <strong>Total Amount:</strong> ${data.colK} <br>
               <strong>Folder:</strong> ${data.colD} <br>
@@ -407,7 +424,7 @@ let currentJOCreatedDate = null;
           // for later cross-checking against the scanned receipt's transaction date
           currentJOCreatedDate = data.JOCreatedDate ? new Date(data.JOCreatedDate.replace(" ", "T")) : null;
           if (currentJOCreatedDate && isNaN(currentJOCreatedDate.getTime())) currentJOCreatedDate = null;
-          
+
           if (data.DeliveryStaff && data.DeliveryStaff.trim()) {
             document.getElementById("mainsubmitbutton").innerText = "Update";
             document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
@@ -418,42 +435,6 @@ let currentJOCreatedDate = null;
         } catch (error) {
           console.error("Search Error:", error);
           JOresult.innerHTML = "<span class='text-danger'>Error connecting to server. Try again.</span>";
-        }
-      });
-
-      /**
-/**
-       * Reset form state
-       */
-/**
-       * Reset form state
-       */
-function clearForm() {
-        form.reset();
-        JOresult.innerHTML = "";
-        document.getElementById("JOR").value = "";
-        document.getElementById("CustomerName").value = "";
-        document.getElementById("gcashInfo").style.display = "none";
-        document.getElementById("gcashLookupMsg").innerText = "";
-        document.getElementById("mainsubmitbutton").disabled = false;
-        document.getElementById("mainsubmitbutton").innerText = "Submit";
-        JOsearchField.value = "";
-
-        // Crucial: Reset radio button value baseline configuration for fresh submissions
-        document.getElementById("G-Cash").value = "G-Cash";
-
-        // Reset dynamic visibility states back to standard defaults
-        const gcashMedia = document.getElementById("gcashMedia");
-        const originalMediaRow = document.getElementById("originalMediaRow");
-        const originalMediaInput = document.getElementById("media");
-
-        if (gcashMedia) {
-          gcashMedia.style.display = "none";
-          gcashMedia.disabled = true;
-        }
-        if (originalMediaRow && originalMediaInput) {
-          originalMediaRow.style.display = "block";
-          originalMediaInput.disabled = false;
         }
       }
 
@@ -527,15 +508,6 @@ function clearForm() {
       }
 
       /**
-       * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
-       */
-/**
-       * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
-       */
-/**
-       * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
-       */
-/**
        * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
        */
 function togglePaymentRefInputs() {
@@ -843,6 +815,15 @@ function togglePaymentRefInputs() {
             document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
             document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
 
+            // If a JO search is still in-flight (user searched JO# and uploaded the
+            // screenshot almost simultaneously), wait for it so currentJOAmount /
+            // currentJOCreatedDate are actually populated before comparing — otherwise
+            // the checks below would silently skip rather than truly validate anything.
+            if (joSearchInFlight) {
+              gcashLookupMsg.innerText = "⏳ Waiting for JO details to finish loading before validating...";
+              try { await joSearchInFlight; } catch (e) { /* already handled inside performJOSearch */ }
+            }
+
             // Cross-check the scanned amount against the JO's total amount
             evaluateAmountMismatch(parsedReceipt.amount);
             evaluateDateAnomaly(parsedReceipt.transactionDate);
@@ -872,6 +853,15 @@ function togglePaymentRefInputs() {
             document.getElementById("G-Cash").value = classifiedType;
             document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
             document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
+
+            // If a JO search is still in-flight (user searched JO# and uploaded the
+            // screenshot almost simultaneously), wait for it so currentJOAmount /
+            // currentJOCreatedDate are actually populated before comparing — otherwise
+            // the checks below would silently skip rather than truly validate anything.
+            if (joSearchInFlight) {
+              gcashLookupMsg.innerText = "⏳ Waiting for JO details to finish loading before validating...";
+              try { await joSearchInFlight; } catch (e) { /* already handled inside performJOSearch */ }
+            }
 
             // Cross-check the scanned amount against the JO's total amount
             evaluateAmountMismatch(parsedReceipt.amount);
