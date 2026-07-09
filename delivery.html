@@ -179,11 +179,13 @@
                     <input type="hidden" id="GcashTransAmount" name="GcashTransAmount" value="" />
                     <input type="hidden" id="TransactionDate" name="TransactionDate" value="" />
                     <input type="hidden" id="AmountMismatchFlag" name="AmountMismatchFlag" value="" />
+                    <input type="hidden" id="DateAnomalyFlag" name="DateAnomalyFlag" value="" />
                     
                     <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*" capture="environment" disabled />
                     
                     <span id="gcashLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
                     <span id="amountMismatchMsg" style="display:block; margin-top:3px; font-size: 0.85em; font-weight:bold;"></span>
+                    <span id="dateAnomalyMsg" style="display:block; margin-top:3px; font-size: 0.85em; font-weight:bold;"></span>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="PaymentType" id="UnPaid" value="Unpaid">
@@ -282,6 +284,10 @@ const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxG
 // Tracks the currently loaded JO's total amount so it can be cross-checked
 // against the scanned payment amount from a GCash/bank receipt.
 let currentJOAmount = null;
+
+// Tracks the currently loaded JO's creation date (from the Combined master sheet)
+// so it can be cross-checked against the scanned receipt's transaction date.
+let currentJOCreatedDate = null;
       // Element references
       const form = document.getElementById("submit-to-google-sheet");
       const JOsearchField = document.getElementById("JOsearch");
@@ -396,6 +402,11 @@ let currentJOAmount = null;
 
           // Parse the JO's total amount for later cross-checking against scanned receipts
           currentJOAmount = parseFloat(String(data.colK).replace(/[^0-9.]/g, "")) || null;
+
+          // Parse the JO's creation date (from the Combined master sheet, via doGet)
+          // for later cross-checking against the scanned receipt's transaction date
+          currentJOCreatedDate = data.JOCreatedDate ? new Date(data.JOCreatedDate.replace(" ", "T")) : null;
+          if (currentJOCreatedDate && isNaN(currentJOCreatedDate.getTime())) currentJOCreatedDate = null;
           
           if (data.DeliveryStaff && data.DeliveryStaff.trim()) {
             document.getElementById("mainsubmitbutton").innerText = "Update";
@@ -590,7 +601,10 @@ function togglePaymentRefInputs() {
         document.getElementById("TransactionDate").value = "";
         document.getElementById("AmountMismatchFlag").value = "";
         document.getElementById("amountMismatchMsg").innerText = "";
+        document.getElementById("DateAnomalyFlag").value = "";
+        document.getElementById("dateAnomalyMsg").innerText = "";
         currentJOAmount = null;
+        currentJOCreatedDate = null;
 
         // Reset all file nodes
         const gcashMedia = document.getElementById("gcashMedia");
@@ -752,6 +766,45 @@ function togglePaymentRefInputs() {
         return isMismatch;
       }
 
+      // Cross-checks a scanned receipt's transaction date against the currently
+      // loaded JO's creation date (from the Combined master sheet). Never blocks
+      // submission — just flags the row for manual audit, same pattern as the
+      // amount mismatch check above. Marker starts with a fixed keyword so it's
+      // XLOOKUP/SEARCH-friendly, e.g.:
+      //   =FILTER(A2:M1000, ISNUMBER(SEARCH("DATE_BEFORE_JO", M2:M1000)))
+      function evaluateDateAnomaly(scannedDateStr) {
+        const flagField = document.getElementById("DateAnomalyFlag");
+        const msgEl = document.getElementById("dateAnomalyMsg");
+
+        if (!currentJOCreatedDate || !scannedDateStr) {
+          flagField.value = "";
+          msgEl.innerText = "";
+          return false;
+        }
+
+        // Accepts "YYYY-MM-DD HH:mm:ss" or "YYYY-MM-DD" from the Gemini extraction
+        const scannedDate = new Date(scannedDateStr.replace(" ", "T"));
+        if (isNaN(scannedDate.getTime())) {
+          flagField.value = "";
+          msgEl.innerText = "";
+          return false;
+        }
+
+        const isBeforeJO = scannedDate.getTime() < currentJOCreatedDate.getTime();
+
+        if (isBeforeJO) {
+          flagField.value = `DATE_BEFORE_JO: Scanned ${scannedDateStr} vs JO Created ${currentJOCreatedDate.toLocaleString("en-PH")}`;
+
+          msgEl.style.color = "#d9534f";
+          msgEl.innerText = `⚠️ DATE_BEFORE_JO — receipt date (${scannedDateStr}) is earlier than this JO's creation date (${currentJOCreatedDate.toLocaleString("en-PH")}). Still submittable, but this will be flagged and reported to Sir Will.`;
+        } else {
+          flagField.value = "";
+          msgEl.innerText = "";
+        }
+
+        return isBeforeJO;
+      }
+
 // --- GEMINI 2.5 OCR AUTOMATION FOR DUAL ONLINE SCANNING & CLASSIFICATION ---
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
@@ -792,6 +845,7 @@ function togglePaymentRefInputs() {
 
             // Cross-check the scanned amount against the JO's total amount
             evaluateAmountMismatch(parsedReceipt.amount);
+            evaluateDateAnomaly(parsedReceipt.transactionDate);
             
             gcashLookupMsg.style.color = "#28a745";
             gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${parsedReceipt.shortRefNo} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
@@ -821,6 +875,7 @@ function togglePaymentRefInputs() {
 
             // Cross-check the scanned amount against the JO's total amount
             evaluateAmountMismatch(parsedReceipt.amount);
+            evaluateDateAnomaly(parsedReceipt.transactionDate);
 
             gcashLookupMsg.style.color = "#e0a800";
             gcashLookupMsg.innerText = "⚠️ No reference number was visible in this screenshot. You may still submit — this will be flagged (" + placeholder + ") for manual verification.";
@@ -843,6 +898,8 @@ function togglePaymentRefInputs() {
           document.getElementById("TransactionDate").value = "";
           document.getElementById("AmountMismatchFlag").value = "";
           document.getElementById("amountMismatchMsg").innerText = "";
+          document.getElementById("DateAnomalyFlag").value = "";
+          document.getElementById("dateAnomalyMsg").innerText = "";
           
           if (submitBtn) {
             submitBtn.disabled = false;
