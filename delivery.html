@@ -511,46 +511,46 @@ let joSearchInFlight = null;
        * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
        */
 function togglePaymentRefInputs() {
-        const gcashRadio = document.getElementById("G-Cash");
-        const gcashInfo = document.getElementById("gcashInfo");
-        const gcashLookupMsg = document.getElementById("gcashLookupMsg");
+  const gcashRadio = document.getElementById("G-Cash");
+  const gcashInfo = document.getElementById("gcashInfo");
+  const gcashLookupMsg = document.getElementById("gcashLookupMsg");
 
-        // Target file components
-        const gcashMedia = document.getElementById("gcashMedia");
-        const originalMediaRow = document.getElementById("originalMediaRow");
-        const originalMediaInput = document.getElementById("media");
+  // Target file components
+  const gcashMedia = document.getElementById("gcashMedia");
+  const originalMediaRow = document.getElementById("originalMediaRow");
+  const originalMediaInput = document.getElementById("media");
 
-        if (gcashRadio && gcashRadio.checked) {
-          gcashInfo.style.display = "inline-block";
-          gcashInfo.required = true;
+  if (gcashRadio && gcashRadio.checked) {
+    gcashInfo.style.display = "inline-block";
+    gcashInfo.required = true;
 
-          if (gcashMedia) {
-            gcashMedia.style.display = "inline-block";
-            gcashMedia.disabled = false;
-          }
-          if (originalMediaRow && originalMediaInput) {
-            originalMediaRow.style.display = "none";
-            originalMediaInput.disabled = true;
-          }
-        } else {
-          // Reset baseline parameters when selecting away from payment forms
-          if (gcashRadio) gcashRadio.value = "G-Cash";
-          gcashInfo.style.display = "none";
-          gcashInfo.value = "";
-          gcashInfo.required = false;
-          gcashLookupMsg.innerText = "";
+    if (gcashMedia) {
+      gcashMedia.style.display = "inline-block";
+      gcashMedia.disabled = false;
+    }
+    if (originalMediaRow && originalMediaInput) {
+      originalMediaRow.style.display = "none";
+      originalMediaInput.disabled = true;
+    }
+  } else {
+    // Reset baseline parameters when selecting away from payment forms
+    if (gcashRadio) gcashRadio.value = "G-Cash";
+    gcashInfo.style.display = "none";
+    gcashInfo.value = "";
+    gcashInfo.required = false;
+    gcashLookupMsg.innerText = "";
 
-          if (gcashMedia) {
-            gcashMedia.style.display = "none";
-            gcashMedia.disabled = true;
-            gcashMedia.value = "";
-          }
-          if (originalMediaRow && originalMediaInput) {
-            originalMediaRow.style.display = "block";
-            originalMediaInput.disabled = false;
-          }
-        }
-      }
+    if (gcashMedia) {
+      gcashMedia.style.display = "none";
+      gcashMedia.disabled = true;
+      gcashMedia.value = "";
+    }
+    if (originalMediaRow && originalMediaInput) {
+      originalMediaRow.style.display = "block";
+      originalMediaInput.disabled = false;
+    }
+  }
+}
 
       /**
        * Reset form state
