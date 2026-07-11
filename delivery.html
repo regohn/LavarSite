@@ -491,21 +491,28 @@
       //  PLACEHOLDER ASSOCIATION FEATURE (shared)
       // ================================================================
       async function fetchPlaceholderJOsForCustomer(customerName) {
+        console.log(`[fetchPlaceholderJOsForCustomer] Searching for customer: "${customerName}"`);
         try {
           const url = `${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=000000`;
           const result = await fetchJsonWithRetry(url);
-          if (result.result !== "success") return [];
-          return result.data.filter(item =>
+          console.log(`[fetchPlaceholderJOsForCustomer] Raw result:`, result);
+          if (result.result !== "success") {
+            console.warn(`[fetchPlaceholderJOsForCustomer] API returned not success:`, result);
+            return [];
+          }
+          const filtered = result.data.filter(item =>
             item.customerName && item.customerName.trim().toLowerCase() === customerName.trim().toLowerCase()
           );
+          console.log(`[fetchPlaceholderJOsForCustomer] Found ${filtered.length} matching JOs.`);
+          return filtered;
         } catch (err) {
-          console.warn("Fetch placeholder JOs failed:", err);
+          console.error(`[fetchPlaceholderJOsForCustomer] Error:`, err);
           return [];
         }
       }
 
-      // Render the list of placeholder JOs with checkboxes and a source label
       function renderPlaceholderList(jos, sourceLabel = "") {
+        console.log(`[renderPlaceholderList] Rendering ${jos.length} items, source: "${sourceLabel}"`);
         const container = document.getElementById("placeholderAssociations");
         const listDiv = document.getElementById("placeholderListItems");
         const labelDiv = document.getElementById("placeholderSourceLabel");
@@ -677,7 +684,6 @@
             document.getElementById("mainsubmitbutton").innerText = "SUBMIT";
           }
 
-          // Fetch and display placeholder JOs for this customer
           const customerName = data.value.trim();
           if (customerName) {
             const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
@@ -1127,7 +1133,10 @@
 
         lookupTimer = setTimeout(async () => {
           try {
+            console.log(`[GCash Lookup] Fetching details for ref: ${ref}`);
             const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(ref)}`);
+            console.log(`[GCash Lookup] Primary result:`, resultData);
+
             if (resultData.result === "success") {
               lookupStatusMsg.style.color = "#28a745";
               lookupStatusMsg.innerText = `✅ Found ${resultData.data.length} record(s).`;
@@ -1138,26 +1147,42 @@
               });
               lookupTableWrapper.style.display = "block";
 
-              // --- NEW: Fetch placeholder JOs for the same customer ---
+              // --- SECONDARY SEARCH: placeholder JOs for the same customer ---
               if (resultData.data.length > 0) {
                 const customerName = resultData.data[0].customerName;
+                console.log(`[GCash Lookup] Extracted customer name: "${customerName}"`);
                 if (customerName) {
-                  const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
-                  // Set the hidden CustomerName field so the buttons use it later
-                  document.getElementById("CustomerName").value = customerName;
-                  renderPlaceholderList(placeholderJOs, `GCash lookup (${ref})`);
+                  try {
+                    // Store the customer name in the hidden field so buttons work
+                    document.getElementById("CustomerName").value = customerName;
+                    const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
+                    console.log(`[GCash Lookup] Placeholder JOs found:`, placeholderJOs);
+                    renderPlaceholderList(placeholderJOs, `GCash lookup (${ref})`);
+                  } catch (err) {
+                    console.error(`[GCash Lookup] Secondary fetch error:`, err);
+                    // Show error in the placeholder area
+                    const container = document.getElementById("placeholderAssociations");
+                    container.style.display = "block";
+                    document.getElementById("placeholderSourceLabel").innerText = `(error fetching placeholder JOs)`;
+                    document.getElementById("placeholderListItems").innerHTML = `<div class="text-danger">Error loading placeholder list: ${err.message}</div>`;
+                  }
+                } else {
+                  console.warn(`[GCash Lookup] Customer name is empty, skipping secondary search.`);
                 }
+              } else {
+                console.log(`[GCash Lookup] No rows found, clearing placeholder.`);
+                document.getElementById("placeholderAssociations").style.display = "none";
               }
             } else if (resultData.result === "not_found") {
               lookupStatusMsg.style.color = "#a94442";
               lookupStatusMsg.innerText = "❌ No records found for this reference.";
-              // Also clear the placeholder list because no customer is known
               document.getElementById("placeholderAssociations").style.display = "none";
             } else {
               lookupStatusMsg.style.color = "#d9534f";
               lookupStatusMsg.innerText = "⚠️ Error: " + (resultData.message || "unknown error");
             }
           } catch (err) {
+            console.error(`[GCash Lookup] Primary fetch error:`, err);
             lookupStatusMsg.style.color = "#d9534f";
             lookupStatusMsg.innerText = "📡 Server error – could not retrieve data.";
           }
