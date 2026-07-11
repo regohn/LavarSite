@@ -1028,82 +1028,67 @@ function togglePaymentRefInputs() {
       // instead of the old IndexedDB cache which could miss newly added entries.
       const paymentRefLookupTimers = {};
 
-      function setupPaymentRefValidation(inputId, msgElementId, mode) {
-        // mode: 'numeric' (G-Cash, exactly 6 digits) or 'alphanumeric' (Other Online, 4-20 chars)
-        const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,20}$/ : /^\d{6}$/;
+function setupPaymentRefValidation(inputId, msgElementId, mode) {
+  const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,20}$/ : /^\d{6}$/;
 
-        document.getElementById(inputId).addEventListener('input', function() {
-          const userInput = this.value.trim();
-          const msgElement = document.getElementById(msgElementId);
-          const submitBtn = document.getElementById("mainsubmitbutton");
+  document.getElementById(inputId).addEventListener('input', function() {
+    const userInput = this.value.trim();
+    const msgElement = document.getElementById(msgElementId);
+    const submitBtn = document.getElementById("mainsubmitbutton");
 
-          clearTimeout(paymentRefLookupTimers[inputId]);
-          msgElement.innerText = "";
+    clearTimeout(paymentRefLookupTimers[inputId]);
+    msgElement.innerText = "";
 
-          if (userInput.length === 0) {
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.style.opacity = "1";
-              submitBtn.style.cursor = "pointer";
-            }
-            return;
-          }
+    if (userInput.length === 0) {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+      return;
+    }
 
-          // Only fire lookup once the pattern is fully matched
-          if (!pattern.test(userInput)) return;
-
-          paymentRefLookupTimers[inputId] = setTimeout(async () => {
-            msgElement.style.color = "#007bff";
-            msgElement.innerText = "Checking reference number...";
-
-            try {
-              const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(userInput)}`);
-
-              if (resultData.result === "success") {
-                // Found in Delivery sheet Column N — already used
-                const match = resultData.data[0];
-                msgElement.style.color = "#d9534f";
-                msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.jor} | ${match.customerName} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
-
-                if (submitBtn) {
-                  submitBtn.disabled = true;
-                  submitBtn.style.opacity = "0.5";
-                  submitBtn.style.cursor = "not-allowed";
-                }
-              } else if (resultData.result === "not_found") {
-                // Not in Delivery sheet — safe to use
-                msgElement.style.color = "#28a745";
-                msgElement.innerText = "✅ Reference number is available";
-
-                if (submitBtn) {
-                  submitBtn.disabled = false;
-                  submitBtn.style.opacity = "1";
-                  submitBtn.style.cursor = "pointer";
-                }
-
-
-              } else {
-                msgElement.style.color = "#d9534f";
-                msgElement.innerText = "⚠️ Could not verify. Proceed with caution.";
-                if (submitBtn) {
-                  submitBtn.disabled = false;
-                  submitBtn.style.opacity = "1";
-                  submitBtn.style.cursor = "pointer";
-                }
-              }
-            } catch (err) {
-              console.error("Ref lookup error:", err);
-              msgElement.style.color = "#d9534f";
-              msgElement.innerText = "📡 Could not connect to server after 3 attempts. Proceed with caution.";
-              if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = "1";
-                submitBtn.style.cursor = "pointer";
-              }
-            }
-          }, 1000);
-        });
+    // ☝️ Allow "000000" as a placeholder: skip duplicate check and enable submit
+    if (userInput === "000000") {
+      msgElement.style.color = "#f0ad4e";
+      msgElement.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = "1";
+        submitBtn.style.cursor = "pointer";
       }
+      return;
+    }
+
+    if (!pattern.test(userInput)) return;
+
+    paymentRefLookupTimers[inputId] = setTimeout(async () => {
+      msgElement.style.color = "#007bff";
+      msgElement.innerText = "Checking reference number...";
+
+      try {
+        const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(userInput)}`);
+
+        if (resultData.result === "success") {
+          // Already used – block submission (unless it's "000000", which we already handled)
+          const match = resultData.data[0];
+          msgElement.style.color = "#d9534f";
+          msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.jor} | ${match.customerName} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
+        } else if (resultData.result === "not_found") {
+          msgElement.style.color = "#28a745";
+          msgElement.innerText = "✅ Reference number is available";
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+        } else {
+          msgElement.style.color = "#d9534f";
+          msgElement.innerText = "⚠️ Could not verify. Proceed with caution.";
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+        }
+      } catch (err) {
+        console.error("Ref lookup error:", err);
+        msgElement.style.color = "#d9534f";
+        msgElement.innerText = "📡 Could not connect to server after 3 attempts. Proceed with caution.";
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+      }
+    }, 1000);
+  });
+}
 
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
