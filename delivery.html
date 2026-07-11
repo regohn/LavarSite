@@ -56,10 +56,7 @@
         font-weight: bold;
       }
 
-      /* Hide the now-unused warning spans */
-      #amountMismatchMsg, #dateAnomalyMsg {
-        display: none;
-      }
+      /* No longer hiding the warning spans – they will appear when needed */
     </style>
   </head>
   <body class="bg-light">
@@ -733,7 +730,8 @@ function togglePaymentRefInputs() {
           }, 3);
 
           if (parsedReceipt && parsedReceipt.shortRefNo) {
-            gcashInfoField.value = parsedReceipt.shortRefNo;
+            const ref = parsedReceipt.shortRefNo;
+            gcashInfoField.value = ref;
             
             // DYNAMIC CLASSIFICATION: Remaps the radio element value before submission reads it
             const classifiedType = parsedReceipt.paymentType || "G-Cash";
@@ -752,12 +750,18 @@ function togglePaymentRefInputs() {
               try { await joSearchInFlight; } catch (e) { /* already handled inside performJOSearch */ }
             }
 
-            // ⛔ Amount and date checks removed – they will never appear.
-            // evaluateAmountMismatch(parsedReceipt.amount);
-            // evaluateDateAnomaly(parsedReceipt.transactionDate);
-            
+            // ✅ Only run amount/date checks if the ref is NOT the placeholder "000000"
+            if (ref !== "000000") {
+              evaluateAmountMismatch(parsedReceipt.amount);
+              evaluateDateAnomaly(parsedReceipt.transactionDate);
+            } else {
+              // For 000000, clear any previous warning messages (they won't be shown)
+              document.getElementById("amountMismatchMsg").innerText = "";
+              document.getElementById("dateAnomalyMsg").innerText = "";
+            }
+
             gcashLookupMsg.style.color = "#28a745";
-            gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${parsedReceipt.shortRefNo} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
+            gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${ref} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
             
             if (submitBtn) {
               submitBtn.disabled = false;
@@ -765,7 +769,7 @@ function togglePaymentRefInputs() {
               submitBtn.innerText = "Submit";
             }
 
-            // Fire input duplicate checker instantly
+            // Fire input duplicate checker instantly (it will handle 000000 separately)
             gcashInfoField.dispatchEvent(new Event("input"));
             
           } else {
@@ -791,9 +795,10 @@ function togglePaymentRefInputs() {
               try { await joSearchInFlight; } catch (e) { /* already handled inside performJOSearch */ }
             }
 
-            // ⛔ Removed again
-            // evaluateAmountMismatch(parsedReceipt.amount);
-            // evaluateDateAnomaly(parsedReceipt.transactionDate);
+            // For no-ref, we also skip amount/date checks because there's no valid ref to compare
+            // (but we clear any previous warnings)
+            document.getElementById("amountMismatchMsg").innerText = "";
+            document.getElementById("dateAnomalyMsg").innerText = "";
 
             gcashLookupMsg.style.color = "#e0a800";
             gcashLookupMsg.innerText = "⚠️ No reference number was visible in this screenshot. You may still submit — this will be flagged (" + placeholder + ") for manual verification.";
