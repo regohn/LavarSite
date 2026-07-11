@@ -66,6 +66,13 @@
         color: #6c757d;
         font-style: italic;
       }
+      .lookup-table {
+        font-size: 11px;
+        text-align: center;
+      }
+      .lookup-table th {
+        background-color: #f1f1f1;
+      }
     </style>
   </head>
   <body class="bg-light">
@@ -251,6 +258,31 @@
           <button id="mainsubmitbutton" type="submit" class="btn btn-primary btn-block">Submit</button>
         </form>
       </div>
+
+      <!-- ====== REINSTATED: GCash Reference Lookup (read‑only, no JO slots) ====== -->
+      <div class="form-container" id="GcashrefLookup" style="margin-top: 30px; margin-bottom: 50px; max-width: 550px;">
+        <h5 class="text-center mb-3 text-secondary">Check GCash Reference</h5>
+        <div class="form-group">
+          <label for="lookupGcashRef">Enter 6‑digit GCash Ref#</label>
+          <input
+            type="text"
+            class="form-control"
+            id="lookupGcashRef"
+            placeholder="e.g. 123456"
+          />
+          <small id="lookupStatusMsg" class="form-text mt-1 font-weight-bold"></small>
+        </div>
+        <div id="lookupTableWrapper" class="table-responsive mt-2" style="display: none;">
+          <p class="text-muted mb-1" style="font-size: 11px;"><strong>JOs linked to this GCash reference:</strong></p>
+          <table class="table table-sm table-bordered bg-white lookup-table">
+            <thead>
+              <tr><th>JO</th><th>Timestamp</th><th>CustomerName</th><th>PaymentType</th></tr>
+            </thead>
+            <tbody id="lookupTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
     <script>
@@ -452,13 +484,11 @@
       // ================================================================
       //  PLACEHOLDER ASSOCIATION FEATURE
       // ================================================================
-      // Fetch all rows with ref=000000 and return those matching the given customer name
       async function fetchPlaceholderJOsForCustomer(customerName) {
         try {
           const url = `${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=000000`;
           const result = await fetchJsonWithRetry(url);
           if (result.result !== "success") return [];
-          // Filter by customer name (case‑insensitive)
           return result.data.filter(item =>
             item.customerName && item.customerName.trim().toLowerCase() === customerName.trim().toLowerCase()
           );
@@ -468,7 +498,6 @@
         }
       }
 
-      // Render the list of placeholder JOs with checkboxes
       function renderPlaceholderList(jos) {
         const container = document.getElementById("placeholderAssociations");
         const listDiv = document.getElementById("placeholderListItems");
@@ -490,7 +519,6 @@
         });
       }
 
-      // Associate selected checkboxes with placeholder (000000)
       async function associateSelectedPlaceholders() {
         const checkboxes = document.querySelectorAll('.placeholder-checkbox:checked');
         if (checkboxes.length === 0) {
@@ -530,7 +558,6 @@
           html: `✅ ${successCount} associated<br>❌ ${failCount} failed`,
           type: successCount > 0 ? "success" : "error"
         });
-        // Refresh the list
         const customerName = document.getElementById("CustomerName").value;
         if (customerName) {
           const refreshed = await fetchPlaceholderJOsForCustomer(customerName);
@@ -538,7 +565,6 @@
         }
       }
 
-      // Set the current JO's GCash field to 000000 and select G-Cash
       function setCurrentJOPlaceholder() {
         const gcashInfo = document.getElementById("gcashInfo");
         const gcashRadio = document.getElementById("G-Cash");
@@ -556,7 +582,7 @@
       }
 
       // ================================================================
-      //  SEARCH FUNCTION (modified)
+      //  SEARCH FUNCTION
       // ================================================================
       searchButton.addEventListener("click", async function () {
         const joNumber = JOsearchField.value.trim();
@@ -640,7 +666,6 @@
             document.getElementById("mainsubmitbutton").innerText = "SUBMIT";
           }
 
-          // ---------- Fetch and display placeholder JOs for this customer ----------
           const customerName = data.value.trim();
           if (customerName) {
             const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
@@ -786,7 +811,7 @@
       }
 
       // ================================================================
-      //  GCASH MEDIA (GEMINI OCR) – conditional checks
+      //  GCASH MEDIA (GEMINI OCR)
       // ================================================================
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
@@ -828,7 +853,6 @@
               try { await joSearchInFlight; } catch (e) { /* ignore */ }
             }
 
-            // Only run mismatch/date checks if ref is NOT 000000
             if (ref !== "000000") {
               evaluateAmountMismatch(parsedReceipt.amount);
               evaluateDateAnomaly(parsedReceipt.transactionDate);
@@ -1062,6 +1086,58 @@
       }
 
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
+
+      // ================================================================
+      //  GCASH REFERENCE LOOKUP (read‑only)
+      // ================================================================
+      const lookupRefInput = document.getElementById('lookupGcashRef');
+      const lookupStatusMsg = document.getElementById('lookupStatusMsg');
+      const lookupTableWrapper = document.getElementById('lookupTableWrapper');
+      const lookupTableBody = document.getElementById('lookupTableBody');
+      let lookupTimer;
+
+      lookupRefInput.addEventListener('input', function() {
+        clearTimeout(lookupTimer);
+        const ref = this.value.trim();
+        lookupStatusMsg.innerText = "";
+        lookupTableBody.innerHTML = "";
+        lookupTableWrapper.style.display = "none";
+
+        if (ref.length === 0) return;
+        if (!/^\d{6}$/.test(ref)) {
+          lookupStatusMsg.style.color = "#d9534f";
+          lookupStatusMsg.innerText = "⚠️ Must be exactly 6 digits.";
+          return;
+        }
+
+        lookupStatusMsg.style.color = "#007bff";
+        lookupStatusMsg.innerText = "Searching...";
+
+        lookupTimer = setTimeout(async () => {
+          try {
+            const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(ref)}`);
+            if (resultData.result === "success") {
+              lookupStatusMsg.style.color = "#28a745";
+              lookupStatusMsg.innerText = `✅ Found ${resultData.data.length} record(s).`;
+              resultData.data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td><strong>${item.jor}</strong></td><td>${item.timestamp}</td><td>${item.customerName}</td><td><span class="badge badge-info">${item.paymentType}</span></td>`;
+                lookupTableBody.appendChild(row);
+              });
+              lookupTableWrapper.style.display = "block";
+            } else if (resultData.result === "not_found") {
+              lookupStatusMsg.style.color = "#a94442";
+              lookupStatusMsg.innerText = "❌ No records found for this reference.";
+            } else {
+              lookupStatusMsg.style.color = "#d9534f";
+              lookupStatusMsg.innerText = "⚠️ Error: " + (resultData.message || "unknown error");
+            }
+          } catch (err) {
+            lookupStatusMsg.style.color = "#d9534f";
+            lookupStatusMsg.innerText = "📡 Server error – could not retrieve data.";
+          }
+        }, 1000);
+      });
 
       // ================================================================
       //  EVENT BINDINGS FOR PLACEHOLDER BUTTONS
