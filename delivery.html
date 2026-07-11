@@ -55,6 +55,11 @@
         color: #007bff;
         font-weight: bold;
       }
+
+      /* Hide the now-unused warning spans */
+      #amountMismatchMsg, #dateAnomalyMsg {
+        display: none;
+      }
     </style>
   </head>
   <body class="bg-light">
@@ -371,7 +376,7 @@ let joSearchInFlight = null;
           const data = await response.json();
 
           if (data.result === "not found") {
-            JOresult.innerHTML = "<span class='text-danger'>Di Pa Na Log ng Mga Nagtupi. Tawagan sila at ipalog.</span>";
+            JOresult.innerHTML = "<span class='text-danger'>Di Pa Na Log ng mga Nagtupi. Tawagan sila at ipalog.</span>";
             return;
           }
 
@@ -511,46 +516,46 @@ let joSearchInFlight = null;
        * Visibility toggle for payment reference fields (G-Cash & Other Online Payment)
        */
 function togglePaymentRefInputs() {
-  const gcashRadio = document.getElementById("G-Cash");
-  const gcashInfo = document.getElementById("gcashInfo");
-  const gcashLookupMsg = document.getElementById("gcashLookupMsg");
+        const gcashRadio = document.getElementById("G-Cash");
+        const gcashInfo = document.getElementById("gcashInfo");
+        const gcashLookupMsg = document.getElementById("gcashLookupMsg");
 
-  // Target file components
-  const gcashMedia = document.getElementById("gcashMedia");
-  const originalMediaRow = document.getElementById("originalMediaRow");
-  const originalMediaInput = document.getElementById("media");
+        // Target file components
+        const gcashMedia = document.getElementById("gcashMedia");
+        const originalMediaRow = document.getElementById("originalMediaRow");
+        const originalMediaInput = document.getElementById("media");
 
-  if (gcashRadio && gcashRadio.checked) {
-    gcashInfo.style.display = "inline-block";
-    gcashInfo.required = true;
+        if (gcashRadio && gcashRadio.checked) {
+          gcashInfo.style.display = "inline-block";
+          gcashInfo.required = true;
 
-    if (gcashMedia) {
-      gcashMedia.style.display = "inline-block";
-      gcashMedia.disabled = false;
-    }
-    if (originalMediaRow && originalMediaInput) {
-      originalMediaRow.style.display = "none";
-      originalMediaInput.disabled = true;
-    }
-  } else {
-    // Reset baseline parameters when selecting away from payment forms
-    if (gcashRadio) gcashRadio.value = "G-Cash";
-    gcashInfo.style.display = "none";
-    gcashInfo.value = "";
-    gcashInfo.required = false;
-    gcashLookupMsg.innerText = "";
+          if (gcashMedia) {
+            gcashMedia.style.display = "inline-block";
+            gcashMedia.disabled = false;
+          }
+          if (originalMediaRow && originalMediaInput) {
+            originalMediaRow.style.display = "none";
+            originalMediaInput.disabled = true;
+          }
+        } else {
+          // Reset baseline parameters when selecting away from payment forms
+          if (gcashRadio) gcashRadio.value = "G-Cash";
+          gcashInfo.style.display = "none";
+          gcashInfo.value = "";
+          gcashInfo.required = false;
+          gcashLookupMsg.innerText = "";
 
-    if (gcashMedia) {
-      gcashMedia.style.display = "none";
-      gcashMedia.disabled = true;
-      gcashMedia.value = "";
-    }
-    if (originalMediaRow && originalMediaInput) {
-      originalMediaRow.style.display = "block";
-      originalMediaInput.disabled = false;
-    }
-  }
-}
+          if (gcashMedia) {
+            gcashMedia.style.display = "none";
+            gcashMedia.disabled = true;
+            gcashMedia.value = "";
+          }
+          if (originalMediaRow && originalMediaInput) {
+            originalMediaRow.style.display = "block";
+            originalMediaInput.disabled = false;
+          }
+        }
+      }
 
       /**
        * Reset form state
@@ -700,84 +705,7 @@ function togglePaymentRefInputs() {
         throw new Error(lastErrorMsg);
       }
 
-      // Cross-checks a scanned receipt amount against the currently loaded JO's total
-      // amount. Never blocks submission — just flags the row for manual audit and
-      // shows an inline warning (own line, so it isn't overwritten by the duplicate
-      // reference checker that runs a moment later on the same message area).
-      // The marker text always starts with a fixed keyword (UNDERPAID / OVERPAID) so
-      // it can be found with a simple XLOOKUP/SEARCH formula, e.g.:
-      //   =XLOOKUP("UNDERPAID*", L2:L1000, L2:L1000, "", 2)   (wildcard match mode)
-      //   or =FILTER(A2:L1000, ISNUMBER(SEARCH("UNDERPAID", L2:L1000)))
-      function evaluateAmountMismatch(scannedAmount) {
-        const mismatchField = document.getElementById("AmountMismatchFlag");
-        const mismatchMsgEl = document.getElementById("amountMismatchMsg");
-        const scanned = parseFloat(scannedAmount);
-
-        if (!currentJOAmount || isNaN(scanned)) {
-          mismatchField.value = "";
-          mismatchMsgEl.innerText = "";
-          return false;
-        }
-
-        const isMismatch = Math.abs(scanned - currentJOAmount) > 0.01;
-
-        if (isMismatch) {
-          const isUnderpaid = scanned < currentJOAmount;
-          const tag = isUnderpaid ? "UNDERPAID" : "OVERPAID";
-          const diff = Math.abs(scanned - currentJOAmount).toFixed(2);
-
-          mismatchField.value = `${tag}: Scanned \u20b1${scanned.toFixed(2)} vs JO \u20b1${currentJOAmount.toFixed(2)} (${isUnderpaid ? "Short" : "Excess"} \u20b1${diff})`;
-
-          mismatchMsgEl.style.color = "#d9534f";
-          mismatchMsgEl.innerText = `\u26a0\ufe0f ${tag} by \u20b1${diff} \u2014 scanned \u20b1${scanned.toFixed(2)} vs JO total \u20b1${currentJOAmount.toFixed(2)}. Still submittable, but this will be flagged and reported to Sir Will.`;
-        } else {
-          mismatchField.value = "";
-          mismatchMsgEl.innerText = "";
-        }
-
-        return isMismatch;
-      }
-
-      // Cross-checks a scanned receipt's transaction date against the currently
-      // loaded JO's creation date (from the Combined master sheet). Never blocks
-      // submission — just flags the row for manual audit, same pattern as the
-      // amount mismatch check above. Marker starts with a fixed keyword so it's
-      // XLOOKUP/SEARCH-friendly, e.g.:
-      //   =FILTER(A2:M1000, ISNUMBER(SEARCH("DATE_BEFORE_JO", M2:M1000)))
-      function evaluateDateAnomaly(scannedDateStr) {
-        const flagField = document.getElementById("DateAnomalyFlag");
-        const msgEl = document.getElementById("dateAnomalyMsg");
-
-        if (!currentJOCreatedDate || !scannedDateStr) {
-          flagField.value = "";
-          msgEl.innerText = "";
-          return false;
-        }
-
-        // Accepts "YYYY-MM-DD HH:mm:ss" or "YYYY-MM-DD" from the Gemini extraction
-        const scannedDate = new Date(scannedDateStr.replace(" ", "T"));
-        if (isNaN(scannedDate.getTime())) {
-          flagField.value = "";
-          msgEl.innerText = "";
-          return false;
-        }
-
-        const isBeforeJO = scannedDate.getTime() < currentJOCreatedDate.getTime();
-
-        if (isBeforeJO) {
-          flagField.value = `DATE_BEFORE_JO: Scanned ${scannedDateStr} vs JO Created ${currentJOCreatedDate.toLocaleString("en-PH")}`;
-
-          msgEl.style.color = "#d9534f";
-          msgEl.innerText = `⚠️ DATE_BEFORE_JO — receipt date (${scannedDateStr}) is earlier than this JO's creation date (${currentJOCreatedDate.toLocaleString("en-PH")}). Still submittable, but this will be flagged and reported to Sir Will.`;
-        } else {
-          flagField.value = "";
-          msgEl.innerText = "";
-        }
-
-        return isBeforeJO;
-      }
-
-// --- GEMINI 2.5 OCR AUTOMATION FOR DUAL ONLINE SCANNING & CLASSIFICATION ---
+      // --- GEMINI 2.5 OCR AUTOMATION FOR DUAL ONLINE SCANNING & CLASSIFICATION ---
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -824,9 +752,9 @@ function togglePaymentRefInputs() {
               try { await joSearchInFlight; } catch (e) { /* already handled inside performJOSearch */ }
             }
 
-            // Cross-check the scanned amount against the JO's total amount
-            evaluateAmountMismatch(parsedReceipt.amount);
-            evaluateDateAnomaly(parsedReceipt.transactionDate);
+            // ⛔ Amount and date checks removed – they will never appear.
+            // evaluateAmountMismatch(parsedReceipt.amount);
+            // evaluateDateAnomaly(parsedReceipt.transactionDate);
             
             gcashLookupMsg.style.color = "#28a745";
             gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${parsedReceipt.shortRefNo} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
@@ -863,9 +791,9 @@ function togglePaymentRefInputs() {
               try { await joSearchInFlight; } catch (e) { /* already handled inside performJOSearch */ }
             }
 
-            // Cross-check the scanned amount against the JO's total amount
-            evaluateAmountMismatch(parsedReceipt.amount);
-            evaluateDateAnomaly(parsedReceipt.transactionDate);
+            // ⛔ Removed again
+            // evaluateAmountMismatch(parsedReceipt.amount);
+            // evaluateDateAnomaly(parsedReceipt.transactionDate);
 
             gcashLookupMsg.style.color = "#e0a800";
             gcashLookupMsg.innerText = "⚠️ No reference number was visible in this screenshot. You may still submit — this will be flagged (" + placeholder + ") for manual verification.";
@@ -1028,67 +956,94 @@ function togglePaymentRefInputs() {
       // instead of the old IndexedDB cache which could miss newly added entries.
       const paymentRefLookupTimers = {};
 
-function setupPaymentRefValidation(inputId, msgElementId, mode) {
-  const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,20}$/ : /^\d{6}$/;
+      function setupPaymentRefValidation(inputId, msgElementId, mode) {
+        // mode: 'numeric' (G-Cash, exactly 6 digits) or 'alphanumeric' (Other Online, 4-20 chars)
+        const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,20}$/ : /^\d{6}$/;
 
-  document.getElementById(inputId).addEventListener('input', function() {
-    const userInput = this.value.trim();
-    const msgElement = document.getElementById(msgElementId);
-    const submitBtn = document.getElementById("mainsubmitbutton");
+        document.getElementById(inputId).addEventListener('input', function() {
+          const userInput = this.value.trim();
+          const msgElement = document.getElementById(msgElementId);
+          const submitBtn = document.getElementById("mainsubmitbutton");
 
-    clearTimeout(paymentRefLookupTimers[inputId]);
-    msgElement.innerText = "";
+          clearTimeout(paymentRefLookupTimers[inputId]);
+          msgElement.innerText = "";
 
-    if (userInput.length === 0) {
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
-      return;
-    }
+          if (userInput.length === 0) {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.style.opacity = "1";
+              submitBtn.style.cursor = "pointer";
+            }
+            return;
+          }
 
-    // ☝️ Allow "000000" as a placeholder: skip duplicate check and enable submit
-    if (userInput === "000000") {
-      msgElement.style.color = "#f0ad4e";
-      msgElement.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = "1";
-        submitBtn.style.cursor = "pointer";
+          // ☝️ Allow "000000" as a placeholder: skip duplicate check and enable submit
+          if (userInput === "000000") {
+            msgElement.style.color = "#f0ad4e";
+            msgElement.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.style.opacity = "1";
+              submitBtn.style.cursor = "pointer";
+            }
+            return;
+          }
+
+          // Only fire lookup once the pattern is fully matched
+          if (!pattern.test(userInput)) return;
+
+          paymentRefLookupTimers[inputId] = setTimeout(async () => {
+            msgElement.style.color = "#007bff";
+            msgElement.innerText = "Checking reference number...";
+
+            try {
+              const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(userInput)}`);
+
+              if (resultData.result === "success") {
+                // Found in Delivery sheet Column N — already used
+                const match = resultData.data[0];
+                msgElement.style.color = "#d9534f";
+                msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.jor} | ${match.customerName} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
+
+                if (submitBtn) {
+                  submitBtn.disabled = true;
+                  submitBtn.style.opacity = "0.5";
+                  submitBtn.style.cursor = "not-allowed";
+                }
+              } else if (resultData.result === "not_found") {
+                // Not in Delivery sheet — safe to use
+                msgElement.style.color = "#28a745";
+                msgElement.innerText = "✅ Reference number is available";
+
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.style.opacity = "1";
+                  submitBtn.style.cursor = "pointer";
+                }
+
+
+              } else {
+                msgElement.style.color = "#d9534f";
+                msgElement.innerText = "⚠️ Could not verify. Proceed with caution.";
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.style.opacity = "1";
+                  submitBtn.style.cursor = "pointer";
+                }
+              }
+            } catch (err) {
+              console.error("Ref lookup error:", err);
+              msgElement.style.color = "#d9534f";
+              msgElement.innerText = "📡 Could not connect to server after 3 attempts. Proceed with caution.";
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+                submitBtn.style.cursor = "pointer";
+              }
+            }
+          }, 1000);
+        });
       }
-      return;
-    }
-
-    if (!pattern.test(userInput)) return;
-
-    paymentRefLookupTimers[inputId] = setTimeout(async () => {
-      msgElement.style.color = "#007bff";
-      msgElement.innerText = "Checking reference number...";
-
-      try {
-        const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(userInput)}`);
-
-        if (resultData.result === "success") {
-          // Already used – block submission (unless it's "000000", which we already handled)
-          const match = resultData.data[0];
-          msgElement.style.color = "#d9534f";
-          msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.jor} | ${match.customerName} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
-          if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
-        } else if (resultData.result === "not_found") {
-          msgElement.style.color = "#28a745";
-          msgElement.innerText = "✅ Reference number is available";
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
-        } else {
-          msgElement.style.color = "#d9534f";
-          msgElement.innerText = "⚠️ Could not verify. Proceed with caution.";
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
-        }
-      } catch (err) {
-        console.error("Ref lookup error:", err);
-        msgElement.style.color = "#d9534f";
-        msgElement.innerText = "📡 Could not connect to server after 3 attempts. Proceed with caution.";
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
-      }
-    }, 1000);
-  });
-}
 
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
