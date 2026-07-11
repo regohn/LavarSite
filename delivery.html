@@ -62,6 +62,10 @@
       .placeholder-list .list-item {
         padding: 4px 0;
       }
+      .placeholder-list .no-items {
+        color: #6c757d;
+        font-style: italic;
+      }
     </style>
   </head>
   <body class="bg-light">
@@ -247,36 +251,6 @@
           <button id="mainsubmitbutton" type="submit" class="btn btn-primary btn-block">Submit</button>
         </form>
       </div>
-
-      <!-- Optional manual association form (can be removed) -->
-      <div class="form-container" id="GcashrefLookup" style="margin-top: 30px; margin-bottom: 50px; max-width: 550px;">
-        <h5 class="text-center mb-3 text-secondary">Associate Gcash Ref# to JO# (Manual)</h5>
-        <form id="gcash-association-form">
-          <div class="form-group">
-            <label for="lookupGcashRef">Gcash Ref#</label>
-            <input
-              type="text"
-              class="form-control"
-              id="lookupGcashRef"
-              name="lookupGcashRef"
-              placeholder="Enter 6-Digit Ref#"
-              required
-            />
-            <small id="lookupStatusMsg" class="form-text mt-1 font-weight-bold"></small>
-          </div>
-          <div id="lookupTableWrapper" class="table-responsive mt-2 mb-3" style="display: none;">
-            <p class="text-muted mb-1" style="font-size: 11px;"><strong>Currently Linked Orders for this GCash payment:</strong></p>
-            <table class="table table-sm table-bordered bg-white" style="font-size: 11px; text-align: center;">
-              <thead class="thead-light">
-                <tr><th>JO</th><th>Timestamp</th><th>CustomerName</th><th>PaymentType</th></tr>
-              </thead>
-              <tbody id="lookupTableBody"></tbody>
-            </table>
-          </div>
-          <div id="joNumSlots"></div>
-          <button id="lookupSubmitButton" type="submit" class="btn btn-secondary btn-block">Associate Reference</button>
-        </form>
-      </div>
     </div>
 
     <script>
@@ -299,12 +273,6 @@
 
       let uploadQueue = [];
       let isUploading = false;
-
-      let associationLookupTimer;
-      const lookupGcashField = document.getElementById('lookupGcashRef');
-      const lookupStatusMsg = document.getElementById('lookupStatusMsg');
-      const lookupTableWrapper = document.getElementById('lookupTableWrapper');
-      const lookupTableBody = document.getElementById('lookupTableBody');
 
       // ================================================================
       //  HELPER FUNCTIONS
@@ -505,7 +473,8 @@
         const container = document.getElementById("placeholderAssociations");
         const listDiv = document.getElementById("placeholderListItems");
         if (!jos || jos.length === 0) {
-          container.style.display = "none";
+          container.style.display = "block";
+          listDiv.innerHTML = `<div class="no-items">No existing placeholder JOs found for this customer.</div>`;
           return;
         }
         container.style.display = "block";
@@ -561,7 +530,7 @@
           html: `✅ ${successCount} associated<br>❌ ${failCount} failed`,
           type: successCount > 0 ? "success" : "error"
         });
-        // Refresh the list (optional)
+        // Refresh the list
         const customerName = document.getElementById("CustomerName").value;
         if (customerName) {
           const refreshed = await fetchPlaceholderJOsForCustomer(customerName);
@@ -573,19 +542,14 @@
       function setCurrentJOPlaceholder() {
         const gcashInfo = document.getElementById("gcashInfo");
         const gcashRadio = document.getElementById("G-Cash");
-        // If not already checked, check it and trigger toggle
         if (!gcashRadio.checked) {
           gcashRadio.checked = true;
           togglePaymentRefInputs();
         }
         gcashInfo.value = "000000";
-        // Trigger input event to show placeholder message
         gcashInfo.dispatchEvent(new Event("input"));
-        // Also set the hidden fields for amount/date? Not needed for placeholder.
-        // Clear any mismatch/date warnings
         document.getElementById("amountMismatchMsg").innerText = "";
         document.getElementById("dateAnomalyMsg").innerText = "";
-        // Show a quick message
         const msgEl = document.getElementById("gcashLookupMsg");
         msgEl.style.color = "#f0ad4e";
         msgEl.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
@@ -676,7 +640,7 @@
             document.getElementById("mainsubmitbutton").innerText = "SUBMIT";
           }
 
-          // ---------- NEW: Fetch and display placeholder JOs for this customer ----------
+          // ---------- Fetch and display placeholder JOs for this customer ----------
           const customerName = data.value.trim();
           if (customerName) {
             const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
@@ -822,7 +786,7 @@
       }
 
       // ================================================================
-      //  GCASH MEDIA (GEMINI OCR) – unchanged but uses conditional checks
+      //  GCASH MEDIA (GEMINI OCR) – conditional checks
       // ================================================================
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
@@ -884,7 +848,6 @@
             gcashInfoField.dispatchEvent(new Event("input"));
 
           } else {
-            // No ref found – use a placeholder (NOREF-...)
             const placeholder = "NOREF-" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
             gcashInfoField.value = placeholder;
             const classifiedType = parsedReceipt.paymentType || "G-Cash";
@@ -1060,7 +1023,6 @@
             return;
           }
 
-          // Bypass duplicate check for 000000
           if (userInput === "000000") {
             msgElement.style.color = "#f0ad4e";
             msgElement.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
@@ -1102,182 +1064,7 @@
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
       // ================================================================
-      //  BOTTOM MANUAL ASSOCIATION (still functional)
-      // ================================================================
-      async function triggerGcashVerification() {
-        const gcashRef = lookupGcashField.value.trim();
-        lookupStatusMsg.innerText = "";
-        lookupTableBody.innerHTML = "";
-        lookupTableWrapper.style.display = "none";
-        if (gcashRef.length === 0) return;
-        if (!/^\d{6}$/.test(gcashRef)) {
-          lookupStatusMsg.style.color = "#d9534f";
-          lookupStatusMsg.innerText = "⚠️ Reference # must be exactly 6 digits.";
-          return;
-        }
-        lookupStatusMsg.style.color = "#007bff";
-        lookupStatusMsg.innerText = "Searching Delivery database...";
-        try {
-          const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(gcashRef)}`);
-          if (resultData.result === "success") {
-            lookupStatusMsg.style.color = "#28a745";
-            lookupStatusMsg.innerText = `✅ Found ${resultData.data.length} match(es). Verify details below before linking:`;
-            resultData.data.forEach(item => {
-              const row = document.createElement('tr');
-              row.innerHTML = `<td><strong>${item.jor}</strong></td><td>${item.timestamp}</td><td>${item.customerName}</td><td><span class="badge badge-info">${item.paymentType}</span></td>`;
-              lookupTableBody.appendChild(row);
-            });
-            lookupTableWrapper.style.display = "block";
-          } else if (resultData.result === "not_found") {
-            lookupStatusMsg.style.color = "#a94442";
-            lookupStatusMsg.innerText = "❌ This GCash reference hasn't been logged in any delivery sheet yet.";
-          } else {
-            lookupStatusMsg.style.color = "#d9534f";
-            lookupStatusMsg.innerText = "⚠️ Error reading database metadata.";
-          }
-        } catch (err) {
-          console.error("Lookup pipeline error:", err);
-          lookupStatusMsg.style.color = "#d9534f";
-          lookupStatusMsg.innerText = "📡 Server communication failure.";
-        }
-      }
-
-      lookupGcashField.addEventListener('input', function() {
-        clearTimeout(associationLookupTimer);
-        associationLookupTimer = setTimeout(triggerGcashVerification, 1000);
-      });
-
-      // Generate 10 JO slots for manual form
-      const JO_SLOT_COUNT = 10;
-      const joNumSlotsContainer = document.getElementById('joNumSlots');
-      const joLookupTimers = {};
-      for (let s = 1; s <= JO_SLOT_COUNT; s++) {
-        joNumSlotsContainer.insertAdjacentHTML('beforeend', `
-          <div class="form-group" id="joSlot${s}">
-            <label for="lookupJoNum${s}" style="font-size:13px; margin-bottom:2px;">
-              JO# ${s} ${s === 1 ? '<span class="text-danger">*</span>' : '<span class="text-muted" style="font-size:11px;">(optional)</span>'}
-            </label>
-            <input type="text" class="form-control jo-num-input" id="lookupJoNum${s}" name="lookupJoNum${s}" placeholder="Enter Job Order Number" ${s === 1 ? 'required' : ''} data-slot="${s}" autocomplete="off" />
-            <small id="joLookupStatusMsg${s}" class="form-text mt-1 font-weight-bold"></small>
-            <div id="joLookupTableWrapper${s}" class="table-responsive mt-1 mb-1" style="display:none;">
-              <p class="text-muted mb-1" style="font-size:11px;"><strong>Existing delivery log for this JO#:</strong></p>
-              <table class="table table-sm table-bordered bg-white" style="font-size:11px; text-align:center;">
-                <thead class="thead-light"><tr><th>GCash Ref#</th><th>Timestamp</th><th>CustomerName</th><th>PaymentType</th></tr></thead>
-                <tbody id="joLookupTableBody${s}"></tbody>
-              </table>
-            </div>
-          </div>`);
-      }
-
-      async function triggerJoVerificationForSlot(slotIndex) {
-        const field = document.getElementById(`lookupJoNum${slotIndex}`);
-        const statusMsg = document.getElementById(`joLookupStatusMsg${slotIndex}`);
-        const tableWrap = document.getElementById(`joLookupTableWrapper${slotIndex}`);
-        const tableBody = document.getElementById(`joLookupTableBody${slotIndex}`);
-        const joNum = field.value.trim();
-        statusMsg.innerText = "";
-        tableBody.innerHTML = "";
-        tableWrap.style.display = "none";
-        if (joNum.length === 0) return;
-        statusMsg.style.color = "#007bff";
-        statusMsg.innerText = "Searching Delivery database for JO#...";
-        try {
-          const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupJoDetails&joNum=${encodeURIComponent(joNum)}`);
-          if (resultData.result === "success") {
-            statusMsg.style.color = "#28a745";
-            statusMsg.innerText = `✅ Found record. Verify existing payment logs below:`;
-            resultData.data.forEach(item => {
-              const row = document.createElement('tr');
-              row.innerHTML = `<td><strong>${item.gcashRef || 'None'}</strong></td><td>${item.timestamp}</td><td>${item.customerName}</td><td><span class="badge badge-info">${item.paymentType}</span></td>`;
-              tableBody.appendChild(row);
-            });
-            tableWrap.style.display = "block";
-          } else if (resultData.result === "not_found") {
-            statusMsg.style.color = "#6c757d";
-            statusMsg.innerText = "ℹ️ No active logs in the delivery tab yet.";
-          } else {
-            statusMsg.style.color = "#d9534f";
-            statusMsg.innerText = "⚠️ " + resultData.message;
-          }
-        } catch (err) {
-          statusMsg.style.color = "#d9534f";
-          statusMsg.innerText = "📡 Server communication failure.";
-        }
-      }
-
-      for (let s = 1; s <= JO_SLOT_COUNT; s++) {
-        document.getElementById(`lookupJoNum${s}`).addEventListener('input', function() {
-          clearTimeout(joLookupTimers[s]);
-          joLookupTimers[s] = setTimeout(() => triggerJoVerificationForSlot(s), 1000);
-        });
-      }
-
-      document.getElementById("gcash-association-form").addEventListener("submit", async function(e) {
-        e.preventDefault();
-        const gcashRef = document.getElementById("lookupGcashRef").value.trim();
-        const submitBtn = document.getElementById("lookupSubmitButton");
-        if (!/^\d{6}$/.test(gcashRef)) {
-          swal("Invalid GCash Ref#", "Reference # must be exactly 6 digits.", "warning");
-          return;
-        }
-        const josToProcess = [];
-        for (let s = 1; s <= JO_SLOT_COUNT; s++) {
-          const val = document.getElementById(`lookupJoNum${s}`).value.trim();
-          if (val === "") continue;
-          josToProcess.push({ slotIndex: s, joNum: val });
-        }
-        if (josToProcess.length === 0) {
-          swal("No JO Numbers", "Please enter at least one Job Order Number.", "warning");
-          return;
-        }
-        submitBtn.disabled = true;
-        submitBtn.innerText = `Processing 0 / ${josToProcess.length}...`;
-        const results = { success: [], failed: [] };
-        for (let idx = 0; idx < josToProcess.length; idx++) {
-          const { slotIndex, joNum } = josToProcess[idx];
-          submitBtn.innerText = `Processing ${idx + 1} / ${josToProcess.length}...`;
-          try {
-            const targetUrl = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(gcashRef)}&lookupJoNum=${encodeURIComponent(joNum)}`;
-            const resultData = await fetchJsonWithRetry(targetUrl);
-            const statusEl = document.getElementById(`joLookupStatusMsg${slotIndex}`);
-            if (resultData.result === "success") {
-              results.success.push(`Slot ${slotIndex}: JO# ${joNum}`);
-              statusEl.style.color = "#28a745";
-              statusEl.innerText = `✅ Linked to GCash Ref# ${gcashRef}`;
-            } else {
-              results.failed.push(`Slot ${slotIndex}: JO# ${joNum} — ${resultData.message}`);
-              statusEl.style.color = "#d9534f";
-              statusEl.innerText = `❌ Failed: ${resultData.message}`;
-            }
-          } catch (err) {
-            results.failed.push(`Slot ${slotIndex}: JO# ${joNum} — Network error`);
-            document.getElementById(`joLookupStatusMsg${slotIndex}`).style.color = "#d9534f";
-            document.getElementById(`joLookupStatusMsg${slotIndex}`).innerText = "❌ Network error.";
-          }
-        }
-        let summaryHtml = "";
-        if (results.success.length > 0) summaryHtml += `<strong>✅ ${results.success.length} linked:</strong><br>${results.success.join("<br>")}<br><br>`;
-        if (results.failed.length > 0) summaryHtml += `<strong>❌ ${results.failed.length} failed:</strong><br>${results.failed.join("<br>")}`;
-        if (results.failed.length === 0) {
-          swal({ title: "All Done!", html: summaryHtml || `All ${results.success.length} JO(s) linked to GCash Ref# ${gcashRef}.`, type: "success" });
-          this.reset();
-          document.getElementById("lookupTableBody").innerHTML = "";
-          document.getElementById("lookupTableWrapper").style.display = "none";
-          document.getElementById("lookupStatusMsg").innerText = "";
-          for (let s = 1; s <= JO_SLOT_COUNT; s++) {
-            document.getElementById(`joLookupTableBody${s}`).innerHTML = "";
-            document.getElementById(`joLookupTableWrapper${s}`).style.display = "none";
-            document.getElementById(`joLookupStatusMsg${s}`).innerText = "";
-          }
-        } else {
-          swal({ title: "Partial / Failed", html: summaryHtml, type: results.success.length > 0 ? "warning" : "error" });
-        }
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Associate Reference";
-      });
-
-      // ================================================================
-      //  EVENT BINDINGS FOR NEW PLACEHOLDER BUTTONS
+      //  EVENT BINDINGS FOR PLACEHOLDER BUTTONS
       // ================================================================
       document.getElementById("associateSelectedBtn").addEventListener("click", associateSelectedPlaceholders);
       document.getElementById("usePlaceholderForCurrentBtn").addEventListener("click", setCurrentJOPlaceholder);
