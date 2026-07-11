@@ -55,8 +55,6 @@
         color: #007bff;
         font-weight: bold;
       }
-
-      /* No longer hiding the warning spans – they will appear when needed */
     </style>
   </head>
   <body class="bg-light">
@@ -702,6 +700,70 @@ function togglePaymentRefInputs() {
         throw new Error(lastErrorMsg);
       }
 
+      // ---- AMOUNT MISMATCH CHECK (restored from original) ----
+      function evaluateAmountMismatch(scannedAmount) {
+        const mismatchField = document.getElementById("AmountMismatchFlag");
+        const mismatchMsgEl = document.getElementById("amountMismatchMsg");
+        const scanned = parseFloat(scannedAmount);
+
+        if (!currentJOAmount || isNaN(scanned)) {
+          mismatchField.value = "";
+          mismatchMsgEl.innerText = "";
+          return false;
+        }
+
+        const isMismatch = Math.abs(scanned - currentJOAmount) > 0.01;
+
+        if (isMismatch) {
+          const isUnderpaid = scanned < currentJOAmount;
+          const tag = isUnderpaid ? "UNDERPAID" : "OVERPAID";
+          const diff = Math.abs(scanned - currentJOAmount).toFixed(2);
+
+          mismatchField.value = `${tag}: Scanned \u20b1${scanned.toFixed(2)} vs JO \u20b1${currentJOAmount.toFixed(2)} (${isUnderpaid ? "Short" : "Excess"} \u20b1${diff})`;
+
+          mismatchMsgEl.style.color = "#d9534f";
+          mismatchMsgEl.innerText = `\u26a0\ufe0f ${tag} by \u20b1${diff} \u2014 scanned \u20b1${scanned.toFixed(2)} vs JO total \u20b1${currentJOAmount.toFixed(2)}. Still submittable, but this will be flagged and reported to Sir Will.`;
+        } else {
+          mismatchField.value = "";
+          mismatchMsgEl.innerText = "";
+        }
+
+        return isMismatch;
+      }
+
+      // ---- DATE ANOMALY CHECK (restored from original) ----
+      function evaluateDateAnomaly(scannedDateStr) {
+        const flagField = document.getElementById("DateAnomalyFlag");
+        const msgEl = document.getElementById("dateAnomalyMsg");
+
+        if (!currentJOCreatedDate || !scannedDateStr) {
+          flagField.value = "";
+          msgEl.innerText = "";
+          return false;
+        }
+
+        const scannedDate = new Date(scannedDateStr.replace(" ", "T"));
+        if (isNaN(scannedDate.getTime())) {
+          flagField.value = "";
+          msgEl.innerText = "";
+          return false;
+        }
+
+        const isBeforeJO = scannedDate.getTime() < currentJOCreatedDate.getTime();
+
+        if (isBeforeJO) {
+          flagField.value = `DATE_BEFORE_JO: Scanned ${scannedDateStr} vs JO Created ${currentJOCreatedDate.toLocaleString("en-PH")}`;
+
+          msgEl.style.color = "#d9534f";
+          msgEl.innerText = `⚠️ DATE_BEFORE_JO — receipt date (${scannedDateStr}) is earlier than this JO's creation date (${currentJOCreatedDate.toLocaleString("en-PH")}). Still submittable, but this will be flagged and reported to Sir Will.`;
+        } else {
+          flagField.value = "";
+          msgEl.innerText = "";
+        }
+
+        return isBeforeJO;
+      }
+
       // --- GEMINI 2.5 OCR AUTOMATION FOR DUAL ONLINE SCANNING & CLASSIFICATION ---
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
@@ -750,12 +812,12 @@ function togglePaymentRefInputs() {
               try { await joSearchInFlight; } catch (e) { /* already handled inside performJOSearch */ }
             }
 
-            // ✅ Only run amount/date checks if the ref is NOT the placeholder "000000"
+            // ----- CONDITIONAL CHECKS: only run for non-placeholder refs -----
             if (ref !== "000000") {
               evaluateAmountMismatch(parsedReceipt.amount);
               evaluateDateAnomaly(parsedReceipt.transactionDate);
             } else {
-              // For 000000, clear any previous warning messages (they won't be shown)
+              // Clear any old warning messages when placeholder is used
               document.getElementById("amountMismatchMsg").innerText = "";
               document.getElementById("dateAnomalyMsg").innerText = "";
             }
@@ -831,9 +893,6 @@ function togglePaymentRefInputs() {
           }
         }
       });
-
-
-
 
       /**
        * Submission: Validates form and pushes to queue
