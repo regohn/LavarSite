@@ -73,6 +73,11 @@
       .lookup-table th {
         background-color: #f1f1f1;
       }
+      .placeholder-source-label {
+        font-size: 11px;
+        color: #6c757d;
+        margin-bottom: 5px;
+      }
     </style>
   </head>
   <body class="bg-light">
@@ -166,9 +171,10 @@
 
           <div id="JOresult" class="mt-3"></div>
 
-          <!-- Placeholder associations list (hidden until we have data) -->
+          <!-- Placeholder associations list (shared between JO search and GCash lookup) -->
           <div id="placeholderAssociations" style="display:none;" class="placeholder-list">
             <p><strong>Existing JOs for this customer with placeholder reference (000000):</strong></p>
+            <div id="placeholderSourceLabel" class="placeholder-source-label"></div>
             <div id="placeholderListItems"></div>
             <div class="mt-2">
               <button type="button" class="btn btn-sm btn-primary" id="associateSelectedBtn">Associate Selected</button>
@@ -259,7 +265,7 @@
         </form>
       </div>
 
-      <!-- ====== REINSTATED: GCash Reference Lookup (read‑only, no JO slots) ====== -->
+      <!-- ====== GCash Reference Lookup (read‑only) ====== -->
       <div class="form-container" id="GcashrefLookup" style="margin-top: 30px; margin-bottom: 50px; max-width: 550px;">
         <h5 class="text-center mb-3 text-secondary">Check GCash Reference</h5>
         <div class="form-group">
@@ -482,7 +488,7 @@
       }
 
       // ================================================================
-      //  PLACEHOLDER ASSOCIATION FEATURE
+      //  PLACEHOLDER ASSOCIATION FEATURE (shared)
       // ================================================================
       async function fetchPlaceholderJOsForCustomer(customerName) {
         try {
@@ -498,15 +504,19 @@
         }
       }
 
-      function renderPlaceholderList(jos) {
+      // Render the list of placeholder JOs with checkboxes and a source label
+      function renderPlaceholderList(jos, sourceLabel = "") {
         const container = document.getElementById("placeholderAssociations");
         const listDiv = document.getElementById("placeholderListItems");
+        const labelDiv = document.getElementById("placeholderSourceLabel");
         if (!jos || jos.length === 0) {
           container.style.display = "block";
+          labelDiv.innerText = sourceLabel ? `(from ${sourceLabel})` : "";
           listDiv.innerHTML = `<div class="no-items">No existing placeholder JOs found for this customer.</div>`;
           return;
         }
         container.style.display = "block";
+        labelDiv.innerText = sourceLabel ? `(from ${sourceLabel})` : "";
         listDiv.innerHTML = "";
         jos.forEach(item => {
           const div = document.createElement("div");
@@ -558,10 +568,11 @@
           html: `✅ ${successCount} associated<br>❌ ${failCount} failed`,
           type: successCount > 0 ? "success" : "error"
         });
+        // Refresh the list (use the current customer name from the hidden field)
         const customerName = document.getElementById("CustomerName").value;
         if (customerName) {
           const refreshed = await fetchPlaceholderJOsForCustomer(customerName);
-          renderPlaceholderList(refreshed);
+          renderPlaceholderList(refreshed, "current search");
         }
       }
 
@@ -666,10 +677,11 @@
             document.getElementById("mainsubmitbutton").innerText = "SUBMIT";
           }
 
+          // Fetch and display placeholder JOs for this customer
           const customerName = data.value.trim();
           if (customerName) {
             const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
-            renderPlaceholderList(placeholderJOs);
+            renderPlaceholderList(placeholderJOs, "JO search");
           }
 
         } catch (error) {
@@ -1088,7 +1100,7 @@
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
       // ================================================================
-      //  GCASH REFERENCE LOOKUP (read‑only)
+      //  GCASH REFERENCE LOOKUP (read‑only) + placeholder fetch
       // ================================================================
       const lookupRefInput = document.getElementById('lookupGcashRef');
       const lookupStatusMsg = document.getElementById('lookupStatusMsg');
@@ -1125,9 +1137,22 @@
                 lookupTableBody.appendChild(row);
               });
               lookupTableWrapper.style.display = "block";
+
+              // --- NEW: Fetch placeholder JOs for the same customer ---
+              if (resultData.data.length > 0) {
+                const customerName = resultData.data[0].customerName;
+                if (customerName) {
+                  const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
+                  // Set the hidden CustomerName field so the buttons use it later
+                  document.getElementById("CustomerName").value = customerName;
+                  renderPlaceholderList(placeholderJOs, `GCash lookup (${ref})`);
+                }
+              }
             } else if (resultData.result === "not_found") {
               lookupStatusMsg.style.color = "#a94442";
               lookupStatusMsg.innerText = "❌ No records found for this reference.";
+              // Also clear the placeholder list because no customer is known
+              document.getElementById("placeholderAssociations").style.display = "none";
             } else {
               lookupStatusMsg.style.color = "#d9534f";
               lookupStatusMsg.innerText = "⚠️ Error: " + (resultData.message || "unknown error");
