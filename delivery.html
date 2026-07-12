@@ -285,7 +285,13 @@
           <p class="text-muted mb-1" style="font-size: 11px;"><strong>JOs linked to this GCash reference:</strong></p>
           <table class="table table-sm table-bordered bg-white lookup-table">
             <thead>
-              <tr><th>JO</th><th>Timestamp</th><th>CustomerName</th><th>PaymentType</th></tr>
+              <tr>
+                <th>JO</th>
+                <th>Timestamp</th>
+                <th>Customer Name</th>
+                <th>Payment Type</th>
+                <th>Gcash Trans. Amount</th>
+              </tr>
             </thead>
             <tbody id="lookupTableBody"></tbody>
           </table>
@@ -297,7 +303,7 @@
         <h5 class="text-center mb-3 text-secondary">Placeholder (000000) JOs for this Customer</h5>
         <p><strong>Existing JOs for this customer with placeholder reference (000000):</strong></p>
         <div id="placeholderSourceLabel" class="placeholder-source-label"></div>
-        <div id="placeholderListItems"></div>
+        <div id="placeholderListItems" class="table-responsive"></div>
         <div class="mt-2">
           <button type="button" class="btn btn-sm btn-primary" id="associateSelectedBtn">Associate Selected to GCash Ref</button>
           <button type="button" class="btn btn-sm btn-warning" id="usePlaceholderForCurrentBtn">Use Placeholder for this JO</button>
@@ -537,29 +543,56 @@
         }
       }
 
+      // ================================================================
+      //  UPDATED: Render placeholder list as a TABLE with Gcash Trans Amount
+      // ================================================================
       function renderPlaceholderList(jos, sourceLabel = "") {
         setDebugMessage(`[render] Rendering ${jos.length} items, source: "${sourceLabel}"`);
         const container = document.getElementById("placeholderAssociations");
         const listDiv = document.getElementById("placeholderListItems");
         const labelDiv = document.getElementById("placeholderSourceLabel");
+
         if (!jos || jos.length === 0) {
           container.style.display = "block";
           labelDiv.innerText = sourceLabel ? `(from ${sourceLabel})` : "";
           listDiv.innerHTML = `<div class="no-items">No existing placeholder JOs found for this customer.</div>`;
           return;
         }
+
         container.style.display = "block";
         labelDiv.innerText = sourceLabel ? `(from ${sourceLabel})` : "";
-        listDiv.innerHTML = "";
+
+        // Build table
+        let tableHtml = `
+          <table class="table table-sm table-bordered bg-white lookup-table">
+            <thead>
+              <tr>
+                <th>Select</th>
+                <th>JO</th>
+                <th>Timestamp</th>
+                <th>Customer Name</th>
+                <th>Payment Type</th>
+                <th>Gcash Trans. Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
         jos.forEach(item => {
-          const div = document.createElement("div");
-          div.className = "list-item";
-          div.innerHTML = `
-            <input type="checkbox" class="placeholder-checkbox" value="${item.jor}" />
-            <strong>JO# ${item.jor}</strong> &nbsp;|&nbsp; ${item.timestamp} &nbsp;|&nbsp; ${item.customerName} &nbsp;|&nbsp; ${item.paymentType}
+          tableHtml += `
+            <tr>
+              <td><input type="checkbox" class="placeholder-checkbox" value="${item.jor}" /></td>
+              <td><strong>${item.jor}</strong></td>
+              <td>${item.timestamp}</td>
+              <td>${item.customerName}</td>
+              <td><span class="badge badge-info">${item.paymentType}</span></td>
+              <td>₱${item.gcashTransAmount || "—"}</td>
+            </tr>
           `;
-          listDiv.appendChild(div);
         });
+
+        tableHtml += `</tbody></table>`;
+        listDiv.innerHTML = tableHtml;
       }
 
       async function refreshPlaceholderList() {
@@ -573,8 +606,7 @@
       }
 
       // ================================================================
-      //  UPDATED: Associate selected JOs to the primary GCash reference
-      //  with enhanced error reporting
+      //  Associate selected JOs to the primary GCash reference
       // ================================================================
       async function associateSelectedPlaceholders() {
         const checkboxes = document.querySelectorAll('.placeholder-checkbox:checked');
@@ -627,7 +659,6 @@
         submitBtn.disabled = false;
         submitBtn.innerText = "Associate Selected to GCash Ref";
 
-        // Show detailed errors in debug panel
         if (errorMessages.length > 0) {
           setDebugMessage("Association errors:\n" + errorMessages.join("\n"));
         } else {
@@ -640,7 +671,6 @@
           type: successCount > 0 ? "success" : "error"
         });
 
-        // Refresh the placeholder list
         await refreshPlaceholderList();
       }
 
@@ -1205,7 +1235,13 @@
               lookupStatusMsg.innerText = `✅ Found ${resultData.data.length} record(s).`;
               resultData.data.forEach(item => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td><strong>${item.jor}</strong></td><td>${item.timestamp}</td><td>${item.customerName}</td><td><span class="badge badge-info">${item.paymentType}</span></td> <td>₱${item.gcashTransAmount || "—"}</td>`;
+                row.innerHTML = `
+                  <td><strong>${item.jor}</strong></td>
+                  <td>${item.timestamp}</td>
+                  <td>${item.customerName}</td>
+                  <td><span class="badge badge-info">${item.paymentType}</span></td>
+                  <td>₱${item.gcashTransAmount || "—"}</td>
+                `;
                 lookupTableBody.appendChild(row);
               });
               lookupTableWrapper.style.display = "block";
