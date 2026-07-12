@@ -184,9 +184,6 @@
 
           <div id="JOresult" class="mt-3"></div>
 
-          <!-- Original placeholder list container removed from here -->
-          <!-- It is now moved to the bottom, after the GCash lookup -->
-
           <div class="form-group mt-3">
             <label for="DeliveryStaff">Delivery Staff</label>
             <select class="form-control" name="DeliveryStaff" id="DeliveryStaff" required>
@@ -294,14 +291,14 @@
         </div>
       </div>
 
-      <!-- ====== MOVED: Placeholder associations list (now appears below the GCash lookup) ====== -->
+      <!-- ====== MOVED: Placeholder associations list (appears below the GCash lookup) ====== -->
       <div class="form-container" id="placeholderAssociations" style="display:none; margin-top: 20px; max-width: 550px;">
         <h5 class="text-center mb-3 text-secondary">Placeholder (000000) JOs for this Customer</h5>
         <p><strong>Existing JOs for this customer with placeholder reference (000000):</strong></p>
         <div id="placeholderSourceLabel" class="placeholder-source-label"></div>
         <div id="placeholderListItems"></div>
         <div class="mt-2">
-          <button type="button" class="btn btn-sm btn-primary" id="associateSelectedBtn">Associate Selected</button>
+          <button type="button" class="btn btn-sm btn-primary" id="associateSelectedBtn">Associate Selected to GCash Ref</button>
           <button type="button" class="btn btn-sm btn-warning" id="usePlaceholderForCurrentBtn">Use Placeholder for this JO</button>
           <button type="button" class="btn btn-sm btn-secondary" id="manualRefreshPlaceholderBtn">Refresh List</button>
         </div>
@@ -574,15 +571,26 @@
         renderPlaceholderList(jos, "manual refresh");
       }
 
+      // ================================================================
+      //  UPDATED: Associate selected JOs to the primary GCash reference
+      // ================================================================
       async function associateSelectedPlaceholders() {
         const checkboxes = document.querySelectorAll('.placeholder-checkbox:checked');
         if (checkboxes.length === 0) {
           swal("No selection", "Please check at least one JO to associate.", "warning");
           return;
         }
+
+        // Get the target GCash reference from the lookup field
+        const targetGcashRef = document.getElementById("lookupGcashRef").value.trim();
+        if (!targetGcashRef || !/^\d{6}$/.test(targetGcashRef)) {
+          swal("Invalid GCash Ref", "Please enter a valid 6‑digit GCash reference in the lookup field.", "warning");
+          return;
+        }
+
         const confirmResult = await swal({
           title: "Associate selected JOs?",
-          text: `This will set GCash Ref to 000000 for ${checkboxes.length} JO(s).`,
+          text: `This will set GCash Ref to ${targetGcashRef} for ${checkboxes.length} JO(s).`,
           type: "warning",
           showCancelButton: true,
           confirmButtonText: "Yes, associate!"
@@ -598,7 +606,7 @@
         for (const cb of checkboxes) {
           const joNum = cb.value;
           try {
-            const url = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=000000&lookupJoNum=${encodeURIComponent(joNum)}`;
+            const url = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(targetGcashRef)}&lookupJoNum=${encodeURIComponent(joNum)}`;
             const result = await fetchJsonWithRetry(url);
             if (result.result === "success") successCount++;
             else failCount++;
@@ -607,12 +615,13 @@
           }
         }
         submitBtn.disabled = false;
-        submitBtn.innerText = "Associate Selected";
+        submitBtn.innerText = "Associate Selected to GCash Ref";
         swal({
           title: "Done",
-          html: `✅ ${successCount} associated<br>❌ ${failCount} failed`,
+          html: `✅ ${successCount} associated to ${targetGcashRef}<br>❌ ${failCount} failed`,
           type: successCount > 0 ? "success" : "error"
         });
+        // Refresh the placeholder list (re-fetch 000000 rows) to reflect the changes
         await refreshPlaceholderList();
       }
 
