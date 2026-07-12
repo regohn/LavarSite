@@ -95,6 +95,7 @@
   <body class="bg-light">
 
     <div class="container">
+      <!-- ====== MAIN DELIVERY FORM ====== -->
       <div class="form-container">
         <div id="queueStatus">
           <div><strong>Pending Uploads:</strong> <span id="queueCount">0</span></div>
@@ -113,7 +114,6 @@
         </div>
 
         <form id="submit-to-google-sheet">
-          <!-- ... (same form fields as before, unchanged) ... -->
           <div class="form-group">
             <label for="JOR">(Only Folded Laundry JOs will appear in search)<br> (Use Delivery form also for In-shop Pickup of laundry by customer)</label>
             <input
@@ -184,19 +184,8 @@
 
           <div id="JOresult" class="mt-3"></div>
 
-          <!-- Placeholder associations list -->
-          <div id="placeholderAssociations" style="display:none;" class="placeholder-list">
-            <p><strong>Existing JOs for this customer with placeholder reference (000000):</strong></p>
-            <div id="placeholderSourceLabel" class="placeholder-source-label"></div>
-            <div id="placeholderListItems"></div>
-            <div class="mt-2">
-              <button type="button" class="btn btn-sm btn-primary" id="associateSelectedBtn">Associate Selected</button>
-              <button type="button" class="btn btn-sm btn-warning" id="usePlaceholderForCurrentBtn">Use Placeholder for this JO</button>
-              <button type="button" class="btn btn-sm btn-secondary" id="manualRefreshPlaceholderBtn">Refresh List</button>
-            </div>
-            <!-- Debug panel -->
-            <div id="debugPanel" class="debug-box" style="display:none;"></div>
-          </div>
+          <!-- Original placeholder list container removed from here -->
+          <!-- It is now moved to the bottom, after the GCash lookup -->
 
           <div class="form-group mt-3">
             <label for="DeliveryStaff">Delivery Staff</label>
@@ -305,6 +294,21 @@
         </div>
       </div>
 
+      <!-- ====== MOVED: Placeholder associations list (now appears below the GCash lookup) ====== -->
+      <div class="form-container" id="placeholderAssociations" style="display:none; margin-top: 20px; max-width: 550px;">
+        <h5 class="text-center mb-3 text-secondary">Placeholder (000000) JOs for this Customer</h5>
+        <p><strong>Existing JOs for this customer with placeholder reference (000000):</strong></p>
+        <div id="placeholderSourceLabel" class="placeholder-source-label"></div>
+        <div id="placeholderListItems"></div>
+        <div class="mt-2">
+          <button type="button" class="btn btn-sm btn-primary" id="associateSelectedBtn">Associate Selected</button>
+          <button type="button" class="btn btn-sm btn-warning" id="usePlaceholderForCurrentBtn">Use Placeholder for this JO</button>
+          <button type="button" class="btn btn-sm btn-secondary" id="manualRefreshPlaceholderBtn">Refresh List</button>
+        </div>
+        <!-- Debug panel (hidden by default) -->
+        <div id="debugPanel" class="debug-box" style="display:none;"></div>
+      </div>
+
     </div>
 
     <script>
@@ -329,7 +333,7 @@
       let isUploading = false;
 
       // ================================================================
-      //  HELPER FUNCTIONS (same as before, only added debugPanel)
+      //  HELPER FUNCTIONS
       // ================================================================
       function setDebugMessage(msg) {
         const panel = document.getElementById("debugPanel");
@@ -458,7 +462,7 @@
       }
 
       // ================================================================
-      //  AMOUNT MISMATCH & DATE ANOMALY (same as before)
+      //  AMOUNT MISMATCH & DATE ANOMALY (run only for non-000000 refs)
       // ================================================================
       function evaluateAmountMismatch(scannedAmount) {
         const mismatchField = document.getElementById("AmountMismatchFlag");
@@ -609,7 +613,6 @@
           html: `✅ ${successCount} associated<br>❌ ${failCount} failed`,
           type: successCount > 0 ? "success" : "error"
         });
-        // Refresh the list
         await refreshPlaceholderList();
       }
 
@@ -856,7 +859,6 @@
           originalMediaRow.style.display = "block";
           originalMediaInput.disabled = false;
         }
-        // Hide debug
         document.getElementById("debugPanel").style.display = "none";
       }
 
@@ -864,15 +866,205 @@
       //  GCASH MEDIA (GEMINI OCR) – unchanged
       // ================================================================
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
-        // ... (same as before, to keep it short I'm omitting but it's the same)
-        // In the final file, this will be unchanged.
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const gcashLookupMsg = document.getElementById("gcashLookupMsg");
+        const gcashInfoField = document.getElementById("gcashInfo");
+        const submitBtn = document.getElementById("mainsubmitbutton");
+
+        gcashLookupMsg.style.color = "#007bff";
+        gcashLookupMsg.innerText = "⏳ Gemini AI is identifying and parsing receipt layout...";
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.style.opacity = "0.5";
+          submitBtn.innerText = "AI Processing...";
+        }
+
+        try {
+          const base64Data = await compressImageToBase64(file);
+          const mimeType = "image/jpeg";
+
+          const parsedReceipt = await analyzeGcashWithRetry(base64Data, mimeType, (attempt, max) => {
+            gcashLookupMsg.innerText = attempt === 1
+              ? "⏳ Gemini AI is identifying and parsing receipt layout..."
+              : `⏳ Retry ${attempt}/${max}: re-attempting scan...`;
+          }, 3);
+
+          if (parsedReceipt && parsedReceipt.shortRefNo) {
+            const ref = parsedReceipt.shortRefNo;
+            gcashInfoField.value = ref;
+
+            const classifiedType = parsedReceipt.paymentType || "G-Cash";
+            document.getElementById("G-Cash").value = classifiedType;
+            document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
+            document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
+
+            if (joSearchInFlight) {
+              gcashLookupMsg.innerText = "⏳ Waiting for JO details to finish loading before validating...";
+              try { await joSearchInFlight; } catch (e) { /* ignore */ }
+            }
+
+            if (ref !== "000000") {
+              evaluateAmountMismatch(parsedReceipt.amount);
+              evaluateDateAnomaly(parsedReceipt.transactionDate);
+            } else {
+              document.getElementById("amountMismatchMsg").innerText = "";
+              document.getElementById("dateAnomalyMsg").innerText = "";
+            }
+
+            gcashLookupMsg.style.color = "#28a745";
+            gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${ref} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
+
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.style.opacity = "1";
+              submitBtn.innerText = "Submit";
+            }
+            gcashInfoField.dispatchEvent(new Event("input"));
+
+          } else {
+            const placeholder = "NOREF-" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+            gcashInfoField.value = placeholder;
+            const classifiedType = parsedReceipt.paymentType || "G-Cash";
+            document.getElementById("G-Cash").value = classifiedType;
+            document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
+            document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
+
+            if (joSearchInFlight) {
+              gcashLookupMsg.innerText = "⏳ Waiting for JO details to finish loading before validating...";
+              try { await joSearchInFlight; } catch (e) { /* ignore */ }
+            }
+
+            document.getElementById("amountMismatchMsg").innerText = "";
+            document.getElementById("dateAnomalyMsg").innerText = "";
+
+            gcashLookupMsg.style.color = "#e0a800";
+            gcashLookupMsg.innerText = "⚠️ No reference number was visible in this screenshot. You may still submit — this will be flagged (" + placeholder + ") for manual verification.";
+
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.style.opacity = "1";
+              submitBtn.innerText = "Submit";
+            }
+          }
+
+        } catch (err) {
+          console.error("Gemini Extraction Failure Chain:", err);
+          gcashLookupMsg.style.color = "#d9534f";
+          gcashLookupMsg.innerText = "❌ " + (err.message || "AI could not read the screenshot cleanly. Please re-upload or ensure the transaction image is clear.");
+          gcashInfoField.value = "";
+          document.getElementById("G-Cash").value = "G-Cash";
+          document.getElementById("GcashTransAmount").value = "";
+          document.getElementById("TransactionDate").value = "";
+          document.getElementById("AmountMismatchFlag").value = "";
+          document.getElementById("amountMismatchMsg").innerText = "";
+          document.getElementById("DateAnomalyFlag").value = "";
+          document.getElementById("dateAnomalyMsg").innerText = "";
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = "1";
+            submitBtn.innerText = "Submit";
+          }
+        }
       });
 
       // ================================================================
-      //  FORM SUBMISSION (QUEUE) – unchanged
+      //  FORM SUBMISSION (QUEUE)
       // ================================================================
-      form.addEventListener("submit", async (e) => { /* ... same ... */ });
-      async function processQueue() { /* ... same ... */ }
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const JOR = document.getElementById("JOR").value;
+        if (!JOR || JOR.trim() === "") {
+          swal("Missing JO#", "Please search and select a Job Order first.", "warning");
+          return;
+        }
+
+        const paymentType = document.querySelector('input[name="PaymentType"]:checked')?.value;
+        const paymentRefValidators = {
+          "G-Cash": {
+            field: document.getElementById("gcashInfo"),
+            pattern: /^\d{6}$/,
+            msg: "G-Cash Reference # must be exactly 6 digits."
+          },
+          "Other Online Banking": {
+            field: document.getElementById("gcashInfo"),
+            pattern: /^[A-Za-z0-9]{4,20}$/,
+            msg: "Reference # must be 4–20 letters/numbers."
+          }
+        };
+        const validator = paymentRefValidators[paymentType];
+        if (validator && validator.field.style.display !== "none") {
+          const refValue = validator.field.value.trim();
+          const isFlaggedNoRef = refValue.startsWith("NOREF-");
+          if (!isFlaggedNoRef && !validator.pattern.test(refValue)) {
+            swal("Invalid Reference #", validator.msg, "warning");
+            return;
+          }
+        }
+
+        const submitBtn = document.getElementById("mainsubmitbutton");
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Queueing...";
+
+        const formData = new FormData(form);
+        const data = {};
+        const filePromises = [];
+        formData.forEach((value, key) => {
+          if (value instanceof File && value.size > 0) {
+            const promise = readFileAsBase64(value).then(b64 => ({ key, value: b64 }));
+            filePromises.push(promise);
+          } else if (!(value instanceof File)) {
+            data[key] = value;
+          }
+        });
+
+        try {
+          const resolvedFiles = await Promise.all(filePromises);
+          resolvedFiles.forEach(f => data[f.key] = f.value);
+
+          const dropdownValue = joDropdown.value;
+          if (dropdownValue === JOR) {
+            const optionToRemove = joDropdown.querySelector(`option[value="${JOR}"]`);
+            if (optionToRemove) optionToRemove.remove();
+          }
+
+          uploadQueue.push(data);
+          updateQueueUI();
+          swal("Success", "Delivery details have been queued.", "success");
+          clearForm();
+        } catch (err) {
+          console.error("Queue Error:", err);
+          swal("Error", "There was an error processing your photos.", "error");
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Submit";
+        }
+      });
+
+      async function processQueue() {
+        if (isUploading || uploadQueue.length === 0 || !navigator.onLine) return;
+        isUploading = true;
+        updateQueueUI();
+        const currentData = uploadQueue[0];
+        try {
+          const params = new URLSearchParams();
+          for (const key in currentData) params.append(key, currentData[key]);
+          await fetch(scriptURL, {
+            method: "POST",
+            mode: "no-cors",
+            body: params.toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+          });
+          uploadQueue.shift();
+          console.log("Queue Update: Upload successful. " + uploadQueue.length + " items remaining.");
+        } catch (err) {
+          console.error("Background Queue Error:", err);
+        } finally {
+          isUploading = false;
+          updateQueueUI();
+        }
+      }
 
       // ================================================================
       //  APP INIT
@@ -891,13 +1083,64 @@
       //  DUPLICATE REFERENCE CHECKER (with 000000 bypass)
       // ================================================================
       const paymentRefLookupTimers = {};
+
       function setupPaymentRefValidation(inputId, msgElementId, mode) {
-        // ... (same)
+        const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,20}$/ : /^\d{6}$/;
+        document.getElementById(inputId).addEventListener('input', function() {
+          const userInput = this.value.trim();
+          const msgElement = document.getElementById(msgElementId);
+          const submitBtn = document.getElementById("mainsubmitbutton");
+
+          clearTimeout(paymentRefLookupTimers[inputId]);
+          msgElement.innerText = "";
+
+          if (userInput.length === 0) {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+            return;
+          }
+
+          if (userInput === "000000") {
+            msgElement.style.color = "#f0ad4e";
+            msgElement.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+            return;
+          }
+
+          if (!pattern.test(userInput)) return;
+
+          paymentRefLookupTimers[inputId] = setTimeout(async () => {
+            msgElement.style.color = "#007bff";
+            msgElement.innerText = "Checking reference number...";
+            try {
+              const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(userInput)}`);
+              if (resultData.result === "success") {
+                const match = resultData.data[0];
+                msgElement.style.color = "#d9534f";
+                msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.jor} | ${match.customerName} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
+                if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
+              } else if (resultData.result === "not_found") {
+                msgElement.style.color = "#28a745";
+                msgElement.innerText = "✅ Reference number is available";
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+              } else {
+                msgElement.style.color = "#d9534f";
+                msgElement.innerText = "⚠️ Could not verify. Proceed with caution.";
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+              }
+            } catch (err) {
+              console.error("Ref lookup error:", err);
+              msgElement.style.color = "#d9534f";
+              msgElement.innerText = "📡 Could not connect to server after 3 attempts. Proceed with caution.";
+              if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+            }
+          }, 1000);
+        });
       }
+
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
       // ================================================================
-      //  GCASH REFERENCE LOOKUP (with visible debug)
+      //  GCASH REFERENCE LOOKUP (read‑only) + secondary placeholder fetch
       // ================================================================
       const lookupRefInput = document.getElementById('lookupGcashRef');
       const lookupStatusMsg = document.getElementById('lookupStatusMsg');
@@ -911,7 +1154,6 @@
         lookupStatusMsg.innerText = "";
         lookupTableBody.innerHTML = "";
         lookupTableWrapper.style.display = "none";
-        // Hide debug initially
         document.getElementById("debugPanel").style.display = "none";
 
         if (ref.length === 0) return;
@@ -940,17 +1182,19 @@
               });
               lookupTableWrapper.style.display = "block";
 
-              // --- SECONDARY SEARCH ---
+              // --- SECONDARY SEARCH for placeholder JOs ---
               if (resultData.data.length > 0) {
                 const customerName = resultData.data[0].customerName;
                 setDebugMessage(`[GCash Lookup] Extracted customer name: "${customerName}"`);
                 if (customerName) {
+                  // Store in hidden field for future use
                   document.getElementById("CustomerName").value = customerName;
                   const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
                   setDebugMessage(`[GCash Lookup] Placeholder JOs found: ${JSON.stringify(placeholderJOs, null, 2)}`);
                   renderPlaceholderList(placeholderJOs, `GCash lookup (${ref})`);
                 } else {
                   setDebugMessage("[GCash Lookup] Customer name is empty, skipping secondary search.");
+                  document.getElementById("placeholderAssociations").style.display = "none";
                 }
               } else {
                 setDebugMessage("[GCash Lookup] No rows found, clearing placeholder.");
