@@ -114,6 +114,7 @@
         </div>
 
         <form id="submit-to-google-sheet">
+          <!-- ... (same as before) ... -->
           <div class="form-group">
             <label for="JOR">(Only Folded Laundry JOs will appear in search)<br> (Use Delivery form also for In-shop Pickup of laundry by customer)</label>
             <input
@@ -267,7 +268,7 @@
         </form>
       </div>
 
-      <!-- ====== GCash Reference Lookup (read‑only) ====== -->
+      <!-- ====== GCash Reference Lookup ====== -->
       <div class="form-container" id="GcashrefLookup" style="margin-top: 30px; margin-bottom: 50px; max-width: 550px;">
         <h5 class="text-center mb-3 text-secondary">Check GCash Reference</h5>
         <div class="form-group">
@@ -291,7 +292,7 @@
         </div>
       </div>
 
-      <!-- ====== MOVED: Placeholder associations list (appears below the GCash lookup) ====== -->
+      <!-- ====== Placeholder associations list (below the GCash lookup) ====== -->
       <div class="form-container" id="placeholderAssociations" style="display:none; margin-top: 20px; max-width: 550px;">
         <h5 class="text-center mb-3 text-secondary">Placeholder (000000) JOs for this Customer</h5>
         <p><strong>Existing JOs for this customer with placeholder reference (000000):</strong></p>
@@ -302,7 +303,7 @@
           <button type="button" class="btn btn-sm btn-warning" id="usePlaceholderForCurrentBtn">Use Placeholder for this JO</button>
           <button type="button" class="btn btn-sm btn-secondary" id="manualRefreshPlaceholderBtn">Refresh List</button>
         </div>
-        <!-- Debug panel (hidden by default) -->
+        <!-- Debug panel -->
         <div id="debugPanel" class="debug-box" style="display:none;"></div>
       </div>
 
@@ -459,7 +460,7 @@
       }
 
       // ================================================================
-      //  AMOUNT MISMATCH & DATE ANOMALY (run only for non-000000 refs)
+      //  AMOUNT MISMATCH & DATE ANOMALY
       // ================================================================
       function evaluateAmountMismatch(scannedAmount) {
         const mismatchField = document.getElementById("AmountMismatchFlag");
@@ -512,7 +513,7 @@
       }
 
       // ================================================================
-      //  PLACEHOLDER ASSOCIATION FEATURE (shared)
+      //  PLACEHOLDER ASSOCIATION
       // ================================================================
       async function fetchPlaceholderJOsForCustomer(customerName) {
         setDebugMessage(`[fetch] Searching for customer: "${customerName}"`);
@@ -573,6 +574,7 @@
 
       // ================================================================
       //  UPDATED: Associate selected JOs to the primary GCash reference
+      //  with enhanced error reporting
       // ================================================================
       async function associateSelectedPlaceholders() {
         const checkboxes = document.querySelectorAll('.placeholder-checkbox:checked');
@@ -581,7 +583,6 @@
           return;
         }
 
-        // Get the target GCash reference from the lookup field
         const targetGcashRef = document.getElementById("lookupGcashRef").value.trim();
         if (!targetGcashRef || !/^\d{6}$/.test(targetGcashRef)) {
           swal("Invalid GCash Ref", "Please enter a valid 6‑digit GCash reference in the lookup field.", "warning");
@@ -603,25 +604,43 @@
 
         let successCount = 0;
         let failCount = 0;
+        let errorMessages = [];
+
         for (const cb of checkboxes) {
-          const joNum = cb.value;
+          const joNum = cb.value.trim();
           try {
             const url = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(targetGcashRef)}&lookupJoNum=${encodeURIComponent(joNum)}`;
             const result = await fetchJsonWithRetry(url);
-            if (result.result === "success") successCount++;
-            else failCount++;
+            console.log(`[Associate] JO ${joNum} response:`, result);
+            if (result.result === "success") {
+              successCount++;
+            } else {
+              failCount++;
+              errorMessages.push(`JO ${joNum}: ${result.message || "Unknown error"}`);
+            }
           } catch (err) {
             failCount++;
+            errorMessages.push(`JO ${joNum}: Network/parse error - ${err.message}`);
           }
         }
+
         submitBtn.disabled = false;
         submitBtn.innerText = "Associate Selected to GCash Ref";
+
+        // Show detailed errors in debug panel
+        if (errorMessages.length > 0) {
+          setDebugMessage("Association errors:\n" + errorMessages.join("\n"));
+        } else {
+          setDebugMessage("All associations succeeded.");
+        }
+
         swal({
           title: "Done",
           html: `✅ ${successCount} associated to ${targetGcashRef}<br>❌ ${failCount} failed`,
           type: successCount > 0 ? "success" : "error"
         });
-        // Refresh the placeholder list (re-fetch 000000 rows) to reflect the changes
+
+        // Refresh the placeholder list
         await refreshPlaceholderList();
       }
 
@@ -872,7 +891,7 @@
       }
 
       // ================================================================
-      //  GCASH MEDIA (GEMINI OCR) – unchanged
+      //  GCASH MEDIA (GEMINI OCR)
       // ================================================================
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
@@ -1149,7 +1168,7 @@
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
       // ================================================================
-      //  GCASH REFERENCE LOOKUP (read‑only) + secondary placeholder fetch
+      //  GCASH REFERENCE LOOKUP + SECONDARY PLACEHOLDER FETCH
       // ================================================================
       const lookupRefInput = document.getElementById('lookupGcashRef');
       const lookupStatusMsg = document.getElementById('lookupStatusMsg');
@@ -1191,12 +1210,11 @@
               });
               lookupTableWrapper.style.display = "block";
 
-              // --- SECONDARY SEARCH for placeholder JOs ---
+              // Secondary search
               if (resultData.data.length > 0) {
                 const customerName = resultData.data[0].customerName;
                 setDebugMessage(`[GCash Lookup] Extracted customer name: "${customerName}"`);
                 if (customerName) {
-                  // Store in hidden field for future use
                   document.getElementById("CustomerName").value = customerName;
                   const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
                   setDebugMessage(`[GCash Lookup] Placeholder JOs found: ${JSON.stringify(placeholderJOs, null, 2)}`);
@@ -1226,7 +1244,7 @@
       });
 
       // ================================================================
-      //  EVENT BINDINGS FOR PLACEHOLDER BUTTONS
+      //  EVENT BINDINGS
       // ================================================================
       document.getElementById("associateSelectedBtn").addEventListener("click", associateSelectedPlaceholders);
       document.getElementById("usePlaceholderForCurrentBtn").addEventListener("click", setCurrentJOPlaceholder);
