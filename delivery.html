@@ -1205,7 +1205,7 @@
               lookupStatusMsg.innerText = `✅ Found ${resultData.data.length} record(s).`;
               resultData.data.forEach(item => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td><strong>${item.jor}</strong></td><td>${item.timestamp}</td><td>${item.customerName}</td><td><span class="badge badge-info">${item.paymentType}</span></td>`;
+                row.innerHTML = `<td><strong>${item.jor}</strong></td><td>${item.timestamp}</td><td>${item.customerName}</td><td><span class="badge badge-info">${item.paymentType}</span></td> <td>₱${item.gcashTransAmount || "—"}</td>`;
                 lookupTableBody.appendChild(row);
               });
               lookupTableWrapper.style.display = "block";
