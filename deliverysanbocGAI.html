@@ -1,0 +1,2047 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  motion, 
+  AnimatePresence 
+} from 'motion/react';
+import { 
+  Truck, 
+  Sparkles, 
+  Search, 
+  Trash2, 
+  Camera, 
+  AlertTriangle, 
+  CheckCircle, 
+  RefreshCw, 
+  Clock, 
+  ExternalLink, 
+  User, 
+  MapPin, 
+  CreditCard, 
+  Layers, 
+  Wifi, 
+  WifiOff, 
+  Terminal, 
+  Info, 
+  ChevronLeft, 
+  ChevronRight,
+  Plus,
+  ArrowRightLeft,
+  X,
+  FileText
+} from 'lucide-react';
+
+// ================================================================
+//  CONFIGURATION & CONSTANTS
+// ================================================================
+const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
+const requestScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
+const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
+
+const DELIVERY_STAFF_OPTIONS = [
+  "Joshua", "Joshua2", "Lowi", "Edward", "LAVAR", "NIDA"
+];
+
+// ================================================================
+//  TYPES
+// ================================================================
+interface QueuedJob {
+  JOR: string;
+  CustomerName: string;
+  serviceType: string;
+  DeliveryStaff: string;
+  PaymentType: string;
+  gcashInfo: string;
+  GcashTransAmount: string;
+  TransactionDate: string;
+  AmountMismatchFlag: string;
+  DateAnomalyFlag: string;
+  Comments: string;
+  UniqueID?: string;
+  media?: string;
+  media2?: string;
+  media3?: string;
+}
+
+interface SearchResult {
+  result?: string;
+  value: string; // CustomerName
+  JO: string;
+  JOCreatedDate?: string;
+  colC: string; // Bags
+  colK: string; // Total Amount
+  colD: string; // Folder
+  colE: string; // Details
+  DeliveryStaff?: string;
+  Comments?: string;
+  DeliveryTimeStamp?: string;
+  UniqueID?: string;
+  Picture1?: string;
+  Picture2?: string;
+  Picture3?: string;
+}
+
+interface GCashRecord {
+  jor: string;
+  timestamp: string;
+  customerName: string;
+  paymentType: string;
+  gcashTransAmount?: string;
+}
+
+interface Toast {
+  id: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  title: string;
+  message: string;
+}
+
+interface DebugLog {
+  time: string;
+  type: 'info' | 'success' | 'warn' | 'error';
+  message: string;
+}
+
+// ================================================================
+//  UTILITY FUNCTIONS
+// ================================================================
+function getManilaDateString(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+}
+
+function getDriveThumbnail(url: string | undefined): string {
+  if (!url) return "";
+  const match = url.match(/[-\w]{25,}/);
+  return match ? `https://drive.google.com/thumbnail?id=${match[0]}` : "";
+}
+
+function compressImageToBase64(file: File, maxDimension = 1600, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDimension) {
+          height = Math.round(height * (maxDimension / width));
+          width = maxDimension;
+        } else if (height >= width && height > maxDimension) {
+          width = Math.round(width * (maxDimension / height));
+          height = maxDimension;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          resolve(dataUrl.split(",")[1]);
+        } else {
+          reject(new Error("Could not compress."));
+        }
+      };
+      img.onerror = () => reject(new Error("Could not load image."));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        resolve((reader.result as string).split(',')[1]);
+      } else {
+        reject(new Error("File empty"));
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export default function App() {
+  // ================================================================
+  //  STATE
+  // ================================================================
+  const [activeTab, setActiveTab] = useState<'form' | 'lookup' | 'placeholders' | 'system'>('form');
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [currentDate, setCurrentDate] = useState<string>(getManilaDateString());
+  const [dropdownJOs, setDropdownJOs] = useState<Array<{ jor: string, name: string }>>([]);
+  const [dropdownLoading, setDropdownLoading] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchLoading, setSearchLoading] = useState<boolean>(false);
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  // Form State
+  const [serviceType, setServiceType] = useState<string>('Delivery');
+  const [deliveryStaff, setDeliveryStaff] = useState<string>('');
+  const [paymentType, setPaymentType] = useState<string>('Cash');
+  const [gcashRef, setGcashRef] = useState<string>('');
+  const [comments, setComments] = useState<string>('');
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Form Media State
+  const [media1, setMedia1] = useState<File | null>(null);
+  const [media1Preview, setMedia1Preview] = useState<string | null>(null);
+  const [media2, setMedia2] = useState<File | null>(null);
+  const [media2Preview, setMedia2Preview] = useState<string | null>(null);
+  const [media3, setMedia3] = useState<File | null>(null);
+  const [media3Preview, setMedia3Preview] = useState<string | null>(null);
+
+  // GCash Dynamic Screen Parsing & Verification
+  const [gcashMedia, setGcashMedia] = useState<File | null>(null);
+  const [gcashMediaPreview, setGcashMediaPreview] = useState<string | null>(null);
+  const [aiAnalyzing, setAiAnalyzing] = useState<boolean>(false);
+  const [aiStatusMsg, setAiStatusMsg] = useState<string>('');
+  
+  // OCR Decoded Data
+  const [scannedAmount, setScannedAmount] = useState<string>('');
+  const [scannedDate, setScannedDate] = useState<string>('');
+  const [amountMismatchFlag, setAmountMismatchFlag] = useState<string>('');
+  const [dateAnomalyFlag, setDateAnomalyFlag] = useState<string>('');
+
+  // GCash Live Validation Checks
+  const [gcashRefStatus, setGcashRefStatus] = useState<'idle' | 'validating' | 'available' | 'used' | 'error'>('idle');
+  const [gcashRefUsageDetails, setGcashRefUsageDetails] = useState<string>('');
+
+  // Queue Manager
+  const [uploadQueue, setUploadQueue] = useState<QueuedJob[]>(() => {
+    const saved = localStorage.getItem('lavar_delivery_queue');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
+  // GCash Verification Search Panel
+  const [lookupRefInput, setLookupRefInput] = useState<string>('');
+  const [lookupLoading, setLookupLoading] = useState<boolean>(false);
+  const [lookupStatus, setLookupStatus] = useState<string>('');
+  const [lookupResults, setLookupResults] = useState<GCashRecord[]>([]);
+
+  // Placeholder Associations
+  const [placeholderJOs, setPlaceholderJOs] = useState<GCashRecord[]>([]);
+  const [placeholderLoading, setPlaceholderLoading] = useState<boolean>(false);
+  const [selectedPlaceholderJOs, setSelectedPlaceholderJOs] = useState<string[]>([]);
+  const [associating, setAssociating] = useState<boolean>(false);
+
+  // Toast System
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // Debug Console
+  const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
+  const [showDebug, setShowDebug] = useState<boolean>(false);
+
+  // File Inputs Key to Reset inputs easily
+  const [fileInputKey, setFileInputKey] = useState<number>(0);
+
+  // Active JO References Refs
+  const currentJOAmount = useRef<number | null>(null);
+  const currentJOCreatedDate = useRef<Date | null>(null);
+  const verificationTimer = useRef<NodeJS.Timeout | null>(null);
+  const lookupTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // ================================================================
+  //  LOGS & TOAST TRIGGERS
+  // ================================================================
+  const logDebug = (type: 'info' | 'success' | 'warn' | 'error', message: string) => {
+    const time = new Date().toLocaleTimeString();
+    setDebugLogs(prev => [{ time, type, message }, ...prev].slice(0, 50));
+  };
+
+  const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, type, title, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
+  };
+
+  // ================================================================
+  //  EFFECTS
+  // ================================================================
+  // Sync Online status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      logDebug('success', 'Internet connection restored.');
+      addToast('success', 'Online', 'Your connection is restored. Sync queue is active.');
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      logDebug('warn', 'You are currently offline. Deliveries will queue locally.');
+      addToast('warning', 'Offline Mode', 'Your network is offline. Your work is safe and will sync once connected.');
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Save Queue to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('lavar_delivery_queue', JSON.stringify(uploadQueue));
+  }, [uploadQueue]);
+
+  // Load requested JO dropdown whenever current date shifts
+  useEffect(() => {
+    const loadRequestedJOs = async () => {
+      setDropdownLoading(true);
+      logDebug('info', `Fetching requested JOs for date: ${currentDate}`);
+      try {
+        const response = await fetch(`${requestScriptURL}?date=${encodeURIComponent(currentDate)}`);
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const formatted = data
+            .filter(item => item["Del JO#"])
+            .map(item => ({
+              jor: String(item["Del JO#"]).trim(),
+              name: String(item["name"] || '').trim()
+            }));
+          setDropdownJOs(formatted);
+          logDebug('success', `Found ${formatted.length} requested JO(s) for ${currentDate}.`);
+        } else {
+          setDropdownJOs([]);
+          logDebug('warn', `No structured requested JO list found for ${currentDate}.`);
+        }
+      } catch (err: any) {
+        setDropdownJOs([]);
+        logDebug('error', `Failed to load Requested JOs: ${err.message || err}`);
+      } finally {
+        setDropdownLoading(false);
+      }
+    };
+    loadRequestedJOs();
+  }, [currentDate]);
+
+  // Periodic Sync Upload Queue (every 5 seconds)
+  useEffect(() => {
+    let active = true;
+    const syncQueue = async () => {
+      if (isUploading || uploadQueue.length === 0 || !navigator.onLine || !active) return;
+      setIsUploading(true);
+      const current = uploadQueue[0];
+      logDebug('info', `Background Queue: Submitting JO# ${current.JOR} for ${current.CustomerName}...`);
+
+      try {
+        const params = new URLSearchParams();
+        Object.entries(current).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            params.append(key, String(value));
+          }
+        });
+
+        // Use standard POST with form urlencoded
+        await fetch(scriptURL, {
+          method: "POST",
+          mode: "no-cors",
+          body: params.toString(),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        });
+
+        logDebug('success', `Background Queue: Successfully submitted JO# ${current.JOR} to Google Sheet.`);
+        addToast('success', 'Sync Successful', `JO# ${current.JOR} for ${current.CustomerName} uploaded successfully!`);
+        
+        if (active) {
+          setUploadQueue(prev => prev.slice(1));
+        }
+      } catch (err: any) {
+        logDebug('error', `Background Queue Error: ${err.message || err}`);
+      } finally {
+        if (active) {
+          setIsUploading(false);
+        }
+      }
+    };
+
+    const interval = setInterval(syncQueue, 5000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [uploadQueue, isUploading, isOnline]);
+
+  // ================================================================
+  //  LIVE GCASH DUP CHECKER
+  // ================================================================
+  useEffect(() => {
+    if (paymentType !== 'G-Cash') return;
+    if (verificationTimer.current) clearTimeout(verificationTimer.current);
+
+    const ref = gcashRef.trim();
+    if (!ref) {
+      setGcashRefStatus('idle');
+      setGcashRefUsageDetails('');
+      return;
+    }
+
+    if (ref === "000000") {
+      setGcashRefStatus('available');
+      setGcashRefUsageDetails('Placeholder reference number allowed.');
+      return;
+    }
+
+    const alphanumericPattern = /^[A-Za-z0-9]{4,20}$/;
+    if (!alphanumericPattern.test(ref)) {
+      setGcashRefStatus('idle');
+      return;
+    }
+
+    setGcashRefStatus('validating');
+    verificationTimer.current = setTimeout(async () => {
+      try {
+        logDebug('info', `Validating GCash Reference usage: ${ref}`);
+        const response = await fetch(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(ref)}`);
+        const result = await response.json();
+        
+        if (result.result === "success") {
+          const match = result.data[0];
+          setGcashRefStatus('used');
+          setGcashRefUsageDetails(`Used by JO# ${match.jor} | ${match.customerName}. Submissions restricted except for "000000".`);
+          logDebug('warn', `GCash Reference ${ref} has ALREADY been used by JO# ${match.jor}.`);
+        } else {
+          setGcashRefStatus('available');
+          setGcashRefUsageDetails('Reference number is available.');
+          logDebug('success', `GCash Reference ${ref} is unique and available.`);
+        }
+      } catch (err: any) {
+        setGcashRefStatus('error');
+        setGcashRefUsageDetails('Network verification failed. Proceed with caution.');
+        logDebug('error', `Failed verifying GCash reference: ${err.message || err}`);
+      }
+    }, 800);
+
+    return () => {
+      if (verificationTimer.current) clearTimeout(verificationTimer.current);
+    };
+  }, [gcashRef, paymentType]);
+
+  // ================================================================
+  //  GCASH QUICK VERIFICATION TAB LOOKUP
+  // ================================================================
+  useEffect(() => {
+    if (activeTab !== 'lookup') return;
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+
+    const ref = lookupRefInput.trim();
+    if (ref.length === 0) {
+      setLookupResults([]);
+      setLookupStatus('');
+      return;
+    }
+
+    if (!/^\d{6}$/.test(ref)) {
+      setLookupStatus('Reference must be exactly 6 digits.');
+      setLookupResults([]);
+      return;
+    }
+
+    setLookupLoading(true);
+    setLookupStatus('Searching...');
+
+    lookupTimer.current = setTimeout(async () => {
+      try {
+        logDebug('info', `Looking up GCash ledger logs for Ref: ${ref}`);
+        const response = await fetch(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(ref)}`);
+        const data = await response.json();
+
+        if (data.result === "success") {
+          setLookupResults(data.data || []);
+          setLookupStatus(`Found ${data.data.length} match(es) for this GCash reference.`);
+          logDebug('success', `Found ${data.data.length} records matching GCash reference ${ref}.`);
+
+          // Fetch outstanding placeholders if a matching client name exists
+          if (data.data.length > 0 && data.data[0].customerName) {
+            fetchCustomerPlaceholders(data.data[0].customerName);
+          }
+        } else {
+          setLookupResults([]);
+          setLookupStatus('No records found for this reference.');
+          logDebug('warn', `No GCash ledger entry found for reference: ${ref}`);
+          setPlaceholderJOs([]);
+        }
+      } catch (err: any) {
+        setLookupStatus('Network error occurred during ledger check.');
+        logDebug('error', `Ledger lookup failed: ${err.message || err}`);
+      } finally {
+        setLookupLoading(false);
+      }
+    }, 600);
+
+    return () => {
+      if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    };
+  }, [lookupRefInput, activeTab]);
+
+  // ================================================================
+  //  COMPUTE REVENUE DETAILS & ANOMALIES
+  // ================================================================
+  const checkAmountAnomaly = (parsedAmt: string) => {
+    const amt = parseFloat(parsedAmt);
+    const targetAmt = currentJOAmount.current;
+
+    if (!targetAmt || isNaN(amt)) {
+      setAmountMismatchFlag('');
+      return;
+    }
+
+    const difference = Math.abs(amt - targetAmt);
+    if (difference > 0.01) {
+      const isUnderpaid = amt < targetAmt;
+      const label = isUnderpaid ? "UNDERPAID" : "OVERPAID";
+      setAmountMismatchFlag(`${label}: Scanned ₱${amt.toFixed(2)} vs JO ₱${targetAmt.toFixed(2)} (Diff: ₱${difference.toFixed(2)})`);
+    } else {
+      setAmountMismatchFlag('');
+    }
+  };
+
+  const checkDateAnomaly = (parsedDateStr: string) => {
+    const targetCreatedDate = currentJOCreatedDate.current;
+    if (!targetCreatedDate || !parsedDateStr) {
+      setDateAnomalyFlag('');
+      return;
+    }
+
+    // Convert parsed timestamp
+    const receiptDate = new Date(parsedDateStr.replace(" ", "T"));
+    if (isNaN(receiptDate.getTime())) {
+      setDateAnomalyFlag('');
+      return;
+    }
+
+    const isBeforeJO = receiptDate.getTime() < targetCreatedDate.getTime();
+    if (isBeforeJO) {
+      setDateAnomalyFlag(`DATE_BEFORE_JO: Scanned ${parsedDateStr} vs JO Created ${targetCreatedDate.toLocaleString()}`);
+    } else {
+      setDateAnomalyFlag('');
+    }
+  };
+
+  // ================================================================
+  //  CORE FUNCTIONS
+  // ================================================================
+  // Day navigation
+  const handleDayOffset = (days: number) => {
+    const activeDate = new Date(currentDate);
+    activeDate.setDate(activeDate.getDate() + days);
+    setCurrentDate(activeDate.toISOString().split("T")[0]);
+  };
+
+  // Auto search when item is chosen in dropdown
+  const handleDropdownSelection = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val) {
+      setSearchQuery(val);
+      handleSearchJO(val);
+    }
+  };
+
+  // Search JO
+  const handleSearchJO = async (targetJO: string) => {
+    const joNum = targetJO.trim();
+    if (!joNum) {
+      addToast('error', 'Search Error', 'Please enter a valid Job Order reference.');
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchError(null);
+    setSearchResult(null);
+    logDebug('info', `Searching for Job Order Ref: ${joNum}`);
+
+    try {
+      const response = await fetch(`${scriptURL}?JO=${encodeURIComponent(joNum)}`);
+      const data = await response.json();
+
+      if (data.result === "not found") {
+        setSearchError("Di Pa Na Log ng mga Nagtupi. Tawagan sila at ipalog.");
+        logDebug('warn', `Job Order ${joNum} not found in Google Sheet logs.`);
+        addToast('warning', 'JO Not Found', 'Job order details are not yet logged by folding staff.');
+      } else {
+        setSearchResult(data);
+        
+        // Populate form if pre-existing delivery data is found
+        if (data.DeliveryStaff && data.DeliveryStaff.trim()) {
+          setDeliveryStaff(data.DeliveryStaff);
+          setComments(data.Comments || '');
+          logDebug('info', `JO# ${joNum} already delivered. Form switches to Update mode.`);
+        } else {
+          setDeliveryStaff('');
+          setComments('');
+        }
+
+        // Cache parameters for real-time receipt checks
+        currentJOAmount.current = parseFloat(String(data.colK).replace(/[^0-9.]/g, "")) || null;
+        const rawCreatedDate = data.JOCreatedDate ? data.JOCreatedDate.replace(" ", "T") : null;
+        if (rawCreatedDate) {
+          const parsed = new Date(rawCreatedDate);
+          currentJOCreatedDate.current = isNaN(parsed.getTime()) ? null : parsed;
+        } else {
+          currentJOCreatedDate.current = null;
+        }
+
+        logDebug('success', `Successfully loaded JO# ${joNum} for customer ${data.value}.`);
+        
+        // Auto-fetch placeholder records for customer
+        if (data.value) {
+          fetchCustomerPlaceholders(data.value);
+        }
+      }
+    } catch (err: any) {
+      setSearchError("Error connecting to server. Please check your connection.");
+      logDebug('error', `Failed search query: ${err.message || err}`);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Fetch Placeholders for Client
+  const fetchCustomerPlaceholders = async (name: string) => {
+    setPlaceholderLoading(true);
+    logDebug('info', `Scanning placeholder JOs for client: "${name}"`);
+    try {
+      const response = await fetch(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=000000`);
+      const result = await response.json();
+      if (result.result === "success") {
+        const matches = (result.data || []).filter((item: any) => 
+          item.customerName && item.customerName.trim().toLowerCase() === name.trim().toLowerCase()
+        );
+        setPlaceholderJOs(matches);
+        logDebug('success', `Found ${matches.length} placeholders for client "${name}".`);
+      } else {
+        setPlaceholderJOs([]);
+      }
+    } catch (err: any) {
+      logDebug('error', `Failed placeholder sweep: ${err.message || err}`);
+    } finally {
+      setPlaceholderLoading(false);
+    }
+  };
+
+  // GCash Screenshot OCR via Gemini Action in Sheets
+  const handleGcashMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setGcashMedia(file);
+    const objectUrl = URL.createObjectURL(file);
+    setGcashMediaPreview(objectUrl);
+
+    setAiAnalyzing(true);
+    setAiStatusMsg("Gemini AI is parsing and verifying screenshot...");
+    logDebug('info', `Initiating Gemini AI OCR parsing for file: ${file.name}`);
+
+    try {
+      const base64Data = await compressImageToBase64(file);
+      
+      // Post to Apps Script Gemini endpoint
+      const payload = new URLSearchParams();
+      payload.append("action", "analyzeGcash");
+      payload.append("base64Data", base64Data);
+      payload.append("mimeType", "image/jpeg");
+
+      logDebug('info', 'Sending compressed image bytes to Gemini endpoint...');
+      const response = await fetch(scriptURL, {
+        method: "POST",
+        body: payload,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      });
+      
+      const parsed = await response.json();
+
+      if (parsed && parsed.shortRefNo) {
+        const ref = parsed.shortRefNo;
+        setGcashRef(ref);
+        setScannedAmount(parsed.amount || '');
+        setScannedDate(parsed.transactionDate || '');
+
+        if (ref !== "000000") {
+          checkAmountAnomaly(parsed.amount);
+          checkDateAnomaly(parsed.transactionDate);
+        } else {
+          setAmountMismatchFlag('');
+          setDateAnomalyFlag('');
+        }
+
+        setAiStatusMsg(`AI Decoded: Ref #${ref} | ₱${parsed.amount || '0'} | ${parsed.transactionDate || 'no date'}`);
+        logDebug('success', `Gemini completed. Decoded: Ref ${ref}, Amount: ${parsed.amount}, Date: ${parsed.transactionDate}`);
+        addToast('success', 'Gemini Decoded', `Receipt read successfully! Ref: ${ref}`);
+      } else {
+        // Handle no ref
+        const noRefPlaceholder = "NOREF-" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+        setGcashRef(noRefPlaceholder);
+        setScannedAmount(parsed?.amount || '');
+        setScannedDate(parsed?.transactionDate || '');
+        setAmountMismatchFlag('');
+        setDateAnomalyFlag('');
+        
+        setAiStatusMsg("No reference number found. Flagged with verification ID.");
+        logDebug('warn', 'Gemini could not locate a 6-digit reference. Assigned custom NOREF identifier.');
+        addToast('warning', 'Reference Not Found', 'Could not extract reference number from picture.');
+      }
+    } catch (err: any) {
+      logDebug('error', `OCR extraction failed: ${err.message || err}`);
+      setAiStatusMsg("Gemini scan timed out or failed. Please enter reference manually.");
+      addToast('error', 'OCR Failed', 'Failed to scan the receipt. Please enter the details manually.');
+    } finally {
+      setAiAnalyzing(false);
+    }
+  };
+
+  // Form Submissions
+  const handleFormSubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!searchResult) {
+      addToast('warning', 'Missing Details', 'Please search and load a Job Order reference.');
+      return;
+    }
+
+    if (paymentType === 'G-Cash' && gcashRefStatus === 'used') {
+      addToast('error', 'Reference In Use', 'The entered GCash reference is already used on another order.');
+      return;
+    }
+
+    setSubmitting(true);
+    logDebug('info', `Adding delivery details for JO# ${searchResult.JO} to background queue.`);
+
+    try {
+      const jobPayload: QueuedJob = {
+        JOR: searchResult.JO,
+        CustomerName: searchResult.value,
+        serviceType,
+        DeliveryStaff: deliveryStaff,
+        PaymentType: paymentType,
+        gcashInfo: paymentType === 'G-Cash' ? gcashRef : '',
+        GcashTransAmount: paymentType === 'G-Cash' ? scannedAmount : '',
+        TransactionDate: paymentType === 'G-Cash' ? scannedDate : '',
+        AmountMismatchFlag: paymentType === 'G-Cash' ? amountMismatchFlag : '',
+        DateAnomalyFlag: paymentType === 'G-Cash' ? dateAnomalyFlag : '',
+        Comments: comments,
+        UniqueID: searchResult.UniqueID || ''
+      };
+
+      // Compile uploads
+      const fileTasks: Promise<any>[] = [];
+      
+      // If GCash, the screenshot is mapped to media1
+      if (paymentType === 'G-Cash' && gcashMedia) {
+        fileTasks.push(readFileAsBase64(gcashMedia).then(b64 => ({ key: 'media', val: b64 })));
+      } else if (media1) {
+        fileTasks.push(readFileAsBase64(media1).then(b64 => ({ key: 'media', val: b64 })));
+      }
+
+      if (media2) {
+        fileTasks.push(readFileAsBase64(media2).then(b64 => ({ key: 'media2', val: b64 })));
+      }
+      if (media3) {
+        fileTasks.push(readFileAsBase64(media3).then(b64 => ({ key: 'media3', val: b64 })));
+      }
+
+      const encodedFiles = await Promise.all(fileTasks);
+      encodedFiles.forEach(item => {
+        (jobPayload as any)[item.key] = item.val;
+      });
+
+      // Clear the JO from date picker list
+      setDropdownJOs(prev => prev.filter(item => item.jor !== searchResult.JO));
+
+      // Append to background queue
+      setUploadQueue(prev => [...prev, jobPayload]);
+      logDebug('info', `Delivery details queued successfully. Upload pending...`);
+      addToast('success', 'Queued Successfully', `JO# ${searchResult.JO} is added to sync queue.`);
+
+      handleClearForm();
+    } catch (err: any) {
+      logDebug('error', `Queue failed: ${err.message || err}`);
+      addToast('error', 'Submission Failed', 'Failed to process images for submission.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Bulk association of 000000 placeholders
+  const handleBulkAssociate = async () => {
+    if (selectedPlaceholderJOs.length === 0) {
+      addToast('warning', 'No Selection', 'Please select at least one placeholder JO.');
+      return;
+    }
+
+    const ref = lookupRefInput.trim();
+    if (!ref || !/^\d{6}$/.test(ref)) {
+      addToast('warning', 'Reference Invalid', 'Please enter a valid 6-digit reference to link.');
+      return;
+    }
+
+    setAssociating(true);
+    logDebug('info', `Initiating bulk association of ${selectedPlaceholderJOs.length} JO(s) to Ref: ${ref}`);
+
+    let successes = 0;
+    let failures = 0;
+
+    for (const jo of selectedPlaceholderJOs) {
+      try {
+        const url = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(ref)}&lookupJoNum=${encodeURIComponent(jo)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.result === "success") {
+          successes++;
+          logDebug('success', `Linked JO# ${jo} successfully to GCash Ref ${ref}.`);
+        } else {
+          failures++;
+          logDebug('error', `Failed linking JO# ${jo}: ${data.message || 'Error response'}`);
+        }
+      } catch (err: any) {
+        failures++;
+        logDebug('error', `Failed linking JO# ${jo}: ${err.message || err}`);
+      }
+    }
+
+    addToast(
+      failures === 0 ? 'success' : 'warning',
+      'Association Completed',
+      `Bulk linking completed. Success: ${successes}, Failures: ${failures}`
+    );
+
+    // Refresh lists
+    setSelectedPlaceholderJOs([]);
+    setLookupRefInput(ref); // Trigger re-search
+    if (searchResult?.value) {
+      fetchCustomerPlaceholders(searchResult.value);
+    }
+    setAssociating(false);
+  };
+
+  const handleClearForm = () => {
+    setSearchResult(null);
+    setSearchQuery('');
+    setSearchError(null);
+    setDeliveryStaff('');
+    setComments('');
+    setPaymentType('Cash');
+    setGcashRef('');
+    setScannedAmount('');
+    setScannedDate('');
+    setAmountMismatchFlag('');
+    setDateAnomalyFlag('');
+    setGcashRefStatus('idle');
+    setGcashRefUsageDetails('');
+    
+    // Revoke previews to avoid memory leak
+    if (media1Preview) URL.revokeObjectURL(media1Preview);
+    if (media2Preview) URL.revokeObjectURL(media2Preview);
+    if (media3Preview) URL.revokeObjectURL(media3Preview);
+    if (gcashMediaPreview) URL.revokeObjectURL(gcashMediaPreview);
+
+    setMedia1(null);
+    setMedia1Preview(null);
+    setMedia2(null);
+    setMedia2Preview(null);
+    setMedia3(null);
+    setMedia3Preview(null);
+    setGcashMedia(null);
+    setGcashMediaPreview(null);
+    setAiStatusMsg('');
+
+    currentJOAmount.current = null;
+    currentJOCreatedDate.current = null;
+
+    // Reset inputs
+    setFileInputKey(prev => prev + 1);
+    logDebug('info', 'Delivery form cleared and reset.');
+  };
+
+  // Previews files
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileNumber: 1 | 2 | 3) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const objectUrl = URL.createObjectURL(file);
+    if (fileNumber === 1) {
+      setMedia1(file);
+      setMedia1Preview(objectUrl);
+    } else if (fileNumber === 2) {
+      setMedia2(file);
+      setMedia2Preview(objectUrl);
+    } else if (fileNumber === 3) {
+      setMedia3(file);
+      setMedia3Preview(objectUrl);
+    }
+  };
+
+  // Use placeholder bypass
+  const handleUsePlaceholderBypass = () => {
+    setPaymentType('G-Cash');
+    setGcashRef('000000');
+    setAmountMismatchFlag('');
+    setDateAnomalyFlag('');
+    addToast('info', 'Bypass Active', 'Using 000000 placeholder for current payment.');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-indigo-500 selection:text-white">
+      {/* ================================================================
+          TOP BANNER HEADER
+         ================================================================ */}
+      <header className="relative bg-white border-b border-slate-200 py-6 px-4 md:px-8 overflow-hidden shadow-sm">
+        {/* Glow Effects */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-slate-100 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl shadow-lg shadow-indigo-600/10 text-white">
+              <Truck className="w-8 h-8 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100/80 tracking-wider uppercase">
+                  Logistics Suite
+                </span>
+              </div>
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
+                LAVAR LAUNDRY
+              </h1>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                High-Fidelity Interactive Dispatch & Payment Verification System
+              </p>
+            </div>
+          </div>
+
+          {/* System Telemetry & Quick Indicators */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Connection Telemetry */}
+            <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold ${
+              isOnline 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                : 'bg-rose-50 border-rose-200 text-rose-700'
+            }`}>
+              {isOnline ? (
+                <>
+                  <Wifi className="w-4 h-4 animate-bounce" />
+                  <span>ONLINE SATELLITE</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4" />
+                  <span>OFFLINE BUFFERING</span>
+                </>
+              )}
+            </div>
+
+            {/* Sync Queue Telemetry */}
+            <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold ${
+              uploadQueue.length > 0 
+                ? 'bg-amber-50 border-amber-200 text-amber-700 animate-pulse' 
+                : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+            }`}>
+              <RefreshCw className={`w-4 h-4 ${isUploading ? 'animate-spin text-indigo-600' : ''}`} />
+              <span>SYNC QUEUE: {uploadQueue.length}</span>
+            </div>
+
+            {/* Developer Log Trigger */}
+            <button 
+              id="devConsoleToggleBtn"
+              onClick={() => setShowDebug(!showDebug)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition shadow-sm"
+            >
+              <Terminal className="w-4 h-4 text-slate-500" />
+              <span>TERMINAL</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ================================================================
+          NAVIGATION RAILS
+         ================================================================ */}
+      <nav className="bg-white border-b border-slate-200 px-4 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto flex overflow-x-auto gap-1 py-3 scrollbar-none">
+          <button
+            id="tabDeliveryFormBtn"
+            onClick={() => setActiveTab('form')}
+            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-medium text-xs md:text-sm whitespace-nowrap transition-all duration-300 ${
+              activeTab === 'form'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10 font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <FileText className="w-4.5 h-4.5" />
+            <span>Delivery Form</span>
+          </button>
+
+          <button
+            id="tabGcashLedgerBtn"
+            onClick={() => setActiveTab('lookup')}
+            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-medium text-xs md:text-sm whitespace-nowrap transition-all duration-300 ${
+              activeTab === 'lookup'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10 font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Search className="w-4.5 h-4.5" />
+            <span>GCash Reference Check</span>
+          </button>
+
+          <button
+            id="tabPlaceholderAssociationsBtn"
+            onClick={() => setActiveTab('placeholders')}
+            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-medium text-xs md:text-sm whitespace-nowrap transition-all duration-300 ${
+              activeTab === 'placeholders'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10 font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Layers className="w-4.5 h-4.5" />
+            <span>Placeholders (000000)</span>
+            {placeholderJOs.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-amber-100 text-amber-800 rounded-full font-bold border border-amber-200">
+                {placeholderJOs.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            id="tabNavigationHubBtn"
+            onClick={() => setActiveTab('system')}
+            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-medium text-xs md:text-sm whitespace-nowrap transition-all duration-300 ${
+              activeTab === 'system'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10 font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <ExternalLink className="w-4.5 h-4.5" />
+            <span>System Hub Links</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* ================================================================
+          MAIN WORKSPACE LAYOUT
+         ================================================================ */}
+      <main className="flex-grow p-4 md:p-8 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="col-span-1 lg:col-span-12">
+          {/* Header Sub Banner if offline queue items exist */}
+          {uploadQueue.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
+              <div className="flex gap-3">
+                <div className="p-2 bg-amber-100 text-amber-700 rounded-lg self-start border border-amber-200">
+                  <Clock className="w-5 h-5 animate-spin" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-amber-850">Background Upload Dispatcher Active</h3>
+                  <p className="text-xs text-amber-700/80 mt-0.5">
+                    There are <span className="font-bold">{uploadQueue.length}</span> transaction(s) queued. These will upload automatically. Keep this page open.
+                  </p>
+                </div>
+              </div>
+              <div className="text-xs text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                Next up: <span className="text-indigo-600 font-mono font-bold">{uploadQueue[0].JOR}</span> ({uploadQueue[0].CustomerName})
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Tab switching wrapper */}
+        <div className="col-span-1 lg:col-span-12">
+          <AnimatePresence mode="wait">
+            {/* ================================================================
+                TAB 1: DELIVERY FORM
+               ================================================================ */}
+            {activeTab === 'form' && (
+              <motion.div
+                key="formTab"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+              >
+                {/* Search & Select Panel (Left) */}
+                <section className="col-span-1 lg:col-span-5 space-y-6">
+                  {/* Dispatch Controller */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+                    <h2 className="text-lg font-bold tracking-tight text-slate-900 mb-4 flex items-center gap-2">
+                      <Search className="w-5 h-5 text-indigo-600" />
+                      <span>Search & Select JO</span>
+                    </h2>
+
+                    {/* Date Navigation Strip */}
+                    <div className="mb-5 bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-center justify-between">
+                      <button 
+                        id="prevDateBtn"
+                        type="button"
+                        onClick={() => handleDayOffset(-1)}
+                        className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-lg transition"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      
+                      <div className="text-center">
+                        <span className="text-slate-500 text-[10px] block font-semibold uppercase tracking-wider">Target Date</span>
+                        <span id="currentDateDisplay" className="text-xs md:text-sm font-mono font-bold text-indigo-600">
+                          {currentDate}
+                        </span>
+                      </div>
+
+                      <button 
+                        id="nextDateBtn"
+                        type="button"
+                        onClick={() => handleDayOffset(1)}
+                        className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-lg transition"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Dropdown Selector */}
+                    <div className="form-group mb-4">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                        JOs Awaiting Delivery ({dropdownJOs.length})
+                      </label>
+                      <select 
+                        id="joDropdown"
+                        onChange={handleDropdownSelection}
+                        disabled={dropdownLoading}
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs md:text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-sm"
+                      >
+                        <option value="">
+                          {dropdownLoading ? 'Scanning sheet database...' : 'Select Requested JO# for Delivery'}
+                        </option>
+                        {dropdownJOs.map(item => (
+                          <option key={item.jor} value={item.jor}>
+                            {item.jor} || {item.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Manual Search */}
+                    <div className="form-group mb-5">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                        Manual JO Search
+                      </label>
+                      <div className="relative">
+                        <input 
+                          id="JOsearch"
+                          type="text"
+                          placeholder="e.g. 23561"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSearchJO(searchQuery)}
+                          className="w-full bg-white border border-slate-200 text-slate-800 text-xs md:text-sm rounded-xl pl-4 pr-10 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-sm"
+                        />
+                        {searchQuery && (
+                          <button 
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        id="searchButton"
+                        type="button"
+                        onClick={() => handleSearchJO(searchQuery)}
+                        disabled={searchLoading}
+                        className="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs md:text-sm py-2.5 rounded-xl transition shadow-sm hover:shadow shadow-indigo-600/10 flex items-center justify-center gap-2"
+                      >
+                        {searchLoading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>SEARCHING...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Search className="w-4 h-4" />
+                            <span>SEARCH</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        id="clearButton"
+                        type="button"
+                        onClick={handleClearForm}
+                        className="px-4 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-950 text-xs md:text-sm font-semibold rounded-xl transition shadow-sm"
+                      >
+                        CLEAR
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Customer Information Panel */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+                    <h2 className="text-lg font-bold tracking-tight text-slate-900 mb-4 flex items-center gap-2">
+                      <User className="w-5 h-5 text-indigo-600" />
+                      <span>Loaded JO details</span>
+                    </h2>
+
+                    {searchError && (
+                      <div className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl text-xs md:text-sm font-medium flex gap-2.5 shadow-sm">
+                        <AlertTriangle className="w-5 h-5 shrink-0" />
+                        <span>{searchError}</span>
+                      </div>
+                    )}
+
+                    {!searchResult && !searchError && (
+                      <div className="text-center py-12 text-slate-500 text-xs md:text-sm">
+                        <Info className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <span>No Job Order loaded. Search or select a JO to begin dispatch entry.</span>
+                      </div>
+                    )}
+
+                    {searchResult && (
+                      <div className="space-y-4">
+                        {/* Summary Info Cards */}
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden shadow-sm">
+                          <div className="absolute top-0 right-0 p-2 text-slate-200">
+                            <Layers className="w-16 h-16 opacity-30 pointer-events-none" />
+                          </div>
+                          
+                          <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">
+                            Active Job Card
+                          </div>
+                          <h3 className="text-base font-extrabold text-slate-900">
+                            {searchResult.value}
+                          </h3>
+                          <div className="text-xs font-mono text-slate-500 mt-0.5">
+                            JO REF: {searchResult.JO}
+                          </div>
+                        </div>
+
+                        {/* Bento Specs Grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                            <span className="text-[10px] text-slate-500 block font-semibold uppercase">Total Price</span>
+                            <span className="text-sm font-mono font-bold text-slate-900">
+                              {searchResult.colK || '₱0.00'}
+                            </span>
+                          </div>
+                          <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                            <span className="text-[10px] text-slate-500 block font-semibold uppercase">Bags Logged</span>
+                            <span className="text-sm font-mono font-bold text-slate-900">
+                              {searchResult.colC || '0'}
+                            </span>
+                          </div>
+                          <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                            <span className="text-[10px] text-slate-500 block font-semibold uppercase">Folding Staff</span>
+                            <span className="text-sm font-bold text-slate-800 truncate">
+                              {searchResult.colD || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                            <span className="text-[10px] text-slate-500 block font-semibold uppercase">Created Date</span>
+                            <span className="text-xs font-mono font-bold text-slate-800 truncate block">
+                              {searchResult.JOCreatedDate || 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Extra Specifications description */}
+                        {searchResult.colE && (
+                          <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs text-slate-700 shadow-sm">
+                            <span className="text-[10px] text-slate-500 block font-bold uppercase tracking-wider mb-1">Specs & Details</span>
+                            <span>{searchResult.colE}</span>
+                          </div>
+                        )}
+
+                        {/* Media files registered during folding */}
+                        {(searchResult.Picture1 || searchResult.Picture2 || searchResult.Picture3) && (
+                          <div>
+                            <span className="text-[10px] text-slate-500 block font-bold uppercase tracking-wider mb-2">Original Folding Pictures</span>
+                            <div className="flex gap-2 overflow-x-auto py-1">
+                              {[searchResult.Picture1, searchResult.Picture2, searchResult.Picture3].map((url, index) => {
+                                if (!url) return null;
+                                return (
+                                  <a 
+                                    key={index}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block border border-slate-200 rounded-lg p-1 bg-white hover:border-indigo-500 shadow-sm transition shrink-0"
+                                  >
+                                    <img 
+                                      src={getDriveThumbnail(url)} 
+                                      alt={`Fold Pic ${index + 1}`}
+                                      className="w-14 h-14 object-cover rounded"
+                                    />
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Prior Delivery Records if exists (Edit Mode indicator) */}
+                        {searchResult.DeliveryStaff && (
+                          <div className="bg-indigo-50 border border-indigo-100 p-3.5 rounded-xl text-xs text-indigo-700 shadow-sm">
+                            <span className="font-bold text-[10px] block uppercase tracking-wider mb-1 text-indigo-800">Existing Dispatch Record Found</span>
+                            <span>Dispatched previously to {searchResult.DeliveryStaff}. Submit button is set to update mode.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* Main Dispatch Form (Right) */}
+                <form onSubmit={jobFormSubmit => handleFormSubmission(jobFormSubmit)} className="col-span-1 lg:col-span-7 space-y-6">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+                    <h2 className="text-xl font-bold tracking-tight text-slate-900 border-b border-slate-200 pb-4 flex items-center gap-2">
+                      <Truck className="w-6 h-6 text-indigo-600" />
+                      <span>Dispatch Dispatch Logs</span>
+                    </h2>
+
+                    {/* Mode (Service Type Selector) */}
+                    <div className="form-group">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+                        Delivery Method / Service Type
+                      </label>
+                      <div className="grid grid-cols-2 gap-3 bg-slate-100 border border-slate-200 p-1.5 rounded-xl">
+                        <button
+                          type="button"
+                          id="serviceTypeDeliveryBtn"
+                          onClick={() => setServiceType('Delivery')}
+                          className={`flex items-center justify-center gap-2 py-3.5 rounded-lg text-xs md:text-sm font-semibold transition ${
+                            serviceType === 'Delivery'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          <Truck className="w-4 h-4" />
+                          <span>Delivery</span>
+                        </button>
+                        <button
+                          type="button"
+                          id="serviceTypePickupBtn"
+                          onClick={() => setServiceType('In-Shop Pickup')}
+                          className={`flex items-center justify-center gap-2 py-3.5 rounded-lg text-xs md:text-sm font-semibold transition ${
+                            serviceType === 'In-Shop Pickup'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          <User className="w-4 h-4" />
+                          <span>In-Shop Pickup</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Delivery Staff Option */}
+                    <div className="form-group">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                        Delivery Staff Member
+                      </label>
+                      <select
+                        id="DeliveryStaff"
+                        required
+                        value={deliveryStaff}
+                        onChange={(e) => setDeliveryStaff(e.target.value)}
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs md:text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-sm"
+                      >
+                        <option value="" disabled hidden>Choose Delivery Rider...</option>
+                        {DELIVERY_STAFF_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Payment Options Column */}
+                    <div className="form-group">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+                        Transaction Payment Option
+                      </label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {[
+                          { val: 'Cash', label: 'Cash' },
+                          { val: 'G-Cash', label: 'GCash / Online' },
+                          { val: 'Unpaid', label: 'Unpaid' },
+                          { val: 'Paid During Pickup/Drop-Off', label: 'Paid Advance' }
+                        ].map(opt => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            onClick={() => setPaymentType(opt.val)}
+                            className={`px-3 py-4 rounded-xl text-xs font-bold border transition text-center flex flex-col justify-center items-center gap-2 ${
+                              paymentType === opt.val
+                                ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500 shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 shadow-sm'
+                            }`}
+                          >
+                            <CreditCard className="w-4 h-4" />
+                            <span>{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dynamic GCash Slide Panel */}
+                    <AnimatePresence>
+                      {paymentType === 'G-Cash' && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-4 overflow-hidden"
+                        >
+                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-inner">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider block">
+                                GCash Receipt Extraction (Gemini OCR Enabled)
+                              </span>
+                              <button 
+                                type="button"
+                                onClick={handleUsePlaceholderBypass}
+                                className="text-[10px] font-bold text-amber-600 hover:text-amber-700 underline"
+                              >
+                                Use 000000 Placeholder
+                              </button>
+                            </div>
+
+                            {/* Dropzone screenshot upload */}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                              <div className="md:col-span-7">
+                                <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-indigo-500/40 rounded-xl p-4 bg-white text-center cursor-pointer transition min-h-[140px] shadow-sm">
+                                  <Camera className="w-8 h-8 text-slate-400 mb-2" />
+                                  <span className="text-xs text-slate-700 font-semibold">Upload GCash Receipt Screenshot</span>
+                                  <span className="text-[10px] text-slate-400 mt-1">Accepts images / screenshots</span>
+                                  <input
+                                    key={`gcash-${fileInputKey}`}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleGcashMediaUpload}
+                                    className="hidden"
+                                  />
+                                </label>
+                              </div>
+
+                              {/* Upload Preview & AI Status */}
+                              <div className="md:col-span-5 flex flex-col justify-center bg-white p-4 border border-slate-200 rounded-xl min-h-[140px] shadow-sm">
+                                {gcashMediaPreview ? (
+                                  <div className="flex gap-3 items-center">
+                                    <img 
+                                      src={gcashMediaPreview} 
+                                      alt="GCash Preview" 
+                                      className="w-16 h-16 object-cover rounded-lg border border-slate-200 shrink-0"
+                                    />
+                                    <div className="overflow-hidden">
+                                      <span className="text-[10px] font-bold text-slate-500 block truncate">{gcashMedia?.name}</span>
+                                      <span className="text-[10px] text-indigo-600 font-mono block">Size: {((gcashMedia?.size || 0) / 1024).toFixed(1)} KB</span>
+                                      {aiAnalyzing && (
+                                        <span className="inline-block mt-1 px-1.5 py-0.5 text-[9px] font-bold bg-indigo-50 text-indigo-700 rounded-full animate-pulse border border-indigo-100">
+                                          Gemini Parsing...
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-4 text-slate-400 text-xs">
+                                    No receipt uploaded. Upload to auto-fill.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Gemini Status Message */}
+                            {aiStatusMsg && (
+                              <div className="p-3 bg-indigo-50 rounded-lg text-xs font-medium border border-indigo-100 text-indigo-700 flex items-center gap-2 shadow-sm">
+                                <Sparkles className="w-4.5 h-4.5 text-indigo-600 shrink-0" />
+                                <span className="truncate">{aiStatusMsg}</span>
+                              </div>
+                            )}
+
+                            {/* Reference input field with duplicate check indicators */}
+                            <div className="form-group">
+                              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                                6-Digit GCash Reference Number
+                              </label>
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. 123456"
+                                  value={gcashRef}
+                                  onChange={(e) => setGcashRef(e.target.value)}
+                                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs md:text-sm font-mono rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-sm"
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                  {gcashRefStatus === 'validating' && (
+                                    <RefreshCw className="w-4 h-4 text-indigo-600 animate-spin" />
+                                  )}
+                                  {gcashRefStatus === 'available' && (
+                                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                  )}
+                                  {gcashRefStatus === 'used' && (
+                                    <AlertTriangle className="w-4 h-4 text-rose-500 animate-pulse" />
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Live duplicated status notices */}
+                              {gcashRefUsageDetails && (
+                                <p className={`text-[10px] mt-1.5 font-bold ${
+                                  gcashRefStatus === 'used' 
+                                    ? 'text-rose-600' 
+                                    : gcashRefStatus === 'available' 
+                                    ? 'text-emerald-600' 
+                                    : 'text-slate-500'
+                                }`}>
+                                  {gcashRefUsageDetails}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Amount Match Anomalies & Date Validation Cards */}
+                            {(amountMismatchFlag || dateAnomalyFlag) && (
+                              <div className="space-y-2 border-t border-slate-200 pt-3">
+                                {amountMismatchFlag && (
+                                  <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 text-xs text-rose-700 font-semibold flex gap-2 shadow-sm">
+                                    <AlertTriangle className="w-4.5 h-4.5 text-rose-600 shrink-0 mt-0.5" />
+                                    <span>⚠️ {amountMismatchFlag}. Will flag on Google Sheet reports.</span>
+                                  </div>
+                                )}
+                                {dateAnomalyFlag && (
+                                  <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 text-xs text-rose-700 font-semibold flex gap-2 shadow-sm">
+                                    <AlertTriangle className="w-4.5 h-4.5 text-rose-600 shrink-0 mt-0.5" />
+                                    <span>⚠️ {dateAnomalyFlag}. Will flag on Google Sheet reports.</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Standard Image Upload inputs */}
+                    <div className="form-group">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+                        Logistics Photos (Upload delivery pictures)
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Media 1 (Hidden if GCash screenshot is used) */}
+                        {paymentType !== 'G-Cash' ? (
+                          <div className="space-y-2">
+                            <label className="flex flex-col items-center justify-center border border-slate-200 hover:border-indigo-500/30 rounded-xl p-3 bg-white hover:bg-slate-50/50 text-center cursor-pointer transition min-h-[100px] shadow-sm">
+                              <Camera className="w-5 h-5 text-slate-400 mb-1" />
+                              <span className="text-[10px] text-slate-600 font-medium">Delivery Photo 1</span>
+                              <input
+                                key={`media1-${fileInputKey}`}
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileChange(e, 1)}
+                                className="hidden"
+                              />
+                            </label>
+                            {media1Preview && (
+                              <img src={media1Preview} alt="Preview 1" className="w-full h-14 object-cover rounded-lg border border-slate-200 shadow-sm" />
+                            )}
+                          </div>
+                        ) : (
+                          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 text-center min-h-[100px] flex flex-col justify-center items-center shadow-sm">
+                            <CheckCircle className="w-5 h-5 text-indigo-600/50 mb-1" />
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Photo 1 mapped to GCash Screenshot</span>
+                          </div>
+                        )}
+
+                        {/* Media 2 */}
+                        <div className="space-y-2">
+                          <label className="flex flex-col items-center justify-center border border-slate-200 hover:border-indigo-500/30 rounded-xl p-3 bg-white hover:bg-slate-50/50 text-center cursor-pointer transition min-h-[100px] shadow-sm">
+                            <Camera className="w-5 h-5 text-slate-400 mb-1" />
+                            <span className="text-[10px] text-slate-600 font-medium">Delivery Photo 2</span>
+                            <input
+                              key={`media2-${fileInputKey}`}
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileChange(e, 2)}
+                              className="hidden"
+                            />
+                          </label>
+                          {media2Preview && (
+                            <img src={media2Preview} alt="Preview 2" className="w-full h-14 object-cover rounded-lg border border-slate-200 shadow-sm" />
+                          )}
+                        </div>
+
+                        {/* Media 3 */}
+                        <div className="space-y-2">
+                          <label className="flex flex-col items-center justify-center border border-slate-200 hover:border-indigo-500/30 rounded-xl p-3 bg-white hover:bg-slate-50/50 text-center cursor-pointer transition min-h-[100px] shadow-sm">
+                            <Camera className="w-5 h-5 text-slate-400 mb-1" />
+                            <span className="text-[10px] text-slate-600 font-medium">Delivery Photo 3</span>
+                            <input
+                              key={`media3-${fileInputKey}`}
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileChange(e, 3)}
+                              className="hidden"
+                            />
+                          </label>
+                          {media2Preview && media3Preview && (
+                            <img src={media3Preview} alt="Preview 3" className="w-full h-14 object-cover rounded-lg border border-slate-200 shadow-sm" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Comments & Location inputs */}
+                    <div className="form-group">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                        Comments / Notes / Delivery Location
+                      </label>
+                      <textarea
+                        required
+                        rows={3}
+                        placeholder="Add delivery coordinates, instructions, or drop-off remarks..."
+                        value={comments}
+                        onChange={(e) => setComments(e.target.value)}
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs md:text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-sm"
+                      />
+                    </div>
+
+                    {/* Submit Dispatch */}
+                    <div className="pt-2">
+                      <button
+                        id="mainsubmitbutton"
+                        type="submit"
+                        disabled={submitting || (paymentType === 'G-Cash' && gcashRefStatus === 'used')}
+                        className={`w-full font-bold text-xs md:text-sm py-4 rounded-xl shadow-md hover:shadow transition flex items-center justify-center gap-2 ${
+                          (paymentType === 'G-Cash' && gcashRefStatus === 'used')
+                            ? 'bg-rose-50 text-rose-400 border border-rose-200 cursor-not-allowed shadow-sm'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-600/10'
+                        }`}
+                      >
+                        {submitting ? (
+                          <>
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                            <span>PROCESSING DISPATCH CHANNELS...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-5 h-5" />
+                            <span>
+                              {searchResult?.DeliveryStaff ? 'QUEUE DISPATCH UPDATE' : 'QUEUE DELIVERY DISPATCH'}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+
+            {/* ================================================================
+                TAB 2: GCASH REFERENCE CHECK
+               ================================================================ */}
+            {activeTab === 'lookup' && (
+              <motion.div
+                key="lookupTab"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="max-w-4xl mx-auto space-y-6"
+              >
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-2 flex items-center gap-2">
+                    <Search className="w-6 h-6 text-indigo-600" />
+                    <span>GCash Ledger Query Tool</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-6 font-medium">
+                    Enter the 6-digit GCash Reference Number to scan the database and see if it is already allocated to outstanding JOs.
+                  </p>
+
+                  <div className="form-group mb-5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                      Enter Reference ID
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="e.g. 123456"
+                        value={lookupRefInput}
+                        onChange={(e) => setLookupRefInput(e.target.value)}
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs md:text-sm font-mono rounded-xl px-4 py-3.5 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500 transition shadow-sm"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        {lookupLoading && (
+                          <RefreshCw className="w-5 h-5 text-indigo-600 animate-spin" />
+                        )}
+                      </div>
+                    </div>
+                    {lookupStatus && (
+                      <p className={`text-xs mt-2 font-semibold ${
+                        lookupResults.length > 0 ? 'text-indigo-600' : 'text-slate-500'
+                      }`}>
+                        {lookupStatus}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Ledger Result Card List / Table */}
+                  {lookupResults.length > 0 && (
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs md:text-sm">
+                          <thead className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase border-b border-slate-200">
+                            <tr>
+                              <th className="p-4">JO Ref #</th>
+                              <th className="p-4">Timestamp</th>
+                              <th className="p-4">Customer Name</th>
+                              <th className="p-4">Payment</th>
+                              <th className="p-4 text-right">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                            {lookupResults.map((item, index) => (
+                              <tr key={index} className="hover:bg-slate-50/50">
+                                <td className="p-4 font-mono text-indigo-600 font-bold">{item.jor}</td>
+                                <td className="p-4 text-slate-500 font-mono">{item.timestamp}</td>
+                                <td className="p-4 text-slate-900 font-semibold">{item.customerName}</td>
+                                <td className="p-4">
+                                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/85 rounded text-[10px] font-bold">
+                                    {item.paymentType}
+                                  </span>
+                                </td>
+                                <td className="p-4 text-right font-mono text-slate-900 font-bold">
+                                  ₱{item.gcashTransAmount || '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sub Tab: outstanding Placeholder for matched client */}
+                {lookupResults.length > 0 && placeholderJOs.length > 0 && (
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm animate-fade-in">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                      <div>
+                        <h3 className="text-base font-extrabold text-slate-900">
+                          Outstanding Placeholders for {lookupResults[0].customerName}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Link outstanding placeholder orders (000000) directly with active reference #{lookupRefInput}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleBulkAssociate}
+                        disabled={associating || selectedPlaceholderJOs.length === 0}
+                        className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 text-white disabled:text-slate-400 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-sm"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Associate Selected</span>
+                      </button>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase border-b border-slate-200">
+                          <tr>
+                            <th className="p-3 w-12 text-center">Select</th>
+                            <th className="p-3">JO Ref #</th>
+                            <th className="p-3">Date Created</th>
+                            <th className="p-3">Client</th>
+                            <th className="p-3 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
+                          {placeholderJOs.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50">
+                              <td className="p-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedPlaceholderJOs.includes(item.jor)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedPlaceholderJOs(prev => [...prev, item.jor]);
+                                    } else {
+                                      setSelectedPlaceholderJOs(prev => prev.filter(id => id !== item.jor));
+                                    }
+                                  }}
+                                  className="w-4.5 h-4.5 accent-indigo-600 rounded border-slate-300 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 text-indigo-600 font-bold">{item.jor}</td>
+                              <td className="p-3 text-slate-500">{item.timestamp}</td>
+                              <td className="p-3 text-slate-900 font-sans font-semibold">{item.customerName}</td>
+                              <td className="p-3 text-right text-slate-900 font-bold">₱{item.gcashTransAmount || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* ================================================================
+                TAB 3: CUSTOMER PLACEHOLDERS
+               ================================================================ */}
+            {activeTab === 'placeholders' && (
+              <motion.div
+                key="placeholdersTab"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="max-w-4xl mx-auto space-y-6"
+              >
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-2 flex items-center gap-2">
+                    <Layers className="w-6 h-6 text-indigo-600" />
+                    <span>Placeholder Associations Hub</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-6 font-medium">
+                    Link orders loaded under the placeholder reference (000000) with a valid GCash transaction after audits are complete.
+                  </p>
+
+                  {searchResult ? (
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-inner">
+                        <div>
+                          <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Currently Loaded Client</span>
+                          <span className="text-sm font-bold text-slate-900">{searchResult.value}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => fetchCustomerPlaceholders(searchResult.value)}
+                          disabled={placeholderLoading}
+                          className="bg-white hover:bg-slate-50 text-xs text-slate-700 font-semibold px-4 py-2.5 rounded-lg border border-slate-200 flex items-center gap-1.5 transition shadow-sm"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${placeholderLoading ? 'animate-spin' : ''}`} />
+                          <span>Refresh Placeholder Sweep</span>
+                        </button>
+                      </div>
+
+                      {placeholderJOs.length === 0 ? (
+                        <div className="text-center py-12 text-slate-500 text-xs md:text-sm">
+                          <CheckCircle className="w-12 h-12 text-emerald-500/50 mx-auto mb-3" />
+                          <span>This client has no pending placeholder (000000) transactions.</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <span className="text-xs text-slate-500 font-semibold">
+                              Select placeholder JOs below, type reference in Ledger tab, then trigger Association.
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (selectedPlaceholderJOs.length === placeholderJOs.length) {
+                                  setSelectedPlaceholderJOs([]);
+                                } else {
+                                  setSelectedPlaceholderJOs(placeholderJOs.map(item => item.jor));
+                                }
+                              }}
+                              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 underline"
+                            >
+                              {selectedPlaceholderJOs.length === placeholderJOs.length ? 'Deselect All' : 'Select All'}
+                            </button>
+                          </div>
+
+                          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                            <table className="w-full text-left text-xs">
+                              <thead className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase border-b border-slate-200">
+                                <tr>
+                                  <th className="p-3 w-12 text-center">Select</th>
+                                  <th className="p-3">JO Ref #</th>
+                                  <th className="p-3">Date Created</th>
+                                  <th className="p-3">Client</th>
+                                  <th className="p-3 text-right">Amount</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
+                                {placeholderJOs.map((item, idx) => (
+                                  <tr key={idx} className="hover:bg-slate-50/50">
+                                    <td className="p-3 text-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedPlaceholderJOs.includes(item.jor)}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            setSelectedPlaceholderJOs(prev => [...prev, item.jor]);
+                                          } else {
+                                            setSelectedPlaceholderJOs(prev => prev.filter(id => id !== item.jor));
+                                          }
+                                        }}
+                                        className="w-4.5 h-4.5 accent-indigo-600 rounded border-slate-300 bg-white"
+                                      />
+                                    </td>
+                                    <td className="p-3 text-indigo-600 font-bold">{item.jor}</td>
+                                    <td className="p-3 text-slate-500">{item.timestamp}</td>
+                                    <td className="p-3 text-slate-900 font-sans font-semibold">{item.customerName}</td>
+                                    <td className="p-3 text-right text-slate-900 font-bold">₱{item.gcashTransAmount || '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-slate-400 text-xs md:text-sm">
+                      <Info className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                      <span>Search for a client JO on the Delivery Form to check their pending placeholders.</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ================================================================
+                TAB 4: SYSTEM HUB LINKS
+               ================================================================ */}
+            {activeTab === 'system' && (
+              <motion.div
+                key="systemTab"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="max-w-4xl mx-auto space-y-6"
+              >
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-2 flex items-center gap-2">
+                    <ExternalLink className="w-6 h-6 text-indigo-600" />
+                    <span>Lavar Laundry Logistics Directory</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-6 font-medium">
+                    Quickly launch related modules of the Lavar Laundry sheets interface. Click to open in external sheets:
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { title: "Requests Summary", path: "pickuprequestsummary.html", desc: "View compiled customer requests." },
+                      { title: "Request Forms", path: "pickuprequest.html", desc: "Launch client request ingestion." },
+                      { title: "Pickup Module", path: "pickup.html", desc: "Record in-bound pickup of dirty laundry." },
+                      { title: "Delivery Module", path: "delivery.html", desc: "Manage outbound logistics and driver routing." },
+                      { title: "Delivery Summary (DVS)", path: "deliverysummary.html", desc: "Check dispatched revenue tallies." },
+                      { title: "Folding Log (Fold)", path: "LavarFormSubmission.html", desc: "Fold department intake sheet entry." }
+                    ].map((item, index) => (
+                      <a
+                        key={index}
+                        href={item.path}
+                        className="bg-white border border-slate-200 hover:border-indigo-500/40 p-5 rounded-2xl transition flex justify-between items-center group shadow-sm hover:shadow"
+                      >
+                        <div>
+                          <h3 className="font-extrabold text-slate-800 group-hover:text-indigo-600 transition text-sm">
+                            {item.title}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+                        </div>
+                        <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </main>
+
+      {/* ================================================================
+          DEVELOPER LOG PANEL (TERMINAL CONSOLE)
+         ================================================================ */}
+      <AnimatePresence>
+        {showDebug && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-slate-200 bg-white font-mono text-[10px] md:text-xs overflow-hidden relative z-50 shadow-inner"
+          >
+            <div className="max-w-7xl mx-auto p-4 space-y-2">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                <span className="text-indigo-600 font-bold flex items-center gap-2">
+                  <Terminal className="w-4.5 h-4.5" />
+                  <span>LAVAR LOGGER TELEMETRY STREAM</span>
+                </span>
+                <button 
+                  id="devConsoleCloseBtn"
+                  onClick={() => setShowDebug(false)}
+                  className="text-slate-400 hover:text-slate-600 text-[10px] font-bold cursor-pointer"
+                >
+                  CLOSE [X]
+                </button>
+              </div>
+
+              <div className="max-h-48 overflow-y-auto space-y-1.5 scrollbar-thin">
+                {debugLogs.length === 0 ? (
+                  <p className="text-slate-400 italic">No operations recorded yet.</p>
+                ) : (
+                  debugLogs.map((log, index) => (
+                    <div key={index} className="flex gap-2">
+                      <span className="text-slate-400 shrink-0">[{log.time}]</span>
+                      <span className={`shrink-0 font-bold ${
+                        log.type === 'success' ? 'text-emerald-600' : 
+                        log.type === 'error' ? 'text-rose-600' : 
+                        log.type === 'warn' ? 'text-amber-600' : 'text-indigo-600'
+                      }`}>
+                        {log.type.toUpperCase()}:
+                      </span>
+                      <span className="text-slate-700 break-all">{log.message}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ================================================================
+          TOAST FLOATING ALERTS CONTAINER
+         ================================================================ */}
+      <div className="fixed bottom-6 right-6 z-50 space-y-3 w-full max-w-sm pointer-events-none">
+        <AnimatePresence>
+          {toasts.map(t => (
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              className="p-4 rounded-xl border shadow-xl flex gap-3 pointer-events-auto bg-white border-slate-200"
+            >
+              <div className={`p-2 rounded-lg shrink-0 border ${
+                t.type === 'success' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                t.type === 'error' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                t.type === 'warning' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'
+              }`}>
+                {t.type === 'success' ? <CheckCircle className="w-5 h-5" /> :
+                 t.type === 'error' ? <AlertTriangle className="w-5 h-5" /> :
+                 t.type === 'warning' ? <AlertTriangle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
+              </div>
+              <div>
+                <h4 className="font-bold text-xs md:text-sm text-slate-950">{t.title}</h4>
+                <p className="text-[11px] md:text-xs text-slate-500 mt-0.5">{t.message}</p>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* ================================================================
+          FOOTER CREDIT SYSTEM
+         ================================================================ */}
+      <footer className="bg-white border-t border-slate-200 py-6 px-6 text-center text-[11px] text-slate-400 font-medium">
+        <div>Lavar Laundry logistics applet. Compiled and Optimized.</div>
+      </footer>
+    </div>
+  );
+}
