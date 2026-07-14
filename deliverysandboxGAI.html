@@ -4,15 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lavar Laundry - Standalone Logistics Dispatch & Payment Suite</title>
+
+  <!-- Global Error Logger & UI Interceptor to prevent silent white screens -->
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error("GLOBAL RUNTIME ERROR CAPTURED:", message, "at", source, ":", lineno, ":", colno);
+      showErrorOverlay("Global Runtime Error", message, source, lineno, colno, error);
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error("UNHANDLED PROMISE REJECTION:", event.reason);
+      const reason = event.reason || "Unknown promise rejection reason";
+      showErrorOverlay("Unhandled Promise Rejection", reason.message || reason, reason.stack || "No stack trace", "", "", reason);
+    });
+
+    function showErrorOverlay(title, message, source, lineno, colno, errorObj) {
+      // Ensure document body is available before appending
+      const appendOverlay = () => {
+        if (document.getElementById('critical-error-overlay')) return;
+        
+        const overlay = document.createElement('div');
+        overlay.id = 'critical-error-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.backgroundColor = '#0f172a';
+        overlay.style.color = '#f1f5f9';
+        overlay.style.padding = '24px';
+        overlay.style.fontFamily = 'monospace';
+        overlay.style.fontSize = '14px';
+        overlay.style.zIndex = '999999';
+        overlay.style.overflowY = 'auto';
+        overlay.style.lineHeight = '1.6';
+        
+        const stackHTML = errorObj && errorObj.stack ? `<pre style="background:#1e293b; padding:12px; border-radius:8px; overflow-x:auto; margin-top:8px; font-size:12px; color:#cbd5e1;">${errorObj.stack}</pre>` : '';
+        
+        overlay.innerHTML = `
+          <div style="max-width:800px; margin:0 auto; background:#1e293b; border:1px solid #ef4444; border-radius:12px; padding:24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <span style="background:#ef4444; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:12px;">CRITICAL</span>
+              <h2 style="margin:0; font-size:18px; color:#f87171; font-family:sans-serif;">${title}</h2>
+            </div>
+            <p style="margin:0 0 16px 0; font-size:15px; color:#f1f5f9; font-weight:bold;">${message}</p>
+            <div style="background:#0f172a; padding:12px; border-radius:8px; color:#94a3b8; font-size:12px; margin-bottom:16px;">
+              <div><strong>File:</strong> ${source || 'N/A'}</div>
+              <div><strong>Line:</strong> ${lineno || 'N/A'} | <strong>Column:</strong> ${colno || 'N/A'}</div>
+            </div>
+            ${stackHTML}
+            <div style="margin-top:20px; font-size:12px; color:#64748b;">
+              💡 <em>Lavar Laundry Standalone Diagnostics Engine. Try clearing your browser cache or checking network connection to CDN scripts if the page fails to load.</em>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+      };
+      
+      if (document.body) {
+        appendOverlay();
+      } else {
+        window.addEventListener('DOMContentLoaded', appendOverlay);
+      }
+    }
+  </script>
   
   <!-- Google Fonts: Inter, Outfit, and JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- React 18 & ReactDOM 18 CDN -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- React 18 & ReactDOM 18 CDN (crossorigin removed for file:// protocol compatibility) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   
   <!-- Babel Standalone for in-browser JSX compiling -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -131,35 +192,68 @@
       const ref = useRef(null);
 
       useEffect(() => {
-        if (ref.current && window.lucide) {
-          ref.current.innerHTML = '';
-          
-          // Case-insensitive lookup helper for UMD Uuids
-          const findIcon = (n) => {
-            if (!window.lucide || !window.lucide.icons) return null;
-            if (window.lucide.icons[n]) return window.lucide.icons[n];
-            
-            const lower = n.toLowerCase();
-            const kebab = n.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-            const keys = Object.keys(window.lucide.icons);
-            
-            const matchKey = keys.find(k => k.toLowerCase() === lower || k.toLowerCase() === kebab);
-            if (matchKey) return window.lucide.icons[matchKey];
-            
-            return window.lucide.icons.helpCircle || window.lucide.icons.HelpCircle;
-          };
+        let isMounted = true;
+        let retryCount = 0;
 
-          const icon = findIcon(name);
-          if (icon) {
-            const svg = icon.toSvg({
-              class: className,
-              width: size,
-              height: size,
-              'stroke-width': 2,
-            });
-            ref.current.innerHTML = svg;
+        const renderIcon = () => {
+          if (!ref.current || !isMounted) return;
+
+          try {
+            if (!window.lucide) {
+              // If not loaded yet, retry a few times
+              if (retryCount < 20) {
+                retryCount++;
+                setTimeout(renderIcon, 150);
+              } else {
+                ref.current.innerHTML = `<span style="font-size: ${size}px; font-weight: bold;">•</span>`;
+              }
+              return;
+            }
+
+            ref.current.innerHTML = '';
+            
+            // Case-insensitive lookup helper supporting both direct exports and window.lucide.icons namespace
+            const findIcon = (n) => {
+              if (!window.lucide) return null;
+              const icons = window.lucide.icons || window.lucide;
+              if (!icons) return null;
+              if (icons[n]) return icons[n];
+              
+              const lower = n.toLowerCase();
+              const kebab = n.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+              const keys = Object.keys(icons);
+              
+              const matchKey = keys.find(k => k.toLowerCase() === lower || k.toLowerCase() === kebab);
+              if (matchKey) return icons[matchKey];
+              
+              return icons.helpCircle || icons.HelpCircle || icons.help || icons.Help || icons.AlertTriangle || icons.alertTriangle;
+            };
+
+            const icon = findIcon(name);
+            if (icon && typeof icon.toSvg === 'function') {
+              const svg = icon.toSvg({
+                class: className,
+                width: size,
+                height: size,
+                'stroke-width': 2,
+              });
+              ref.current.innerHTML = svg;
+            } else {
+              ref.current.innerHTML = `<span style="font-size: ${size}px; font-weight: bold;">•</span>`;
+            }
+          } catch (err) {
+            console.error("Lucide Icon rendering error for name:", name, err);
+            if (ref.current) {
+              ref.current.innerHTML = `<span style="font-size: ${size}px; font-weight: bold;">•</span>`;
+            }
           }
-        }
+        };
+
+        renderIcon();
+
+        return () => {
+          isMounted = false;
+        };
       }, [name, size, className]);
 
       return <span ref={ref} className={`inline-flex items-center justify-center shrink-0 ${className}`} />;
@@ -272,8 +366,13 @@
 
       // Queue system
       const [uploadQueue, setUploadQueue] = useState(() => {
-        const saved = localStorage.getItem('lavar_delivery_queue');
-        return saved ? JSON.parse(saved) : [];
+        try {
+          const saved = localStorage.getItem('lavar_delivery_queue');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          console.error("Lavar Local Storage Parsing Error:", e);
+          return [];
+        }
       });
       const [isUploading, setIsUploading] = useState(false);
 
