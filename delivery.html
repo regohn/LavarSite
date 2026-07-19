@@ -264,7 +264,7 @@
             <input class="form-control-file" type="file" name="media3" id="media3" />
           </div>
 
-          <button id="mainsubmitbutton" type="submit" class="btn btn-primary btn-block">Submit</button>
+          <button id="mainsubmitbutton" type="submit" class="btn btn-primary btn-block" disabled>Submit</button>
         </form>
       </div>
 
@@ -326,6 +326,24 @@
       let currentJOAmount = null;
       let currentJOCreatedDate = null;
       let joSearchInFlight = null;
+
+      // Submit is only allowed once a JO# has been searched/selected, AND no
+      // GCash duplicate-reference flag is currently active.
+      let gcashDuplicateBlocked = false;
+      // Remembers the last successfully scanned GCash receipt so that, if the
+      // scan happened BEFORE the JO search finished, we can re-run the amount/date
+      // flag checks once JO data actually arrives.
+      let lastScannedGcashReceipt = null; // { amount, transactionDate, ref }
+
+      function refreshSubmitButtonState() {
+        const submitBtn = document.getElementById("mainsubmitbutton");
+        if (!submitBtn) return;
+        const hasJO = document.getElementById("JOR").value.trim() !== "";
+        const blocked = !hasJO || gcashDuplicateBlocked;
+        submitBtn.disabled = blocked;
+        submitBtn.style.opacity = blocked ? "0.5" : "1";
+        submitBtn.style.cursor = blocked ? "not-allowed" : "pointer";
+      }
 
       const form = document.getElementById("submit-to-google-sheet");
       const JOsearchField = document.getElementById("JOsearch");
@@ -492,6 +510,8 @@
         return isMismatch;
       }
 
+      const DATE_ANOMALY_GRACE_MS = 24 * 60 * 60 * 1000; // 1 day — small gaps (minutes) are normal timing/clock drift, not anomalies
+
       function evaluateDateAnomaly(scannedDateStr) {
         const flagField = document.getElementById("DateAnomalyFlag");
         const msgEl = document.getElementById("dateAnomalyMsg");
@@ -506,7 +526,8 @@
           msgEl.innerText = "";
           return false;
         }
-        const isBeforeJO = scannedDate.getTime() < currentJOCreatedDate.getTime();
+        const gapMs = currentJOCreatedDate.getTime() - scannedDate.getTime();
+        const isBeforeJO = gapMs > DATE_ANOMALY_GRACE_MS;
         if (isBeforeJO) {
           flagField.value = `DATE_BEFORE_JO: Scanned ${scannedDateStr} vs JO Created ${currentJOCreatedDate.toLocaleString("en-PH")}`;
           msgEl.style.color = "#d9534f";
@@ -767,6 +788,17 @@
           currentJOCreatedDate = data.JOCreatedDate ? new Date(data.JOCreatedDate.replace(" ", "T")) : null;
           if (currentJOCreatedDate && isNaN(currentJOCreatedDate.getTime())) currentJOCreatedDate = null;
 
+          // JO# is now known — allow submission (unless still blocked by a GCash dup flag).
+          refreshSubmitButtonState();
+
+          // If a GCash receipt was already scanned before this JO search finished,
+          // its amount/date flags couldn't be checked against JO data at scan time.
+          // Re-run them now that currentJOAmount / currentJOCreatedDate are available.
+          if (lastScannedGcashReceipt && lastScannedGcashReceipt.ref !== "000000") {
+            evaluateAmountMismatch(lastScannedGcashReceipt.amount);
+            evaluateDateAnomaly(lastScannedGcashReceipt.transactionDate);
+          }
+
           if (data.DeliveryStaff && data.DeliveryStaff.trim()) {
             document.getElementById("mainsubmitbutton").innerText = "Update";
             document.getElementById("DeliveryStaff").value = data.DeliveryStaff;
@@ -864,6 +896,8 @@
           gcashInfo.value = "";
           gcashInfo.required = false;
           gcashLookupMsg.innerText = "";
+          gcashDuplicateBlocked = false;
+          refreshSubmitButtonState();
           if (gcashMedia) {
             gcashMedia.style.display = "none";
             gcashMedia.disabled = true;
@@ -890,8 +924,10 @@
         document.getElementById("CustomerName").value = "";
         document.getElementById("gcashInfo").style.display = "none";
         document.getElementById("gcashLookupMsg").innerText = "";
-        document.getElementById("mainsubmitbutton").disabled = false;
         document.getElementById("mainsubmitbutton").innerText = "Submit";
+        gcashDuplicateBlocked = false;
+        lastScannedGcashReceipt = null;
+        refreshSubmitButtonState();
         JOsearchField.value = "";
         document.getElementById("placeholderAssociations").style.display = "none";
 
@@ -961,6 +997,11 @@
             document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
             document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
 
+            // Remember this scan so if the JO search hasn't finished (or hasn't
+            // even started) yet, the amount/date flags can be re-checked once
+            // JO data becomes available — see performJOSearch().
+            lastScannedGcashReceipt = { amount: parsedReceipt.amount, transactionDate: parsedReceipt.transactionDate, ref };
+
             if (joSearchInFlight) {
               gcashLookupMsg.innerText = "⏳ Waiting for JO details to finish loading before validating...";
               try { await joSearchInFlight; } catch (e) { /* ignore */ }
@@ -978,10 +1019,9 @@
             gcashLookupMsg.innerText = `✅ AI Match (${classifiedType}): Ref ${ref} | Amt: ₱${parsedReceipt.amount} | ${parsedReceipt.transactionDate || "no date read"}`;
 
             if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.style.opacity = "1";
               submitBtn.innerText = "Submit";
             }
+            refreshSubmitButtonState();
             gcashInfoField.dispatchEvent(new Event("input"));
 
           } else {
@@ -1004,10 +1044,9 @@
             gcashLookupMsg.innerText = "⚠️ No reference number was visible in this screenshot. You may still submit — this will be flagged (" + placeholder + ") for manual verification.";
 
             if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.style.opacity = "1";
               submitBtn.innerText = "Submit";
             }
+            refreshSubmitButtonState();
           }
 
         } catch (err) {
@@ -1023,10 +1062,9 @@
           document.getElementById("DateAnomalyFlag").value = "";
           document.getElementById("dateAnomalyMsg").innerText = "";
           if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = "1";
             submitBtn.innerText = "Submit";
           }
+          refreshSubmitButtonState();
         }
       });
 
@@ -1137,6 +1175,7 @@
           dateSpan.innerText = manilaDate;
           loadJODropdown(manilaDate);
         }
+        refreshSubmitButtonState();
         setInterval(processQueue, 5000);
       };
 
@@ -1150,20 +1189,21 @@
         document.getElementById(inputId).addEventListener('input', function() {
           const userInput = this.value.trim();
           const msgElement = document.getElementById(msgElementId);
-          const submitBtn = document.getElementById("mainsubmitbutton");
 
           clearTimeout(paymentRefLookupTimers[inputId]);
           msgElement.innerText = "";
 
           if (userInput.length === 0) {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+            gcashDuplicateBlocked = false;
+            refreshSubmitButtonState();
             return;
           }
 
           if (userInput === "000000") {
             msgElement.style.color = "#f0ad4e";
             msgElement.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+            gcashDuplicateBlocked = false;
+            refreshSubmitButtonState();
             return;
           }
 
@@ -1178,25 +1218,30 @@
                 const match = resultData.data[0];
                 msgElement.style.color = "#d9534f";
                 msgElement.innerHTML = `<strong>⚠️ Already used:</strong> JO# ${match.jor} | ${match.customerName} | Kung pang 2 JO ito, imamanual edit ito sa audit with Sir Will.`;
-                if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = "0.5"; submitBtn.style.cursor = "not-allowed"; }
+                gcashDuplicateBlocked = true;
+                refreshSubmitButtonState();
               } else if (resultData.result === "not_found") {
                 msgElement.style.color = "#28a745";
                 msgElement.innerText = "✅ Reference number is available";
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+                gcashDuplicateBlocked = false;
+                refreshSubmitButtonState();
               } else {
                 msgElement.style.color = "#d9534f";
                 msgElement.innerText = "⚠️ Could not verify. Proceed with caution.";
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+                gcashDuplicateBlocked = false;
+                refreshSubmitButtonState();
               }
             } catch (err) {
               console.error("Ref lookup error:", err);
               msgElement.style.color = "#d9534f";
               msgElement.innerText = "📡 Could not connect to server after 3 attempts. Proceed with caution.";
-              if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = "1"; submitBtn.style.cursor = "pointer"; }
+              gcashDuplicateBlocked = false;
+              refreshSubmitButtonState();
             }
           }, 1000);
         });
       }
+
 
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
