@@ -217,6 +217,7 @@
                     <input type="hidden" id="TransactionDate" name="TransactionDate" value="" />
                     <input type="hidden" id="AmountMismatchFlag" name="AmountMismatchFlag" value="" />
                     <input type="hidden" id="DateAnomalyFlag" name="DateAnomalyFlag" value="" />
+                    <input type="hidden" id="OldReceiptFlag" name="OldReceiptFlag" value="" />
 
                     <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*" />
 
@@ -334,6 +335,8 @@
       // scan happened BEFORE the JO search finished, we can re-run the amount/date
       // flag checks once JO data actually arrives.
       let lastScannedGcashReceipt = null; // { amount, transactionDate, ref }
+
+      const OLD_RECEIPT_THRESHOLD_DAYS = 90; // ~3 months
 
       function refreshSubmitButtonState() {
         const submitBtn = document.getElementById("mainsubmitbutton");
@@ -537,6 +540,67 @@
           msgEl.innerText = "";
         }
         return isBeforeJO;
+      }
+
+      // If the receipt is roughly 3+ months old, prompt the user to send an
+      // approval email before the JO is submitted. The email is sent server-side
+      // (Apps Script MailApp, from the script's own account) — no client mail app
+      // is opened. Sending is optional — the user can decline and still submit.
+      async function evaluateOldReceipt(scannedDateStr, ref, amount) {
+        const flagField = document.getElementById("OldReceiptFlag");
+        if (!scannedDateStr) { flagField.value = ""; return; }
+
+        const scannedDate = new Date(scannedDateStr.replace(" ", "T"));
+        if (isNaN(scannedDate.getTime())) { flagField.value = ""; return; }
+
+        const daysAgo = Math.floor((Date.now() - scannedDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysAgo < OLD_RECEIPT_THRESHOLD_DAYS) { flagField.value = ""; return; }
+
+        const monthsAgo = Math.round(daysAgo / 30);
+        const jor = document.getElementById("JOR").value.trim();
+        const customerName = document.getElementById("CustomerName").value.trim();
+
+        const wantsToSend = await swal({
+          title: "Old receipt detected",
+          text: `This receipt is dated ${scannedDateStr} — about ${monthsAgo} month(s) ago. Send this for approval?`,
+          type: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Yes, send for approval",
+          cancelButtonText: "No, just flag it"
+        });
+
+        if (!wantsToSend) {
+          flagField.value = `OLD_RECEIPT: Scanned ${scannedDateStr} (${daysAgo} days ago)`;
+          return;
+        }
+
+        try {
+          const payload = new URLSearchParams();
+          payload.append("action", "sendApprovalEmail");
+          payload.append("jor", jor);
+          payload.append("customerName", customerName);
+          payload.append("gcashRef", ref || "");
+          payload.append("amount", amount || "");
+          payload.append("receiptDate", scannedDateStr);
+          payload.append("monthsAgo", monthsAgo);
+
+          const response = await fetch(scriptURL, {
+            method: "POST",
+            body: payload,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+          });
+          const result = await response.json();
+
+          if (result.result === "success") {
+            flagField.value = `OLD_RECEIPT: Scanned ${scannedDateStr} (${daysAgo} days ago) - approval email sent`;
+          } else {
+            flagField.value = `OLD_RECEIPT: Scanned ${scannedDateStr} (${daysAgo} days ago) - approval email FAILED (${result.error || "unknown error"})`;
+            swal("Email not sent", result.error || "Could not send the approval email. It has still been flagged in the sheet.", "error");
+          }
+        } catch (err) {
+          flagField.value = `OLD_RECEIPT: Scanned ${scannedDateStr} (${daysAgo} days ago) - approval email FAILED (network error)`;
+          swal("Email not sent", "Could not reach the server to send the approval email. It has still been flagged in the sheet.", "error");
+        }
       }
 
       // ================================================================
@@ -939,6 +1003,7 @@
         document.getElementById("amountMismatchMsg").innerText = "";
         document.getElementById("DateAnomalyFlag").value = "";
         document.getElementById("dateAnomalyMsg").innerText = "";
+        document.getElementById("OldReceiptFlag").value = "";
         currentJOAmount = null;
         currentJOCreatedDate = null;
 
@@ -1010,9 +1075,11 @@
             if (ref !== "000000") {
               evaluateAmountMismatch(parsedReceipt.amount);
               evaluateDateAnomaly(parsedReceipt.transactionDate);
+              await evaluateOldReceipt(parsedReceipt.transactionDate, ref, parsedReceipt.amount);
             } else {
               document.getElementById("amountMismatchMsg").innerText = "";
               document.getElementById("dateAnomalyMsg").innerText = "";
+              document.getElementById("OldReceiptFlag").value = "";
             }
 
             gcashLookupMsg.style.color = "#28a745";
@@ -1061,6 +1128,7 @@
           document.getElementById("amountMismatchMsg").innerText = "";
           document.getElementById("DateAnomalyFlag").value = "";
           document.getElementById("dateAnomalyMsg").innerText = "";
+          document.getElementById("OldReceiptFlag").value = "";
           if (submitBtn) {
             submitBtn.innerText = "Submit";
           }
