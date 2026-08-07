@@ -28,6 +28,16 @@
     .file-label:hover {
       background-color: #006be6;
     }
+    .file-label.scan {
+      background-color: #34c759;
+    }
+    .file-label.scan:hover {
+      background-color: #28a745;
+    }
+    .scanning {
+      background-color: #ff9500 !important;
+      cursor: wait;
+    }
   </style>
 </head>
 <body class="p-4 flex justify-center items-center min-h-screen">
@@ -45,7 +55,7 @@
       <!-- Business Entity Selection -->
       <div class="space-y-2">
         <span class="text-gray-700 text-sm">Business Entity</span>
-        <div class="flex gap-4">
+        <div class="flex flex-wrap gap-4">
           <label class="flex items-center space-x-2 cursor-pointer">
             <input type="radio" name="BusinessEntity" value="Lavar Laundry" required checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
             <span class="text-sm text-gray-700">Lavar Laundry</span>
@@ -58,13 +68,10 @@
             <input type="radio" name="BusinessEntity" value="Personal" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
             <span class="text-sm text-gray-700">Personal</span>
           </label>
-
           <label class="flex items-center space-x-2 cursor-pointer">
             <input type="radio" name="BusinessEntity" value="Staycation" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
             <span class="text-sm text-gray-700">Staycation</span>
           </label>
-                    
-
         </div>
       </div>
 
@@ -110,20 +117,22 @@
       </label>
 
       <!-- Media Inputs -->
+      <!-- Media 1: SCAN (primary) -->
       <label class="block">
-        <span class="file-label">Upload Media 1</span>
+        <span class="file-label scan" id="media1Label">📸 Upload Receipt to Scan</span>
         <input type="file" name="Media1" accept="image/*" id="media1">
         <span id="media1Name" class="text-sm text-gray-600 block mt-1"></span>
       </label>
 
+      <!-- Media 2 & 3: additional attachments -->
       <label class="block">
-        <span class="file-label">Upload Media 2</span>
+        <span class="file-label">Upload Media 2 (optional)</span>
         <input type="file" name="Media2" accept="image/*" id="media2">
         <span id="media2Name" class="text-sm text-gray-600 block mt-1"></span>
       </label>
 
       <label class="block">
-        <span class="file-label">Upload Media 3</span>
+        <span class="file-label">Upload Media 3 (optional)</span>
         <input type="file" name="Media3" accept="image/*" id="media3">
         <span id="media3Name" class="text-sm text-gray-600 block mt-1"></span>
       </label>
@@ -139,18 +148,133 @@
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbwc1YQVDvH07gYkCJf4SWtTnlydG5i-qdfq9ToYEVQukaheQm4ftMmiGZflZ44MInUM/exec";
 
-    // SINGLE window.onload handler
     window.onload = function() {
-      // 1. Set default date to today
+      // Set default date to today
       const dateInput = document.getElementsByName("Date")[0];
       const today = new Date().toISOString().split('T')[0];
       if(dateInput) dateInput.value = today;
       
-      // 2. Load the searchable suggestions
+      // Load transaction suggestions
       loadTransactionSuggestions();
-    };    
+    };
 
-    // Form Submission Logic
+    // -------- RECEIPT SCANNING (Media1) --------
+    document.getElementById("media1").addEventListener("change", async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const status = document.getElementById("status");
+      const label = document.getElementById("media1Label");
+      status.textContent = "Scanning receipt...";
+      status.style.color = "#1c1c1e";
+      label.classList.add("scanning");
+      label.textContent = "⏳ Scanning...";
+
+      try {
+        // Compress the image to reduce payload size (optional but recommended)
+        const base64 = await compressImage(file);
+        const payload = new URLSearchParams();
+        payload.append("action", "scanReceipt");
+        payload.append("base64Data", base64.split(",")[1]);
+        payload.append("mimeType", file.type);
+
+        const response = await fetch(scriptURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: payload.toString()
+        });
+        const result = await response.json();
+
+        if (result.error) {
+          status.textContent = "Scan error: " + result.error;
+          status.style.color = "#dc3545";
+          label.classList.remove("scanning");
+          label.textContent = "📸 Upload Receipt to Scan";
+          return;
+        }
+
+        // Populate form fields
+        if (result.date) {
+          const dateInput = document.getElementsByName("Date")[0];
+          const d = new Date(result.date);
+          if (!isNaN(d)) {
+            dateInput.value = d.toISOString().split('T')[0];
+          } else {
+            dateInput.value = result.date;
+          }
+        }
+        if (result.transaction) {
+          document.getElementsByName("Transaction")[0].value = result.transaction;
+        }
+        if (result.amount) {
+          document.getElementsByName("Amount")[0].value = result.amount;
+        }
+        if (result.transactionType) {
+          const select = document.getElementsByName("TransactionType")[0];
+          const options = Array.from(select.options);
+          const matched = options.find(opt => opt.value.toLowerCase() === result.transactionType.toLowerCase());
+          if (matched) select.value = matched.value;
+          else select.value = result.transactionType;
+        }
+        if (result.transactionMode) {
+          document.getElementsByName("TransactionMode")[0].value = result.transactionMode;
+        }
+        if (result.receiptNumber) {
+          document.getElementsByName("ReceiptNumber")[0].value = result.receiptNumber;
+        }
+        if (result.businessEntity) {
+          const radios = document.getElementsByName("BusinessEntity");
+          for (let radio of radios) {
+            if (radio.value.toLowerCase() === result.businessEntity.toLowerCase()) {
+              radio.checked = true;
+              break;
+            }
+          }
+        }
+
+        status.textContent = "✅ Receipt scanned – fields populated. Please review and submit.";
+        status.style.color = "#28a745";
+
+      } catch (err) {
+        status.textContent = "Error scanning: " + err.message;
+        status.style.color = "#dc3545";
+      } finally {
+        label.classList.remove("scanning");
+        label.textContent = "📸 Upload Receipt to Scan";
+      }
+    });
+
+    // -------- HELPER: COMPRESS IMAGE --------
+    function compressImage(file, maxDim = 1600, quality = 0.85) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > height && width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
+            } else if (height >= width && height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
+          };
+          img.onerror = () => reject(new Error("Image load failed"));
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // -------- FORM SUBMISSION (unchanged) --------
     document.getElementById("expenseForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const form = e.target;
@@ -162,7 +286,7 @@
       const plainData = {};
       formData.forEach((v, k) => plainData[k] = v);
 
-      // Handle Media uploads
+      // Handle Media uploads (all three)
       for (let i = 1; i <= 3; i++) {
         const file = formData.get(`Media${i}`);
         if (file && file.size > 0) {
@@ -182,15 +306,17 @@
         status.textContent = msg;
         status.style.color = "#28a745";
         form.reset();
-        
-        // Reset the date to today after form clear
+        // Reset date to today after clear
         const today = new Date().toISOString().split('T')[0];
         document.getElementsByName("Date")[0].value = today;
-
-        // Clear media names after reset
+        // Clear file name displays
         document.getElementById("media1Name").textContent = "";
         document.getElementById("media2Name").textContent = "";
         document.getElementById("media3Name").textContent = "";
+        // Clear file inputs themselves (optional)
+        document.getElementById("media1").value = "";
+        document.getElementById("media2").value = "";
+        document.getElementById("media3").value = "";
       })
       .catch(err => {
         status.textContent = "Error: " + err.message;
@@ -198,6 +324,7 @@
       });
     });
 
+    // -------- HELPER: FILE TO BASE64 --------
     function toBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -207,6 +334,7 @@
       });
     }
 
+    // -------- FILE NAME DISPLAY (unchanged) --------
     function showFileName(inputId, spanId) {
       const input = document.getElementById(inputId);
       const span = document.getElementById(spanId);
@@ -218,17 +346,16 @@
         }
       });
     }
-
     showFileName("media1", "media1Name");
     showFileName("media2", "media2Name");
     showFileName("media3", "media3Name");
 
+    // -------- LOAD TRANSACTION SUGGESTIONS --------
     async function loadTransactionSuggestions() {
       const datalist = document.getElementById("transactionSuggestions");
       try {
         const response = await fetch(`${scriptURL}?action=getTransactions`);
         const suggestions = await response.json();
-        
         datalist.innerHTML = "";
         suggestions.forEach(item => {
           const option = document.createElement("option");
