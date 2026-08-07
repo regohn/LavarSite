@@ -171,7 +171,7 @@
       label.textContent = "⏳ Scanning...";
 
       try {
-        // Compress the image to reduce payload size (optional but recommended)
+        // Compress the image to reduce payload size
         const base64 = await compressImage(file);
         const payload = new URLSearchParams();
         payload.append("action", "scanReceipt");
@@ -184,6 +184,7 @@
           body: payload.toString()
         });
         const result = await response.json();
+        console.log("Scanned receipt data:", result);  // DEBUG
 
         if (result.error) {
           status.textContent = "Scan error: " + result.error;
@@ -193,16 +194,29 @@
           return;
         }
 
-        // Populate form fields
+        // --- Populate date (improved parser) ---
         if (result.date) {
           const dateInput = document.getElementsByName("Date")[0];
-          const d = new Date(result.date);
-          if (!isNaN(d)) {
-            dateInput.value = d.toISOString().split('T')[0];
+          let parsedDate = null;
+          // Try to parse YYYY-MM-DD
+          const match = result.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (match) {
+            parsedDate = new Date(match[1], match[2]-1, match[3]);
           } else {
+            // Try generic date parsing
+            const d = new Date(result.date);
+            if (!isNaN(d)) parsedDate = d;
+          }
+          if (parsedDate && !isNaN(parsedDate)) {
+            dateInput.value = parsedDate.toISOString().split('T')[0];
+          } else {
+            // Fallback: set as raw string
             dateInput.value = result.date;
+            console.warn("Could not parse date:", result.date);
           }
         }
+
+        // --- Populate other fields ---
         if (result.transaction) {
           document.getElementsByName("Transaction")[0].value = result.transaction;
         }
@@ -313,7 +327,7 @@
         document.getElementById("media1Name").textContent = "";
         document.getElementById("media2Name").textContent = "";
         document.getElementById("media3Name").textContent = "";
-        // Clear file inputs themselves (optional)
+        // Clear file inputs themselves
         document.getElementById("media1").value = "";
         document.getElementById("media2").value = "";
         document.getElementById("media3").value = "";
