@@ -1157,7 +1157,7 @@
           },
           "Other Online Banking": {
             field: document.getElementById("gcashInfo"),
-            pattern: /^[A-Za-z0-9]{4,20}$/,
+            pattern: /^[A-Za-z0-9]{4,}$/,
             msg: "Reference # must be 4–20 letters/numbers."
           }
         };
@@ -1253,7 +1253,7 @@
       const paymentRefLookupTimers = {};
 
       function setupPaymentRefValidation(inputId, msgElementId, mode) {
-        const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,20}$/ : /^\d{6,20}$/;
+        const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,}$/ : /^\d{6,20}$/;  
         document.getElementById(inputId).addEventListener('input', function() {
           const userInput = this.value.trim();
           const msgElement = document.getElementById(msgElementId);
