@@ -102,7 +102,15 @@
           <div id="nextUploadInfo" style="margin-top: 5px;"></div>
         </div>
 
-        <h4 class="text-center mb-4">Lavar Laundry Delivery Form</h4>
+        <h4 class="text-center mb-1">Lavar Laundry Delivery Form</h4>
+        
+        <!-- DYNAMIC BUILD DATE ADDED HERE -->
+        <div class="text-center mb-3">
+          <span id="githubBuildDate" class="badge badge-light text-muted border" style="font-size: 10px;">
+            Checking version...
+          </span>
+        </div>
+
         <div>
           <a href="pickuprequestsummary.html"> Requests Summary </a> |
           <a href="pickuprequest.html"> Request Forms </a> |
@@ -114,7 +122,6 @@
         </div>
 
         <form id="submit-to-google-sheet">
-          <!-- ... (same as before) ... -->
           <div class="form-group">
             <label for="JOR">(Only Folded Laundry JOs will appear in search)<br> (Use Delivery form also for In-shop Pickup of laundry by customer)</label>
             <input
@@ -299,7 +306,7 @@
         </div>
       </div>
 
-      <!-- ====== Placeholder associations list (below the GCash lookup) ====== -->
+      <!-- ====== Placeholder associations list ====== -->
       <div class="form-container" id="placeholderAssociations" style="display:none; margin-top: 20px; max-width: 550px;">
         <h5 class="text-center mb-3 text-secondary">Placeholder (000000) JOs for this Customer</h5>
         <p><strong>Existing JOs for this customer with placeholder reference (000000):</strong></p>
@@ -310,7 +317,6 @@
           <button type="button" class="btn btn-sm btn-warning" id="usePlaceholderForCurrentBtn">Use Placeholder for this JO</button>
           <button type="button" class="btn btn-sm btn-secondary" id="manualRefreshPlaceholderBtn">Refresh List</button>
         </div>
-        <!-- Debug panel -->
         <div id="debugPanel" class="debug-box" style="display:none;"></div>
       </div>
 
@@ -318,9 +324,9 @@
 
     <script>
       // ================================================================
-      //  CONFIGURATION & GLOBALS
+      //  CORRECT DEPLOYMENT ID APPLIED HERE
       // ================================================================
-      const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
+      const scriptURL = "https://script.google.com/macros/s/AKfycbyTd6NrJzoiH19Y-HUhochhXqghF5AM9gNdfE3yHB39vrnOTJYGA7IN12IMBgoSS42A/exec";
       const requestScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
       const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
 
@@ -328,15 +334,10 @@
       let currentJOCreatedDate = null;
       let joSearchInFlight = null;
 
-      // Submit is only allowed once a JO# has been searched/selected, AND no
-      // GCash duplicate-reference flag is currently active.
       let gcashDuplicateBlocked = false;
-      // Remembers the last successfully scanned GCash receipt so that, if the
-      // scan happened BEFORE the JO search finished, we can re-run the amount/date
-      // flag checks once JO data actually arrives.
-      let lastScannedGcashReceipt = null; // { amount, transactionDate, ref }
+      let lastScannedGcashReceipt = null;
 
-      const OLD_RECEIPT_THRESHOLD_DAYS = 90; // ~3 months
+      const OLD_RECEIPT_THRESHOLD_DAYS = 90; 
 
       function refreshSubmitButtonState() {
         const submitBtn = document.getElementById("mainsubmitbutton");
@@ -357,9 +358,6 @@
       let uploadQueue = [];
       let isUploading = false;
 
-      // ================================================================
-      //  HELPER FUNCTIONS
-      // ================================================================
       function setDebugMessage(msg) {
         const panel = document.getElementById("debugPanel");
         panel.style.display = "block";
@@ -406,7 +404,8 @@
         });
       }
 
-      function compressImageToBase64(file, maxDimension = 1600, quality = 0.85) {
+      // HIGH COMPRESSION (800px / 0.60 quality)
+      function compressImageToBase64(file, maxDimension = 800, quality = 0.60) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => {
@@ -457,7 +456,8 @@
         throw lastError;
       }
 
-      async function analyzeGcashWithRetry(base64Data, mimeType, onAttempt, maxRetries = 3) {
+      // NO OVERLAPPING RETRIES (maxRetries = 1)
+      async function analyzeGcashWithRetry(base64Data, mimeType, onAttempt, maxRetries = 1) {
         let lastErrorMsg = "Unknown error";
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           if (onAttempt) onAttempt(attempt, maxRetries);
@@ -486,9 +486,6 @@
         throw new Error(lastErrorMsg);
       }
 
-      // ================================================================
-      //  AMOUNT MISMATCH & DATE ANOMALY
-      // ================================================================
       function evaluateAmountMismatch(scannedAmount) {
         const mismatchField = document.getElementById("AmountMismatchFlag");
         const mismatchMsgEl = document.getElementById("amountMismatchMsg");
@@ -513,7 +510,7 @@
         return isMismatch;
       }
 
-      const DATE_ANOMALY_GRACE_MS = 24 * 60 * 60 * 1000; // 1 day — small gaps (minutes) are normal timing/clock drift, not anomalies
+      const DATE_ANOMALY_GRACE_MS = 24 * 60 * 60 * 1000; 
 
       function evaluateDateAnomaly(scannedDateStr) {
         const flagField = document.getElementById("DateAnomalyFlag");
@@ -542,10 +539,6 @@
         return isBeforeJO;
       }
 
-      // If the receipt is roughly 3+ months old, prompt the user to send an
-      // approval email before the JO is submitted. The email is sent server-side
-      // (Apps Script MailApp, from the script's own account) — no client mail app
-      // is opened. Sending is optional — the user can decline and still submit.
       async function evaluateOldReceipt(scannedDateStr, ref, amount) {
         const flagField = document.getElementById("OldReceiptFlag");
         if (!scannedDateStr) { flagField.value = ""; return; }
@@ -595,44 +588,29 @@
             flagField.value = `OLD_RECEIPT: Scanned ${scannedDateStr} (${daysAgo} days ago) - approval email sent`;
           } else {
             flagField.value = `OLD_RECEIPT: Scanned ${scannedDateStr} (${daysAgo} days ago) - approval email FAILED (${result.error || "unknown error"})`;
-            swal("Email not sent", result.error || "Could not send the approval email. It has still been flagged in the sheet.", "error");
+            swal("Email not sent", result.error || "Could not send the approval email.", "error");
           }
         } catch (err) {
           flagField.value = `OLD_RECEIPT: Scanned ${scannedDateStr} (${daysAgo} days ago) - approval email FAILED (network error)`;
-          swal("Email not sent", "Could not reach the server to send the approval email. It has still been flagged in the sheet.", "error");
+          swal("Email not sent", "Could not reach the server to send the approval email.", "error");
         }
       }
 
-      // ================================================================
-      //  PLACEHOLDER ASSOCIATION
-      // ================================================================
       async function fetchPlaceholderJOsForCustomer(customerName) {
-        setDebugMessage(`[fetch] Searching for customer: "${customerName}"`);
         try {
           const url = `${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=000000`;
           const result = await fetchJsonWithRetry(url);
-          setDebugMessage(`[fetch] Raw result: ${JSON.stringify(result, null, 2)}`);
-          if (result.result !== "success") {
-            setDebugMessage(`[fetch] API returned not success: ${JSON.stringify(result)}`);
-            return [];
-          }
+          if (result.result !== "success") return [];
           const filtered = result.data.filter(item =>
             item.customerName && item.customerName.trim().toLowerCase() === customerName.trim().toLowerCase()
           );
-          setDebugMessage(`[fetch] Found ${filtered.length} matching JOs.`);
           return filtered;
         } catch (err) {
-          setDebugMessage(`[fetch] Error: ${err.message}`);
-          console.error(err);
           return [];
         }
       }
 
-      // ================================================================
-      //  UPDATED: Render placeholder list as a TABLE with Gcash Trans Amount
-      // ================================================================
       function renderPlaceholderList(jos, sourceLabel = "") {
-        setDebugMessage(`[render] Rendering ${jos.length} items, source: "${sourceLabel}"`);
         const container = document.getElementById("placeholderAssociations");
         const listDiv = document.getElementById("placeholderListItems");
         const labelDiv = document.getElementById("placeholderSourceLabel");
@@ -647,7 +625,6 @@
         container.style.display = "block";
         labelDiv.innerText = sourceLabel ? `(from ${sourceLabel})` : "";
 
-        // Build table
         let tableHtml = `
           <table class="table table-sm table-bordered bg-white lookup-table">
             <thead>
@@ -682,17 +659,11 @@
 
       async function refreshPlaceholderList() {
         const customerName = document.getElementById("CustomerName").value;
-        if (!customerName) {
-          setDebugMessage("[refresh] No customer name found in hidden field.");
-          return;
-        }
+        if (!customerName) return;
         const jos = await fetchPlaceholderJOsForCustomer(customerName);
         renderPlaceholderList(jos, "manual refresh");
       }
 
-      // ================================================================
-      //  Associate selected JOs to the primary GCash reference
-      // ================================================================
       async function associateSelectedPlaceholders() {
         const checkboxes = document.querySelectorAll('.placeholder-checkbox:checked');
         if (checkboxes.length === 0) {
@@ -702,7 +673,7 @@
 
         const targetGcashRef = document.getElementById("lookupGcashRef").value.trim();
         if (!targetGcashRef || !/^\d{6,20}$/.test(targetGcashRef)) {
-          swal("Invalid GCash Ref", "Please enter a valid GCash reference (6–20 digits) in the lookup field.", "warning");
+          swal("Invalid GCash Ref", "Please enter a valid GCash reference.", "warning");
           return;
         }
 
@@ -721,34 +692,18 @@
 
         let successCount = 0;
         let failCount = 0;
-        let errorMessages = [];
 
         for (const cb of checkboxes) {
           const joNum = cb.value.trim();
           try {
             const url = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(targetGcashRef)}&lookupJoNum=${encodeURIComponent(joNum)}`;
             const result = await fetchJsonWithRetry(url);
-            console.log(`[Associate] JO ${joNum} response:`, result);
-            if (result.result === "success") {
-              successCount++;
-            } else {
-              failCount++;
-              errorMessages.push(`JO ${joNum}: ${result.message || "Unknown error"}`);
-            }
-          } catch (err) {
-            failCount++;
-            errorMessages.push(`JO ${joNum}: Network/parse error - ${err.message}`);
-          }
+            if (result.result === "success") successCount++; else failCount++;
+          } catch (err) { failCount++; }
         }
 
         submitBtn.disabled = false;
         submitBtn.innerText = "Associate Selected to GCash Ref";
-
-        if (errorMessages.length > 0) {
-          setDebugMessage("Association errors:\n" + errorMessages.join("\n"));
-        } else {
-          setDebugMessage("All associations succeeded.");
-        }
 
         swal({
           title: "Done",
@@ -775,9 +730,6 @@
         msgEl.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
       }
 
-      // ================================================================
-      //  SEARCH FUNCTION
-      // ================================================================
       searchButton.addEventListener("click", async function () {
         const joNumber = JOsearchField.value.trim();
         document.getElementById("DeliveryStaff").value = "";
@@ -852,12 +804,8 @@
           currentJOCreatedDate = data.JOCreatedDate ? new Date(data.JOCreatedDate.replace(" ", "T")) : null;
           if (currentJOCreatedDate && isNaN(currentJOCreatedDate.getTime())) currentJOCreatedDate = null;
 
-          // JO# is now known — allow submission (unless still blocked by a GCash dup flag).
           refreshSubmitButtonState();
 
-          // If a GCash receipt was already scanned before this JO search finished,
-          // its amount/date flags couldn't be checked against JO data at scan time.
-          // Re-run them now that currentJOAmount / currentJOCreatedDate are available.
           if (lastScannedGcashReceipt && lastScannedGcashReceipt.ref !== "000000") {
             evaluateAmountMismatch(lastScannedGcashReceipt.amount);
             evaluateDateAnomaly(lastScannedGcashReceipt.transactionDate);
@@ -878,14 +826,10 @@
           }
 
         } catch (error) {
-          console.error("Search Error:", error);
           JOresult.innerHTML = "<span class='text-danger'>Error connecting to server. Try again.</span>";
         }
       }
 
-      // ================================================================
-      //  DATE NAVIGATION & DROPDOWN
-      // ================================================================
       function changeDate(offsetDays) {
         const currentDateEl = document.getElementById("currentDate");
         const currentDate = new Date(currentDateEl.innerText);
@@ -919,7 +863,6 @@
             }
           });
         } catch (err) {
-          console.error("Dropdown Load Error:", err);
           dropdown.innerHTML = '<option value="">Error loading JOs</option>';
         }
       }
@@ -932,9 +875,6 @@
         }
       }
 
-      // ================================================================
-      //  TOGGLE PAYMENT REF INPUTS
-      // ================================================================
       function togglePaymentRefInputs() {
         const gcashRadio = document.getElementById("G-Cash");
         const gcashInfo = document.getElementById("gcashInfo");
@@ -978,9 +918,6 @@
         radio.addEventListener('change', togglePaymentRefInputs);
       });
 
-      // ================================================================
-      //  CLEAR FORM
-      // ================================================================
       function clearForm() {
         form.reset();
         JOresult.innerHTML = "";
@@ -1022,7 +959,7 @@
       }
 
       // ================================================================
-      //  GCASH MEDIA (GEMINI OCR)
+      //  GCASH MEDIA (GEMINI OCR) - WITH LOGS & TIMERS
       // ================================================================
       document.getElementById("gcashMedia").addEventListener("change", async function(e) {
         const file = e.target.files[0];
@@ -1044,16 +981,23 @@
           const base64Data = await compressImageToBase64(file);
           const mimeType = "image/jpeg";
 
+          // Start Timer
+          const scanStartTime = performance.now();
+
+          // Enforcing 1 Attempt limit
           const parsedReceipt = await analyzeGcashWithRetry(base64Data, mimeType, (attempt, max) => {
             gcashLookupMsg.innerText = attempt === 1
               ? "⏳ Gemini AI is identifying and parsing receipt layout..."
               : `⏳ Retry ${attempt}/${max}: re-attempting scan...`;
-          }, 3);
+          }, 1);
+
+          // Stop Timer & Output to Browser Console
+          const scanEndTime = performance.now();
+          const scanDurationSec = ((scanEndTime - scanStartTime) / 1000).toFixed(2);
+          console.log(`⏱️ [Gemini Scan] Finished in ${scanDurationSec} seconds.`);
+          console.log(`📦 [Gemini Data]`, parsedReceipt);
 
           if (parsedReceipt && (parsedReceipt.fullRefNo || parsedReceipt.shortRefNo)) {
-            // Use the FULL reference number for storage/dup-checking, not the truncated
-            // 6-digit shortRefNo — two different receipts can share the same last 6 digits,
-            // which caused false "already used" duplicate flags.
             const ref = parsedReceipt.fullRefNo || parsedReceipt.shortRefNo;
             gcashInfoField.value = ref;
 
@@ -1062,9 +1006,6 @@
             document.getElementById("GcashTransAmount").value = parsedReceipt.amount || "";
             document.getElementById("TransactionDate").value = parsedReceipt.transactionDate || "";
 
-            // Remember this scan so if the JO search hasn't finished (or hasn't
-            // even started) yet, the amount/date flags can be re-checked once
-            // JO data becomes available — see performJOSearch().
             lastScannedGcashReceipt = { amount: parsedReceipt.amount, transactionDate: parsedReceipt.transactionDate, ref };
 
             if (joSearchInFlight) {
@@ -1119,7 +1060,7 @@
         } catch (err) {
           console.error("Gemini Extraction Failure Chain:", err);
           gcashLookupMsg.style.color = "#d9534f";
-          gcashLookupMsg.innerText = "❌ " + (err.message || "AI could not read the screenshot cleanly. Please re-upload or ensure the transaction image is clear.");
+          gcashLookupMsg.innerText = "❌ " + (err.message || "AI could not read the screenshot cleanly.");
           gcashInfoField.value = "";
           document.getElementById("G-Cash").value = "G-Cash";
           document.getElementById("GcashTransAmount").value = "";
@@ -1153,7 +1094,7 @@
           "G-Cash": {
             field: document.getElementById("gcashInfo"),
             pattern: /^\d{6,20}$/,
-            msg: "G-Cash Reference # must be 6–20 digits (use the full reference number, not a truncated one)."
+            msg: "G-Cash Reference # must be 6–20 digits."
           },
           "Other Online Banking": {
             field: document.getElementById("gcashInfo"),
@@ -1202,7 +1143,6 @@
           swal("Success", "Delivery details have been queued.", "success");
           clearForm();
         } catch (err) {
-          console.error("Queue Error:", err);
           swal("Error", "There was an error processing your photos.", "error");
           submitBtn.disabled = false;
           submitBtn.innerText = "Submit";
@@ -1224,7 +1164,6 @@
             headers: { "Content-Type": "application/x-www-form-urlencoded" }
           });
           uploadQueue.shift();
-          console.log("Queue Update: Upload successful. " + uploadQueue.length + " items remaining.");
         } catch (err) {
           console.error("Background Queue Error:", err);
         } finally {
@@ -1234,7 +1173,7 @@
       }
 
       // ================================================================
-      //  APP INIT
+      //  APP INIT & DYNAMIC BUILD DATE
       // ================================================================
       window.onload = function() {
         const manilaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
@@ -1245,10 +1184,19 @@
         }
         refreshSubmitButtonState();
         setInterval(processQueue, 5000);
+
+        // Render Dynamic GitHub Build Timestamp
+        const buildDateEl = document.getElementById("githubBuildDate");
+        if (buildDateEl) {
+          const lastMod = new Date(document.lastModified);
+          buildDateEl.innerText = "Page Version: " + lastMod.toLocaleString("en-PH", {
+            month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true
+          });
+        }
       };
 
       // ================================================================
-      //  DUPLICATE REFERENCE CHECKER (with 000000 bypass)
+      //  DUPLICATE REFERENCE CHECKER
       // ================================================================
       const paymentRefLookupTimers = {};
 
@@ -1300,7 +1248,6 @@
                 refreshSubmitButtonState();
               }
             } catch (err) {
-              console.error("Ref lookup error:", err);
               msgElement.style.color = "#d9534f";
               msgElement.innerText = "📡 Could not connect to server after 3 attempts. Proceed with caution.";
               gcashDuplicateBlocked = false;
@@ -1310,11 +1257,10 @@
         });
       }
 
-
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
 
       // ================================================================
-      //  GCASH REFERENCE LOOKUP + SECONDARY PLACEHOLDER FETCH
+      //  GCASH REFERENCE LOOKUP
       // ================================================================
       const lookupRefInput = document.getElementById('lookupGcashRef');
       const lookupStatusMsg = document.getElementById('lookupStatusMsg');
@@ -1333,7 +1279,7 @@
         if (ref.length === 0) return;
         if (!/^\d{6,20}$/.test(ref)) {
           lookupStatusMsg.style.color = "#d9534f";
-          lookupStatusMsg.innerText = "⚠️ Must be 6–20 digits (use the full reference number).";
+          lookupStatusMsg.innerText = "⚠️ Must be 6–20 digits.";
           return;
         }
 
@@ -1342,10 +1288,7 @@
 
         lookupTimer = setTimeout(async () => {
           try {
-            setDebugMessage(`[GCash Lookup] Fetching details for ref: ${ref}`);
             const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(ref)}`);
-            setDebugMessage(`[GCash Lookup] Primary result: ${JSON.stringify(resultData, null, 2)}`);
-
             if (resultData.result === "success") {
               lookupStatusMsg.style.color = "#28a745";
               lookupStatusMsg.innerText = `✅ Found ${resultData.data.length} record(s).`;
@@ -1362,46 +1305,28 @@
               });
               lookupTableWrapper.style.display = "block";
 
-              // Secondary search
               if (resultData.data.length > 0) {
                 const customerName = resultData.data[0].customerName;
-                setDebugMessage(`[GCash Lookup] Extracted customer name: "${customerName}"`);
                 if (customerName) {
                   document.getElementById("CustomerName").value = customerName;
                   const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
-                  setDebugMessage(`[GCash Lookup] Placeholder JOs found: ${JSON.stringify(placeholderJOs, null, 2)}`);
                   renderPlaceholderList(placeholderJOs, `GCash lookup (${ref})`);
-                } else {
-                  setDebugMessage("[GCash Lookup] Customer name is empty, skipping secondary search.");
-                  document.getElementById("placeholderAssociations").style.display = "none";
                 }
-              } else {
-                setDebugMessage("[GCash Lookup] No rows found, clearing placeholder.");
-                document.getElementById("placeholderAssociations").style.display = "none";
               }
             } else if (resultData.result === "not_found") {
               lookupStatusMsg.style.color = "#a94442";
               lookupStatusMsg.innerText = "❌ No records found for this reference.";
-              document.getElementById("placeholderAssociations").style.display = "none";
-            } else {
-              lookupStatusMsg.style.color = "#d9534f";
-              lookupStatusMsg.innerText = "⚠️ Error: " + (resultData.message || "unknown error");
             }
           } catch (err) {
-            setDebugMessage(`[GCash Lookup] Error: ${err.message}`);
             lookupStatusMsg.style.color = "#d9534f";
             lookupStatusMsg.innerText = "📡 Server error – could not retrieve data.";
           }
         }, 1000);
       });
 
-      // ================================================================
-      //  EVENT BINDINGS
-      // ================================================================
       document.getElementById("associateSelectedBtn").addEventListener("click", associateSelectedPlaceholders);
       document.getElementById("usePlaceholderForCurrentBtn").addEventListener("click", setCurrentJOPlaceholder);
       document.getElementById("manualRefreshPlaceholderBtn").addEventListener("click", refreshPlaceholderList);
-
     </script>
   </body>
 </html>
