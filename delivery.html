@@ -1058,7 +1058,7 @@
             gcashLookupMsg.innerText = attempt === 1
               ? "⏳ Gemini AI is identifying and parsing receipt layout..."
               : `⏳ Retry ${attempt}/${max}: re-attempting scan...`;
-          }, 3);
+          });
 
           if (parsedReceipt && (parsedReceipt.fullRefNo || parsedReceipt.shortRefNo)) {
             // Use the FULL reference number for storage/dup-checking, not the truncated
