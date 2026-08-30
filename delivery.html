@@ -451,7 +451,7 @@
         throw lastError;
       }
 
-      async function analyzeGcashWithRetry(base64Data, mimeType, onAttempt, maxRetries = 2) {
+      async function analyzeGcashWithRetry(base64Data, mimeType, onAttempt, maxRetries = 1) {
         let lastErrorMsg = "Unknown error";
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           if (onAttempt) onAttempt(attempt, maxRetries);
