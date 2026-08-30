@@ -998,11 +998,11 @@
           const base64Data = await compressImageToBase64(file);
           const mimeType = "image/jpeg";
 
-          const parsedReceipt = await analyzeGcashWithRetry(base64Data, mimeType, (attempt, max) => {
+  const parsedReceipt = await analyzeGcashWithRetry(base64Data, mimeType, (attempt, max) => {
             gcashLookupMsg.innerText = attempt === 1
               ? "⏳ Gemini AI is identifying and parsing receipt layout..."
               : `⏳ Retry ${attempt}/${max}: re-attempting scan...`;
-          }, 2);
+          }, 3);
 
           if (parsedReceipt && (parsedReceipt.fullRefNo || parsedReceipt.shortRefNo)) {
             const ref = parsedReceipt.fullRefNo || parsedReceipt.shortRefNo;
