@@ -273,12 +273,12 @@
       <div class="form-container" id="GcashrefLookup" style="margin-top: 30px; margin-bottom: 50px; max-width: 550px;">
         <h5 class="text-center mb-3 text-secondary">Check GCash Reference</h5>
         <div class="form-group">
-          <label for="lookupGcashRef">Enter 6‑digit GCash Ref#</label>
+          <label for="lookupGcashRef">Enter GCash or Bank Ref#</label>
           <input
             type="text"
             class="form-control"
             id="lookupGcashRef"
-            placeholder="e.g. 123456"
+            placeholder="e.g. 123456 or ABC123XYZ"
           />
           <small id="lookupStatusMsg" class="form-text mt-1 font-weight-bold"></small>
         </div>
@@ -701,8 +701,8 @@
         }
 
         const targetGcashRef = document.getElementById("lookupGcashRef").value.trim();
-        if (!targetGcashRef || !/^\d{6,20}$/.test(targetGcashRef)) {
-          swal("Invalid GCash Ref", "Please enter a valid GCash reference (6–20 digits) in the lookup field.", "warning");
+        if (!targetGcashRef || !/^[A-Za-z0-9]{4,}$/.test(targetGcashRef)) {
+          swal("Invalid Reference", "Please enter a valid GCash or bank reference (at least 4 letters/digits) in the lookup field.", "warning");
           return;
         }
 
@@ -798,7 +798,8 @@
 
       async function performJOSearch(joNumber) {
         try {
-          const data = await fetchJsonWithRetry(`${scriptURL}?JO=${joNumber}`);
+          const response = await fetch(`${scriptURL}?JO=${joNumber}`);
+          const data = await response.json();
 
           if (data.result === "not found") {
             JOresult.innerHTML = "<span class='text-danger'>Di Pa Na Log ng mga Nagtupi. Tawagan sila at ipalog.</span>";
@@ -878,7 +879,7 @@
 
         } catch (error) {
           console.error("Search Error:", error);
-          JOresult.innerHTML = `<span class='text-danger'>Error connecting to server after 3 attempts (${error.message}). Try again.</span>`;
+          JOresult.innerHTML = "<span class='text-danger'>Error connecting to server. Try again.</span>";
         }
       }
 
@@ -1330,9 +1331,9 @@
         document.getElementById("debugPanel").style.display = "none";
 
         if (ref.length === 0) return;
-        if (!/^\d{6,20}$/.test(ref)) {
+        if (!/^[A-Za-z0-9]{4,}$/.test(ref)) {
           lookupStatusMsg.style.color = "#d9534f";
-          lookupStatusMsg.innerText = "⚠️ Must be 6–20 digits (use the full reference number).";
+          lookupStatusMsg.innerText = "⚠️ Must be at least 4 letters/digits (use the full reference number).";
           return;
         }
 
