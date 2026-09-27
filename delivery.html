@@ -221,6 +221,17 @@
 
                     <input type="file" id="gcashMedia" name="media" style="display:none; margin-left:10px; font-size: 11px; max-width: 170px;" accept="image/*" />
 
+                    <button type="button" id="openRefAssocModalBtn" class="btn btn-sm btn-outline-primary mt-1" style="display:none; font-size:11px;">🔗 Attach to Other JOs</button>
+
+                    <div id="attachedJOsSummary" style="display:none; margin-top:8px; font-size:12px; border:1px solid #ddd; border-radius:4px; padding:6px; background:#f9f9f9;">
+                      <strong>Also attaching this ref to:</strong>
+                      <div id="attachedJOsList" class="mt-1"></div>
+                      <div style="margin-top:4px;">
+                        <strong>Attached total:</strong> <span id="attachedJOsTotal">₱0.00</span>
+                      </div>
+                      <button type="button" id="editAttachedJOsBtn" class="btn btn-sm btn-outline-secondary mt-1" style="font-size:11px;">Edit Selection</button>
+                    </div>
+
                     <span id="gcashLookupMsg" style="display:block; margin-top:5px; font-size: 0.85em;"></span>
                     <span id="amountMismatchMsg" style="display:block; margin-top:3px; font-size: 0.85em; font-weight:bold;"></span>
                     <span id="dateAnomalyMsg" style="display:block; margin-top:3px; font-size: 0.85em; font-weight:bold;"></span>
@@ -269,48 +280,62 @@
         </form>
       </div>
 
-      <!-- ====== GCash Reference Lookup ====== -->
-      <div class="form-container" id="GcashrefLookup" style="margin-top: 30px; margin-bottom: 50px; max-width: 550px;">
-        <h5 class="text-center mb-3 text-secondary">Check GCash Reference</h5>
-        <div class="form-group">
-          <label for="lookupGcashRef">Enter 6‑digit GCash Ref#</label>
-          <input
-            type="text"
-            class="form-control"
-            id="lookupGcashRef"
-            placeholder="e.g. 123456"
-          />
-          <small id="lookupStatusMsg" class="form-text mt-1 font-weight-bold"></small>
-        </div>
-        <div id="lookupTableWrapper" class="table-responsive mt-2" style="display: none;">
-          <p class="text-muted mb-1" style="font-size: 11px;"><strong>JOs linked to this GCash reference:</strong></p>
-          <table class="table table-sm table-bordered bg-white lookup-table">
-            <thead>
-              <tr>
-                <th>JO</th>
-                <th>Timestamp</th>
-                <th>Customer Name</th>
-                <th>Payment Type</th>
-                <th>Gcash Trans. Amount</th>
-              </tr>
-            </thead>
-            <tbody id="lookupTableBody"></tbody>
-          </table>
+      <!-- ====== "Attach Payment To Other JOs" Modal ====== -->
+      <div class="modal" id="refAssocModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Attach This Payment To Other JOs</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+              <p class="text-muted" style="font-size: 12px;">Search for Job Orders with no recorded reference (blank or placeholder <code>000000</code>) to also attach to this GCash reference.</p>
+
+              <div class="form-group">
+                <div class="btn-group btn-group-toggle" role="group">
+                  <button type="button" class="btn btn-sm btn-outline-secondary active" id="refModeCustomerBtn">This Customer</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="refModeOtherBtn">Other Customer</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <input type="text" class="form-control" id="refModalSearchInput" placeholder="Customer name...">
+                <div class="mt-2">
+                  <button type="button" class="btn btn-sm btn-primary" id="refModalSearchBtn">Search</button>
+                </div>
+                <small id="refModalStatusMsg" class="form-text mt-1"></small>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered bg-white lookup-table">
+                  <thead>
+                    <tr>
+                      <th>✓</th><th>JO#</th><th>Customer</th><th>Amount</th><th>Date Created</th><th>Current Ref</th>
+                    </tr>
+                  </thead>
+                  <tbody id="refModalResultsBody"></tbody>
+                </table>
+              </div>
+
+              <hr>
+              <div id="refModalSummary" style="font-size: 13px;">
+                <div>Current JO Amount: <strong id="refModalCurrentJOAmt">₱0.00</strong></div>
+                <div>+ Ticked JOs Total: <strong id="refModalTickedTotal">₱0.00</strong></div>
+                <div>= Combined Total: <strong id="refModalCombinedTotal">₱0.00</strong></div>
+                <div>Scanned GCash Amount: <strong id="refModalScannedAmount">₱0.00</strong></div>
+                <div id="refModalDeltaLine" class="font-weight-bold mt-1"></div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="refModalConfirmBtn">Confirm Selection</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- ====== Placeholder associations list (below the GCash lookup) ====== -->
-      <div class="form-container" id="placeholderAssociations" style="display:none; margin-top: 20px; max-width: 550px;">
-        <h5 class="text-center mb-3 text-secondary">Placeholder (000000) JOs for this Customer</h5>
-        <p><strong>Existing JOs for this customer with placeholder reference (000000):</strong></p>
-        <div id="placeholderSourceLabel" class="placeholder-source-label"></div>
-        <div id="placeholderListItems" class="table-responsive"></div>
-        <div class="mt-2">
-          <button type="button" class="btn btn-sm btn-primary" id="associateSelectedBtn">Associate Selected to GCash Ref</button>
-          <button type="button" class="btn btn-sm btn-warning" id="usePlaceholderForCurrentBtn">Use Placeholder for this JO</button>
-          <button type="button" class="btn btn-sm btn-secondary" id="manualRefreshPlaceholderBtn">Refresh List</button>
-        </div>
-        <!-- Debug panel -->
+      <!-- Debug panel (kept for troubleshooting; hidden unless setDebugMessage() fires) -->
+      <div class="form-container" style="margin-top: 20px; max-width: 550px;">
         <div id="debugPanel" class="debug-box" style="display:none;"></div>
       </div>
 
@@ -604,175 +629,257 @@
       }
 
       // ================================================================
-      //  PLACEHOLDER ASSOCIATION
+      //  "ATTACH PAYMENT TO OTHER JOs" MODAL
       // ================================================================
-      async function fetchPlaceholderJOsForCustomer(customerName) {
-        setDebugMessage(`[fetch] Searching for customer: "${customerName}"`);
+      // Selections persist across searches/reopens, keyed by JO#, until the
+      // user removes them or clearForm() runs.
+      let refModalSelections = {}; // { [jor]: { jor, customerName, totalAmount, jocreatedDate, gcashRef } }
+      let refModalMode = "customer"; // "customer" | "other"
+      const REF_AMOUNT_THRESHOLD = 20; // ₱ — allowed delta before flagging a mismatch
+
+      function parseAmt(v) {
+        const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ""));
+        return isNaN(n) ? 0 : n;
+      }
+
+      function openRefAssocModal() {
+        const customerName = document.getElementById("CustomerName").value.trim();
+        setRefModalMode("customer");
+        document.getElementById("refModalSearchInput").value = customerName;
+        document.getElementById("refModalResultsBody").innerHTML = "";
+        document.getElementById("refModalStatusMsg").innerText = "";
+        recomputeModalTotals();
+        renderAlreadySelectedRows();
+        $('#refAssocModal').modal('show');
+        if (customerName) searchRefModal();
+      }
+
+      function setRefModalMode(mode) {
+        refModalMode = mode;
+        document.getElementById("refModeCustomerBtn").classList.toggle("active", mode === "customer");
+        document.getElementById("refModeOtherBtn").classList.toggle("active", mode === "other");
+        const input = document.getElementById("refModalSearchInput");
+        input.placeholder = mode === "customer" ? "Customer name..." : "Search other customer's name...";
+        if (mode === "other") input.value = "";
+      }
+
+      document.getElementById("refModeCustomerBtn").addEventListener("click", () => {
+        setRefModalMode("customer");
+        document.getElementById("refModalSearchInput").value = document.getElementById("CustomerName").value.trim();
+      });
+      document.getElementById("refModeOtherBtn").addEventListener("click", () => setRefModalMode("other"));
+
+      // Shows any JOs already ticked in a prior search session, so reopening
+      // the modal doesn't lose the current selection before a fresh search.
+      function renderAlreadySelectedRows() {
+        const body = document.getElementById("refModalResultsBody");
+        const rows = Object.values(refModalSelections).map(item => buildRefModalRowHtml(item, true));
+        body.innerHTML = rows.join("");
+        rows.forEach((_, idx) => {}); // no-op, checkboxes wired via delegation below
+      }
+
+      function buildRefModalRowHtml(item, checked) {
+        return `
+          <tr data-jor="${item.jor}">
+            <td><input type="checkbox" class="ref-modal-checkbox" value="${item.jor}" ${checked ? "checked" : ""} /></td>
+            <td><strong>${item.jor}</strong></td>
+            <td>${item.customerName}</td>
+            <td>₱${item.totalAmount || "—"}</td>
+            <td>${item.jocreatedDate || "—"}</td>
+            <td>${item.gcashRef || "<span class='text-muted'>blank</span>"}</td>
+          </tr>`;
+      }
+
+      async function searchRefModal() {
+        const statusMsg = document.getElementById("refModalStatusMsg");
+        const query = document.getElementById("refModalSearchInput").value.trim();
+
+        if (!query) {
+          statusMsg.style.color = "#d9534f";
+          statusMsg.innerText = "Enter a name to search.";
+          return;
+        }
+
+        statusMsg.style.color = "#007bff";
+        statusMsg.innerText = "Searching...";
+
         try {
-          const url = `${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=000000`;
+          const params = refModalMode === "customer"
+            ? `mode=customerBlank&customerName=${encodeURIComponent(query)}`
+            : `mode=byName&nameQuery=${encodeURIComponent(query)}`;
+          const url = `${gcashLookupScriptURL}?action=searchJOsForModal&${params}`;
           const result = await fetchJsonWithRetry(url);
-          setDebugMessage(`[fetch] Raw result: ${JSON.stringify(result, null, 2)}`);
+
           if (result.result !== "success") {
-            setDebugMessage(`[fetch] API returned not success: ${JSON.stringify(result)}`);
-            return [];
+            statusMsg.style.color = "#d9534f";
+            statusMsg.innerText = "⚠️ " + (result.message || "Search failed.");
+            return;
           }
-          const filtered = result.data.filter(item =>
-            item.customerName && item.customerName.trim().toLowerCase() === customerName.trim().toLowerCase()
-          );
-          setDebugMessage(`[fetch] Found ${filtered.length} matching JOs.`);
-          return filtered;
+
+          statusMsg.style.color = "#28a745";
+          statusMsg.innerText = `Found ${result.data.length} JO(s) with blank/placeholder reference.`;
+
+          const body = document.getElementById("refModalResultsBody");
+          // Keep already-ticked rows even if this search doesn't return them again.
+          const alreadySelectedNotInResults = Object.values(refModalSelections)
+            .filter(sel => !result.data.some(r => r.jor === sel.jor));
+
+          const allRows = [...alreadySelectedNotInResults, ...result.data];
+          body.innerHTML = allRows.map(item => buildRefModalRowHtml(item, !!refModalSelections[item.jor])).join("")
+            || `<tr><td colspan="6" class="text-muted text-center">No matching JOs found.</td></tr>`;
+
         } catch (err) {
-          setDebugMessage(`[fetch] Error: ${err.message}`);
+          statusMsg.style.color = "#d9534f";
+          statusMsg.innerText = "📡 Server error – could not search.";
           console.error(err);
-          return [];
         }
       }
 
-      // ================================================================
-      //  UPDATED: Render placeholder list as a TABLE with Gcash Trans Amount
-      // ================================================================
-      function renderPlaceholderList(jos, sourceLabel = "") {
-        setDebugMessage(`[render] Rendering ${jos.length} items, source: "${sourceLabel}"`);
-        const container = document.getElementById("placeholderAssociations");
-        const listDiv = document.getElementById("placeholderListItems");
-        const labelDiv = document.getElementById("placeholderSourceLabel");
+      document.getElementById("refModalSearchBtn").addEventListener("click", searchRefModal);
 
-        if (!jos || jos.length === 0) {
-          container.style.display = "block";
-          labelDiv.innerText = sourceLabel ? `(from ${sourceLabel})` : "";
-          listDiv.innerHTML = `<div class="no-items">No existing placeholder JOs found for this customer.</div>`;
+      // Event delegation for checkboxes (rows are re-rendered on every search)
+      document.getElementById("refModalResultsBody").addEventListener("change", function(e) {
+        if (!e.target.classList.contains("ref-modal-checkbox")) return;
+        const row = e.target.closest("tr");
+        const jor = e.target.value;
+        if (e.target.checked) {
+          refModalSelections[jor] = {
+            jor,
+            customerName: row.children[2].innerText,
+            totalAmount: row.children[3].innerText.replace(/[^0-9.]/g, ""),
+            jocreatedDate: row.children[4].innerText,
+            gcashRef: row.children[5].innerText.trim()
+          };
+        } else {
+          delete refModalSelections[jor];
+        }
+        recomputeModalTotals();
+      });
+
+      function recomputeModalTotals() {
+        const tickedTotal = Object.values(refModalSelections).reduce((sum, item) => sum + parseAmt(item.totalAmount), 0);
+        const scannedAmount = parseAmt(document.getElementById("GcashTransAmount").value);
+        const currentAmt = currentJOAmount || 0;
+        const combined = currentAmt + tickedTotal;
+        const delta = combined - scannedAmount;
+
+        document.getElementById("refModalCurrentJOAmt").innerText = `₱${currentAmt.toFixed(2)}`;
+        document.getElementById("refModalTickedTotal").innerText = `₱${tickedTotal.toFixed(2)}`;
+        document.getElementById("refModalCombinedTotal").innerText = `₱${combined.toFixed(2)}`;
+        document.getElementById("refModalScannedAmount").innerText = `₱${scannedAmount.toFixed(2)}`;
+
+        const deltaLine = document.getElementById("refModalDeltaLine");
+        if (scannedAmount === 0) {
+          deltaLine.style.color = "#6c757d";
+          deltaLine.innerText = "No scanned GCash amount to compare against yet.";
+        } else if (Math.abs(delta) <= REF_AMOUNT_THRESHOLD) {
+          deltaLine.style.color = "#28a745";
+          deltaLine.innerText = `✅ Within ₱${REF_AMOUNT_THRESHOLD} threshold (Δ ₱${delta.toFixed(2)}).`;
+        } else {
+          deltaLine.style.color = "#d9534f";
+          deltaLine.innerText = `⚠️ Off by ₱${Math.abs(delta).toFixed(2)} (${delta > 0 ? "over" : "under"}) — exceeds the ₱${REF_AMOUNT_THRESHOLD} threshold.`;
+        }
+      }
+
+      async function confirmRefModalSelection() {
+        const scannedAmount = parseAmt(document.getElementById("GcashTransAmount").value);
+        const tickedTotal = Object.values(refModalSelections).reduce((sum, item) => sum + parseAmt(item.totalAmount), 0);
+        const combined = (currentJOAmount || 0) + tickedTotal;
+        const delta = Math.abs(combined - scannedAmount);
+
+        if (scannedAmount > 0 && delta > REF_AMOUNT_THRESHOLD) {
+          const proceed = await swal({
+            title: "Amount mismatch",
+            text: `Combined total (₱${combined.toFixed(2)}) is off by ₱${delta.toFixed(2)} from the scanned amount (₱${scannedAmount.toFixed(2)}), beyond the ₱${REF_AMOUNT_THRESHOLD} threshold. Proceed anyway?`,
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, proceed"
+          });
+          if (!proceed) return;
+        }
+
+        $('#refAssocModal').modal('hide');
+        renderAttachedJOsSummary();
+      }
+
+      document.getElementById("refModalConfirmBtn").addEventListener("click", confirmRefModalSelection);
+
+      function renderAttachedJOsSummary() {
+        const summaryBox = document.getElementById("attachedJOsSummary");
+        const listDiv = document.getElementById("attachedJOsList");
+        const totalSpan = document.getElementById("attachedJOsTotal");
+        const items = Object.values(refModalSelections);
+
+        if (items.length === 0) {
+          summaryBox.style.display = "none";
+          listDiv.innerHTML = "";
           return;
         }
 
-        container.style.display = "block";
-        labelDiv.innerText = sourceLabel ? `(from ${sourceLabel})` : "";
+        summaryBox.style.display = "block";
+        listDiv.innerHTML = items.map(item => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0;">
+            <span><strong>${item.jor}</strong> — ${item.customerName} — ₱${parseAmt(item.totalAmount).toFixed(2)}</span>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-attached-jo" data-jor="${item.jor}" style="font-size:10px; padding:2px 6px;">✕</button>
+          </div>
+        `).join("");
 
-        // Build table
-        let tableHtml = `
-          <table class="table table-sm table-bordered bg-white lookup-table">
-            <thead>
-              <tr>
-                <th>Select</th>
-                <th>JO</th>
-                <th>Timestamp</th>
-                <th>Customer Name</th>
-                <th>Payment Type</th>
-                <th>Gcash Trans. Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
+        const total = items.reduce((sum, item) => sum + parseAmt(item.totalAmount), 0);
+        totalSpan.innerText = `₱${total.toFixed(2)}`;
 
-        jos.forEach(item => {
-          tableHtml += `
-            <tr>
-              <td><input type="checkbox" class="placeholder-checkbox" value="${item.jor}" /></td>
-              <td><strong>${item.jor}</strong></td>
-              <td>${item.timestamp}</td>
-              <td>${item.customerName}</td>
-              <td><span class="badge badge-info">${item.paymentType}</span></td>
-              <td>₱${item.gcashTransAmount || "—"}</td>
-            </tr>
-          `;
+        listDiv.querySelectorAll(".remove-attached-jo").forEach(btn => {
+          btn.addEventListener("click", function() {
+            delete refModalSelections[this.dataset.jor];
+            renderAttachedJOsSummary();
+          });
         });
-
-        tableHtml += `</tbody></table>`;
-        listDiv.innerHTML = tableHtml;
       }
 
-      async function refreshPlaceholderList() {
-        const customerName = document.getElementById("CustomerName").value;
-        if (!customerName) {
-          setDebugMessage("[refresh] No customer name found in hidden field.");
-          return;
-        }
-        const jos = await fetchPlaceholderJOsForCustomer(customerName);
-        renderPlaceholderList(jos, "manual refresh");
+      document.getElementById("openRefAssocModalBtn").addEventListener("click", openRefAssocModal);
+      document.getElementById("editAttachedJOsBtn").addEventListener("click", openRefAssocModal);
+
+      function resetRefModalState() {
+        refModalSelections = {};
+        renderAttachedJOsSummary();
       }
 
-      // ================================================================
-      //  Associate selected JOs to the primary GCash reference
-      // ================================================================
-      async function associateSelectedPlaceholders() {
-        const checkboxes = document.querySelectorAll('.placeholder-checkbox:checked');
-        if (checkboxes.length === 0) {
-          swal("No selection", "Please check at least one JO to associate.", "warning");
+      // Writes `targetRef` into Column N for every ticked "attach to other
+      // JOs" selection. Runs in the background after the main delivery
+      // record has already been queued/submitted — a failure here does not
+      // block or roll back the main submission, but is surfaced via swal.
+      async function applyAttachedJORefs(selections, targetRef) {
+        if (!targetRef || !/^[A-Za-z0-9]{4,20}$/.test(targetRef)) {
+          swal("Reference not attached", "The scanned reference number wasn't valid, so it could not be attached to the other selected JOs. You can attach them manually later.", "warning");
           return;
         }
-
-        const targetGcashRef = document.getElementById("lookupGcashRef").value.trim();
-        if (!targetGcashRef || !/^\d{6,20}$/.test(targetGcashRef)) {
-          swal("Invalid GCash Ref", "Please enter a valid GCash reference (6–20 digits) in the lookup field.", "warning");
-          return;
-        }
-
-        const confirmResult = await swal({
-          title: "Associate selected JOs?",
-          text: `This will set GCash Ref to ${targetGcashRef} for ${checkboxes.length} JO(s).`,
-          type: "warning",
-          showCancelButton: true,
-          confirmButtonText: "Yes, associate!"
-        });
-        if (!confirmResult) return;
-
-        const submitBtn = document.getElementById("associateSelectedBtn");
-        submitBtn.disabled = true;
-        submitBtn.innerText = "Associating...";
 
         let successCount = 0;
-        let failCount = 0;
-        let errorMessages = [];
+        const failed = [];
 
-        for (const cb of checkboxes) {
-          const joNum = cb.value.trim();
+        for (const item of selections) {
           try {
-            const url = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(targetGcashRef)}&lookupJoNum=${encodeURIComponent(joNum)}`;
+            const url = `${gcashLookupScriptURL}?action=associateGcash&lookupGcashRef=${encodeURIComponent(targetRef)}&lookupJoNum=${encodeURIComponent(item.jor)}`;
             const result = await fetchJsonWithRetry(url);
-            console.log(`[Associate] JO ${joNum} response:`, result);
             if (result.result === "success") {
               successCount++;
             } else {
-              failCount++;
-              errorMessages.push(`JO ${joNum}: ${result.message || "Unknown error"}`);
+              failed.push(`JO ${item.jor}: ${result.message || "unknown error"}`);
             }
           } catch (err) {
-            failCount++;
-            errorMessages.push(`JO ${joNum}: Network/parse error - ${err.message}`);
+            failed.push(`JO ${item.jor}: ${err.message}`);
           }
         }
 
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Associate Selected to GCash Ref";
-
-        if (errorMessages.length > 0) {
-          setDebugMessage("Association errors:\n" + errorMessages.join("\n"));
+        if (failed.length > 0) {
+          setDebugMessage("Attach-to-other-JOs errors:\n" + failed.join("\n"));
+          swal({
+            title: "Attached with some errors",
+            html: `✅ ${successCount} JO(s) updated with ref ${targetRef}<br>❌ ${failed.length} failed — see debug panel below the form.`,
+            type: "warning"
+          });
         } else {
-          setDebugMessage("All associations succeeded.");
+          swal("Attached", `✅ ${successCount} additional JO(s) updated with reference ${targetRef}.`, "success");
         }
-
-        swal({
-          title: "Done",
-          html: `✅ ${successCount} associated to ${targetGcashRef}<br>❌ ${failCount} failed`,
-          type: successCount > 0 ? "success" : "error"
-        });
-
-        await refreshPlaceholderList();
-      }
-
-      function setCurrentJOPlaceholder() {
-        const gcashInfo = document.getElementById("gcashInfo");
-        const gcashRadio = document.getElementById("G-Cash");
-        if (!gcashRadio.checked) {
-          gcashRadio.checked = true;
-          togglePaymentRefInputs();
-        }
-        gcashInfo.value = "000000";
-        gcashInfo.dispatchEvent(new Event("input"));
-        document.getElementById("amountMismatchMsg").innerText = "";
-        document.getElementById("dateAnomalyMsg").innerText = "";
-        const msgEl = document.getElementById("gcashLookupMsg");
-        msgEl.style.color = "#f0ad4e";
-        msgEl.innerText = "⚠️ Placeholder reference number (000000) – allowed even if already used.";
       }
 
       // ================================================================
@@ -783,7 +890,6 @@
         document.getElementById("DeliveryStaff").value = "";
         document.getElementById("Comments").value = "";
         JOresult.innerHTML = "";
-        document.getElementById("placeholderAssociations").style.display = "none";
 
         if (!joNumber) {
           JOresult.innerHTML = "<span class='text-warning'>Please enter a JO number.</span>";
@@ -871,12 +977,6 @@
             document.getElementById("mainsubmitbutton").innerText = "SUBMIT";
           }
 
-          const customerName = data.value.trim();
-          if (customerName) {
-            const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
-            renderPlaceholderList(placeholderJOs, "JO search");
-          }
-
         } catch (error) {
           console.error("Search Error:", error);
           JOresult.innerHTML = "<span class='text-danger'>Error connecting to server. Try again.</span>";
@@ -943,6 +1043,8 @@
         const originalMediaRow = document.getElementById("originalMediaRow");
         const originalMediaInput = document.getElementById("media");
 
+        const openRefBtn = document.getElementById("openRefAssocModalBtn");
+
         if (gcashRadio && gcashRadio.checked) {
           gcashInfo.style.display = "inline-block";
           gcashInfo.required = true;
@@ -954,6 +1056,7 @@
             originalMediaRow.style.display = "none";
             originalMediaInput.disabled = true;
           }
+          if (openRefBtn) openRefBtn.style.display = "inline-block";
         } else {
           if (gcashRadio) gcashRadio.value = "G-Cash";
           gcashInfo.style.display = "none";
@@ -971,6 +1074,8 @@
             originalMediaRow.style.display = "block";
             originalMediaInput.disabled = false;
           }
+          if (openRefBtn) openRefBtn.style.display = "none";
+          resetRefModalState();
         }
       }
 
@@ -987,13 +1092,14 @@
         document.getElementById("JOR").value = "";
         document.getElementById("CustomerName").value = "";
         document.getElementById("gcashInfo").style.display = "none";
+        document.getElementById("openRefAssocModalBtn").style.display = "none";
         document.getElementById("gcashLookupMsg").innerText = "";
         document.getElementById("mainsubmitbutton").innerText = "Submit";
         gcashDuplicateBlocked = false;
         lastScannedGcashReceipt = null;
         refreshSubmitButtonState();
         JOsearchField.value = "";
-        document.getElementById("placeholderAssociations").style.display = "none";
+        resetRefModalState();
 
         const gcashRadioReset = document.getElementById("G-Cash");
         if (gcashRadioReset) gcashRadioReset.value = "G-Cash";
@@ -1187,6 +1293,11 @@
           }
         });
 
+        // Snapshot the ticked "attach to other JOs" selections + target ref
+        // BEFORE clearForm() wipes them, so they can be applied after queueing.
+        const attachedSelections = Object.values(refModalSelections);
+        const attachedTargetRef = document.getElementById("gcashInfo").value.trim();
+
         try {
           const resolvedFiles = await Promise.all(filePromises);
           resolvedFiles.forEach(f => data[f.key] = f.value);
@@ -1201,6 +1312,10 @@
           updateQueueUI();
           swal("Success", "Delivery details have been queued.", "success");
           clearForm();
+
+          if (attachedSelections.length > 0) {
+            applyAttachedJORefs(attachedSelections, attachedTargetRef);
+          }
         } catch (err) {
           console.error("Queue Error:", err);
           swal("Error", "There was an error processing your photos.", "error");
@@ -1312,95 +1427,6 @@
 
 
       setupPaymentRefValidation('gcashInfo', 'gcashLookupMsg', 'alphanumeric');
-
-      // ================================================================
-      //  GCASH REFERENCE LOOKUP + SECONDARY PLACEHOLDER FETCH
-      // ================================================================
-      const lookupRefInput = document.getElementById('lookupGcashRef');
-      const lookupStatusMsg = document.getElementById('lookupStatusMsg');
-      const lookupTableWrapper = document.getElementById('lookupTableWrapper');
-      const lookupTableBody = document.getElementById('lookupTableBody');
-      let lookupTimer;
-
-      lookupRefInput.addEventListener('input', function() {
-        clearTimeout(lookupTimer);
-        const ref = this.value.trim();
-        lookupStatusMsg.innerText = "";
-        lookupTableBody.innerHTML = "";
-        lookupTableWrapper.style.display = "none";
-        document.getElementById("debugPanel").style.display = "none";
-
-        if (ref.length === 0) return;
-        if (!/^\d{6,20}$/.test(ref)) {
-          lookupStatusMsg.style.color = "#d9534f";
-          lookupStatusMsg.innerText = "⚠️ Must be 6–20 digits (use the full reference number).";
-          return;
-        }
-
-        lookupStatusMsg.style.color = "#007bff";
-        lookupStatusMsg.innerText = "Searching...";
-
-        lookupTimer = setTimeout(async () => {
-          try {
-            setDebugMessage(`[GCash Lookup] Fetching details for ref: ${ref}`);
-            const resultData = await fetchJsonWithRetry(`${gcashLookupScriptURL}?action=lookupGcashDetails&gcashRef=${encodeURIComponent(ref)}`);
-            setDebugMessage(`[GCash Lookup] Primary result: ${JSON.stringify(resultData, null, 2)}`);
-
-            if (resultData.result === "success") {
-              lookupStatusMsg.style.color = "#28a745";
-              lookupStatusMsg.innerText = `✅ Found ${resultData.data.length} record(s).`;
-              resultData.data.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                  <td><strong>${item.jor}</strong></td>
-                  <td>${item.timestamp}</td>
-                  <td>${item.customerName}</td>
-                  <td><span class="badge badge-info">${item.paymentType}</span></td>
-                  <td>₱${item.gcashTransAmount || "—"}</td>
-                `;
-                lookupTableBody.appendChild(row);
-              });
-              lookupTableWrapper.style.display = "block";
-
-              // Secondary search
-              if (resultData.data.length > 0) {
-                const customerName = resultData.data[0].customerName;
-                setDebugMessage(`[GCash Lookup] Extracted customer name: "${customerName}"`);
-                if (customerName) {
-                  document.getElementById("CustomerName").value = customerName;
-                  const placeholderJOs = await fetchPlaceholderJOsForCustomer(customerName);
-                  setDebugMessage(`[GCash Lookup] Placeholder JOs found: ${JSON.stringify(placeholderJOs, null, 2)}`);
-                  renderPlaceholderList(placeholderJOs, `GCash lookup (${ref})`);
-                } else {
-                  setDebugMessage("[GCash Lookup] Customer name is empty, skipping secondary search.");
-                  document.getElementById("placeholderAssociations").style.display = "none";
-                }
-              } else {
-                setDebugMessage("[GCash Lookup] No rows found, clearing placeholder.");
-                document.getElementById("placeholderAssociations").style.display = "none";
-              }
-            } else if (resultData.result === "not_found") {
-              lookupStatusMsg.style.color = "#a94442";
-              lookupStatusMsg.innerText = "❌ No records found for this reference.";
-              document.getElementById("placeholderAssociations").style.display = "none";
-            } else {
-              lookupStatusMsg.style.color = "#d9534f";
-              lookupStatusMsg.innerText = "⚠️ Error: " + (resultData.message || "unknown error");
-            }
-          } catch (err) {
-            setDebugMessage(`[GCash Lookup] Error: ${err.message}`);
-            lookupStatusMsg.style.color = "#d9534f";
-            lookupStatusMsg.innerText = "📡 Server error – could not retrieve data.";
-          }
-        }, 1000);
-      });
-
-      // ================================================================
-      //  EVENT BINDINGS
-      // ================================================================
-      document.getElementById("associateSelectedBtn").addEventListener("click", associateSelectedPlaceholders);
-      document.getElementById("usePlaceholderForCurrentBtn").addEventListener("click", setCurrentJOPlaceholder);
-      document.getElementById("manualRefreshPlaceholderBtn").addEventListener("click", refreshPlaceholderList);
 
     </script>
   </body>
