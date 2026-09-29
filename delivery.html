@@ -708,7 +708,7 @@
             ? `mode=customerBlank&customerName=${encodeURIComponent(query)}`
             : `mode=byName&nameQuery=${encodeURIComponent(query)}`;
           const url = `${gcashLookupScriptURL}?action=searchJOsForModal&${params}`;
-          const result = await fetchJsonWithRetry(url);
+          const result = await fetchJsonWithRetry(url, 3, 30000);
 
           if (result.result !== "success") {
             statusMsg.style.color = "#d9534f";
@@ -904,8 +904,7 @@
 
       async function performJOSearch(joNumber) {
         try {
-          const response = await fetch(`${scriptURL}?JO=${joNumber}`);
-          const data = await response.json();
+          const data = await fetchJsonWithRetry(`${scriptURL}?JO=${joNumber}`, 3, 20000);
 
           if (data.result === "not found") {
             JOresult.innerHTML = "<span class='text-danger'>Di Pa Na Log ng mga Nagtupi. Tawagan sila at ipalog.</span>";
