@@ -1059,12 +1059,23 @@
         const rows = reconAllData.filter(item => item.customerName === name);
         const body = document.getElementById("reconDetailsTableBody");
 
+        // Helper Formulas' O column now embeds each JO's created date as
+        // "29116 (09/27/2026), 29120 (09/28/2026)" — split back into
+        // individual entries (on ", " right before the next JO# begins) so
+        // each can be shown on its own line instead of one long inline blob.
+        function renderJoListCell(joListText, joCount) {
+          const items = (joListText || "").split(/,\s*(?=\d)/).map(s => s.trim()).filter(Boolean);
+          if (items.length === 0) return '<span class="text-muted">—</span>';
+          return items.map(jo => `<div style="white-space: nowrap;">${jo}</div>`).join("")
+            + `<div class="text-muted" style="font-size: 11px;">(${joCount} JO${joCount !== 1 ? 's' : ''})</div>`;
+        }
+
         body.innerHTML = rows.map(item => `
           <tr>
             <td>${item.mismatched
               ? `<a href="#" class="recon-select-ref" data-ref="${item.gcashRef}" data-gap="${item.delta}" title="Click to search for JOs to attach to this reference"><strong>${item.gcashRef}</strong></a>`
               : `<strong>${item.gcashRef}</strong>`}</td>
-            <td style="max-width: 200px; overflow-wrap: break-word;">${item.joList} <span class="text-muted">(${item.joCount})</span></td>
+            <td style="max-width: 200px; overflow-wrap: break-word;">${renderJoListCell(item.joList, item.joCount)}</td>
             <td>₱${item.sumPOSAmount.toFixed(2)}</td>
             <td>₱${item.gcashTransAmount.toFixed(2)}</td>
             <td class="${item.delta > 0 ? 'text-danger' : (item.delta < 0 ? 'text-warning' : 'text-success')} font-weight-bold">${item.delta > 0 ? '+' : ''}₱${item.delta.toFixed(2)}</td>
