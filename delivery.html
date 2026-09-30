@@ -111,7 +111,39 @@
           <a href="deliverysummary.html"> DVS </a> |
           <a href="LavarFormSubmission.html"> Fold </a> <br>
           <br>
+          <button type="button" id="openReconModalBtn" class="btn btn-sm btn-outline-dark">📋 Reconcile Pending References</button>
+          <br><br>
         </div>
+
+        <!-- ====== Reconciliation Modal: refs where sum(POS Amount) doesn't match Gcash Trans. Amount ====== -->
+        <div class="modal" id="refReconModal" tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Pending GCash References</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              </div>
+              <div class="modal-body">
+                <p class="text-muted" style="font-size: 12px;">References where the total POS Amount of their attached JOs doesn't match the recorded GCash transaction amount. Select one to search for more JOs to attach to it.</p>
+                <div id="reconStatusMsg" class="mb-2"></div>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered bg-white lookup-table">
+                    <thead>
+                      <tr>
+                        <th>Ref#</th><th>JOs</th><th>POS Sum</th><th>Gcash Amt</th><th>Δ</th><th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="reconTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
 
         <form id="submit-to-google-sheet">
           <!-- ... (same as before) ... -->
@@ -637,21 +669,50 @@
       let refModalMode = "customer"; // "customer" | "other"
       const REF_AMOUNT_THRESHOLD = 20; // ₱ — allowed delta before flagging a mismatch
 
+      // Reconcile-mode state: set when the modal is opened from the "Pending
+      // References" list instead of the normal G-Cash payment flow. In this
+      // mode there's no "current JO" — the target ref and gap are whatever
+      // the user picked from the reconciliation table, and confirming
+      // applies the association immediately instead of waiting for the main
+      // form's submit.
+      let reconcileMode = false;
+      let reconcileTargetRef = "";
+      let reconcileGap = 0;
+
       function parseAmt(v) {
         const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ""));
         return isNaN(n) ? 0 : n;
       }
 
       function openRefAssocModal() {
+        reconcileMode = false;
+        document.querySelector("#refAssocModal .modal-title").innerText = "Attach This Payment To Other JOs";
         const customerName = document.getElementById("CustomerName").value.trim();
         setRefModalMode("customer");
         document.getElementById("refModalSearchInput").value = customerName;
         document.getElementById("refModalResultsBody").innerHTML = "";
         document.getElementById("refModalStatusMsg").innerText = "";
+        refModalSelections = {};
         recomputeModalTotals();
         renderAlreadySelectedRows();
         $('#refAssocModal').modal('show');
         if (customerName) searchRefModal();
+      }
+
+      // Entry point from the "Pending References" reconciliation table.
+      function openRefAssocModalForReconcile(ref, gap) {
+        reconcileMode = true;
+        reconcileTargetRef = ref;
+        reconcileGap = gap;
+        refModalSelections = {};
+        setRefModalMode("other");
+        document.getElementById("refModalSearchInput").value = "";
+        document.getElementById("refModalResultsBody").innerHTML = "";
+        document.getElementById("refModalStatusMsg").innerText = "";
+        document.querySelector("#refAssocModal .modal-title").innerText = "Attach More JOs to Ref# " + ref;
+        recomputeModalTotals();
+        $('#refReconModal').modal('hide');
+        $('#refAssocModal').modal('show');
       }
 
       function setRefModalMode(mode) {
@@ -758,6 +819,30 @@
 
       function recomputeModalTotals() {
         const tickedTotal = Object.values(refModalSelections).reduce((sum, item) => sum + parseAmt(item.totalAmount), 0);
+
+        if (reconcileMode) {
+          const delta = tickedTotal - reconcileGap;
+          document.getElementById("refModalCurrentJOAmt").parentElement.style.display = "none";
+          document.getElementById("refModalCombinedTotal").parentElement.style.display = "none";
+          document.getElementById("refModalTickedTotal").innerText = `₱${tickedTotal.toFixed(2)}`;
+          document.getElementById("refModalScannedAmount").innerText = `₱${reconcileGap.toFixed(2)}`;
+          document.getElementById("refModalScannedAmount").parentElement.firstChild.textContent = "Remaining Gap for Ref# " + reconcileTargetRef + ": ";
+
+          const deltaLine = document.getElementById("refModalDeltaLine");
+          if (Math.abs(delta) <= REF_AMOUNT_THRESHOLD) {
+            deltaLine.style.color = "#28a745";
+            deltaLine.innerText = `✅ Ticked total closes the gap (Δ ₱${delta.toFixed(2)}).`;
+          } else {
+            deltaLine.style.color = "#d9534f";
+            deltaLine.innerText = `⚠️ Still off by ₱${Math.abs(delta).toFixed(2)} (${delta > 0 ? "over" : "under"}) from the ₱${REF_AMOUNT_THRESHOLD} threshold.`;
+          }
+          return;
+        }
+
+        document.getElementById("refModalCurrentJOAmt").parentElement.style.display = "";
+        document.getElementById("refModalCombinedTotal").parentElement.style.display = "";
+        document.getElementById("refModalScannedAmount").parentElement.firstChild.textContent = "Scanned GCash Amount: ";
+
         const scannedAmount = parseAmt(document.getElementById("GcashTransAmount").value);
         const currentAmt = currentJOAmount || 0;
         const combined = currentAmt + tickedTotal;
@@ -782,8 +867,34 @@
       }
 
       async function confirmRefModalSelection() {
-        const scannedAmount = parseAmt(document.getElementById("GcashTransAmount").value);
         const tickedTotal = Object.values(refModalSelections).reduce((sum, item) => sum + parseAmt(item.totalAmount), 0);
+
+        if (reconcileMode) {
+          const selections = Object.values(refModalSelections);
+          if (selections.length === 0) {
+            swal("No selection", "Tick at least one JO to attach.", "warning");
+            return;
+          }
+          const delta = Math.abs(tickedTotal - reconcileGap);
+          if (delta > REF_AMOUNT_THRESHOLD) {
+            const proceed = await swal({
+              title: "Amount mismatch",
+              text: `Ticked total (₱${tickedTotal.toFixed(2)}) is off by ₱${delta.toFixed(2)} from the remaining gap (₱${reconcileGap.toFixed(2)}), beyond the ₱${REF_AMOUNT_THRESHOLD} threshold. Proceed anyway?`,
+              type: "warning",
+              showCancelButton: true,
+              confirmButtonText: "Yes, proceed"
+            });
+            if (!proceed) return;
+          }
+
+          $('#refAssocModal').modal('hide');
+          await applyAttachedJORefs(selections, reconcileTargetRef);
+          reconcileMode = false;
+          refModalSelections = {};
+          return;
+        }
+
+        const scannedAmount = parseAmt(document.getElementById("GcashTransAmount").value);
         const combined = (currentJOAmount || 0) + tickedTotal;
         const delta = Math.abs(combined - scannedAmount);
 
@@ -840,8 +951,65 @@
 
       function resetRefModalState() {
         refModalSelections = {};
+        reconcileMode = false;
         renderAttachedJOsSummary();
       }
+
+      // ================================================================
+      //  RECONCILIATION MODAL — "Pending GCash References"
+      // ================================================================
+      async function openReconModal() {
+        const statusMsg = document.getElementById("reconStatusMsg");
+        const body = document.getElementById("reconTableBody");
+        body.innerHTML = "";
+        statusMsg.style.color = "#007bff";
+        statusMsg.innerText = "Loading...";
+        $('#refReconModal').modal('show');
+
+        try {
+          const url = `${gcashLookupScriptURL}?action=getRefReconciliationSummary`;
+          const result = await fetchJsonWithRetry(url, 3, 30000);
+
+          if (result.result !== "success") {
+            statusMsg.style.color = "#d9534f";
+            statusMsg.innerText = "⚠️ " + (result.message || "Could not load.");
+            return;
+          }
+
+          if (result.data.length === 0) {
+            statusMsg.style.color = "#28a745";
+            statusMsg.innerText = "✅ No mismatched references found.";
+            return;
+          }
+
+          statusMsg.style.color = "#28a745";
+          statusMsg.innerText = `${result.data.length} reference(s) with a mismatch beyond ₱${REF_AMOUNT_THRESHOLD}.`;
+
+          body.innerHTML = result.data.map(item => `
+            <tr>
+              <td><strong>${item.gcashRef}</strong></td>
+              <td style="max-width: 220px; overflow-wrap: break-word;">${item.joList} <span class="text-muted">(${item.joCount})</span></td>
+              <td>₱${item.sumPOSAmount.toFixed(2)}</td>
+              <td>₱${item.gcashTransAmount.toFixed(2)}</td>
+              <td class="${item.delta > 0 ? 'text-danger' : 'text-warning'} font-weight-bold">${item.delta > 0 ? '+' : ''}₱${item.delta.toFixed(2)}</td>
+              <td><button type="button" class="btn btn-sm btn-primary recon-select-btn" data-ref="${item.gcashRef}" data-gap="${item.delta}">Select</button></td>
+            </tr>
+          `).join("");
+
+          body.querySelectorAll(".recon-select-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+              openRefAssocModalForReconcile(this.dataset.ref, parseFloat(this.dataset.gap));
+            });
+          });
+
+        } catch (err) {
+          statusMsg.style.color = "#d9534f";
+          statusMsg.innerText = "📡 Server error – could not load.";
+          console.error(err);
+        }
+      }
+
+      document.getElementById("openReconModalBtn").addEventListener("click", openReconModal);
 
       // Writes `targetRef` into Column N for every ticked "attach to other
       // JOs" selection. Runs in the background after the main delivery
