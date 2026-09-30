@@ -120,21 +120,30 @@
           <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title">Pending GCash References</h5>
+                <h5 class="modal-title">Reconcile GCash References</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
               </div>
               <div class="modal-body">
-                <p class="text-muted" style="font-size: 12px;">References where the total POS Amount of their attached JOs doesn't match the recorded GCash transaction amount. Select one to search for more JOs to attach to it.</p>
+                <p class="text-muted" style="font-size: 12px;">Search or pick a customer to see their GCash references. Rows off by more than ₱<span id="reconThresholdLabel">50</span> get an attach icon to search for more JOs to close the gap.</p>
                 <div id="reconStatusMsg" class="mb-2"></div>
-                <div class="table-responsive">
-                  <table class="table table-sm table-bordered bg-white lookup-table">
-                    <thead>
-                      <tr>
-                        <th>Ref#</th><th>JOs</th><th>POS Sum</th><th>Gcash Amt</th><th>Δ</th><th></th>
-                      </tr>
-                    </thead>
-                    <tbody id="reconTableBody"></tbody>
-                  </table>
+
+                <div class="form-group">
+                  <input type="text" class="form-control" id="reconCustomerSearchInput" placeholder="Search customer name...">
+                </div>
+                <div id="reconCustomerListContainer" class="mb-3" style="max-height: 160px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;"></div>
+
+                <div id="reconDetailsSection" style="display:none;">
+                  <p class="mb-1"><strong>References for: <span id="reconSelectedCustomerName"></span></strong></p>
+                  <div class="table-responsive">
+                    <table class="table table-sm table-bordered bg-white lookup-table">
+                      <thead>
+                        <tr>
+                          <th>Ref#</th><th>JOs</th><th>POS Sum</th><th>Gcash Amt</th><th>Δ</th><th></th>
+                        </tr>
+                      </thead>
+                      <tbody id="reconDetailsTableBody"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
               <div class="modal-footer">
@@ -829,12 +838,12 @@
           document.getElementById("refModalScannedAmount").parentElement.firstChild.textContent = "Remaining Gap for Ref# " + reconcileTargetRef + ": ";
 
           const deltaLine = document.getElementById("refModalDeltaLine");
-          if (Math.abs(delta) <= REF_AMOUNT_THRESHOLD) {
+          if (Math.abs(delta) <= RECON_MISMATCH_THRESHOLD) {
             deltaLine.style.color = "#28a745";
             deltaLine.innerText = `✅ Ticked total closes the gap (Δ ₱${delta.toFixed(2)}).`;
           } else {
             deltaLine.style.color = "#d9534f";
-            deltaLine.innerText = `⚠️ Still off by ₱${Math.abs(delta).toFixed(2)} (${delta > 0 ? "over" : "under"}) from the ₱${REF_AMOUNT_THRESHOLD} threshold.`;
+            deltaLine.innerText = `⚠️ Still off by ₱${Math.abs(delta).toFixed(2)} (${delta > 0 ? "over" : "under"}) from the ₱${RECON_MISMATCH_THRESHOLD} threshold.`;
           }
           return;
         }
@@ -876,10 +885,10 @@
             return;
           }
           const delta = Math.abs(tickedTotal - reconcileGap);
-          if (delta > REF_AMOUNT_THRESHOLD) {
+          if (delta > RECON_MISMATCH_THRESHOLD) {
             const proceed = await swal({
               title: "Amount mismatch",
-              text: `Ticked total (₱${tickedTotal.toFixed(2)}) is off by ₱${delta.toFixed(2)} from the remaining gap (₱${reconcileGap.toFixed(2)}), beyond the ₱${REF_AMOUNT_THRESHOLD} threshold. Proceed anyway?`,
+              text: `Ticked total (₱${tickedTotal.toFixed(2)}) is off by ₱${delta.toFixed(2)} from the remaining gap (₱${reconcileGap.toFixed(2)}), beyond the ₱${RECON_MISMATCH_THRESHOLD} threshold. Proceed anyway?`,
               type: "warning",
               showCancelButton: true,
               confirmButtonText: "Yes, proceed"
@@ -956,12 +965,18 @@
       }
 
       // ================================================================
-      //  RECONCILIATION MODAL — "Pending GCash References"
+      //  RECONCILIATION MODAL — customer search/list -> per-customer ref table
       // ================================================================
+      const RECON_MISMATCH_THRESHOLD = 50; // ₱ — matches the backend's REF_RECON_MISMATCH_THRESHOLD
+      let reconAllData = [];       // full fetched list: { customerName, gcashRef, sumPOSAmount, gcashTransAmount, joCount, joList, delta, mismatched }
+      let reconSelectedCustomer = null;
+
       async function openReconModal() {
         const statusMsg = document.getElementById("reconStatusMsg");
-        const body = document.getElementById("reconTableBody");
-        body.innerHTML = "";
+        document.getElementById("reconCustomerListContainer").innerHTML = "";
+        document.getElementById("reconCustomerSearchInput").value = "";
+        document.getElementById("reconDetailsSection").style.display = "none";
+        reconSelectedCustomer = null;
         statusMsg.style.color = "#007bff";
         statusMsg.innerText = "Loading...";
         $('#refReconModal').modal('show');
@@ -976,37 +991,93 @@
             return;
           }
 
-          if (result.data.length === 0) {
-            statusMsg.style.color = "#28a745";
-            statusMsg.innerText = "✅ No mismatched references found.";
+          reconAllData = result.data;
+
+          if (reconAllData.length === 0) {
+            statusMsg.style.color = "#6c757d";
+            statusMsg.innerText = "No customers with a GCash reference found.";
             return;
           }
 
+          const mismatchCount = reconAllData.filter(item => item.mismatched).length;
           statusMsg.style.color = "#28a745";
-          statusMsg.innerText = `${result.data.length} reference(s) with a mismatch beyond ₱${REF_AMOUNT_THRESHOLD}.`;
+          statusMsg.innerText = `${new Set(reconAllData.map(i => i.customerName)).size} customer(s), ${mismatchCount} reference(s) off by more than ₱${RECON_MISMATCH_THRESHOLD}.`;
 
-          body.innerHTML = result.data.map(item => `
-            <tr>
-              <td><strong>${item.gcashRef}</strong></td>
-              <td style="max-width: 220px; overflow-wrap: break-word;">${item.joList} <span class="text-muted">(${item.joCount})</span></td>
-              <td>₱${item.sumPOSAmount.toFixed(2)}</td>
-              <td>₱${item.gcashTransAmount.toFixed(2)}</td>
-              <td class="${item.delta > 0 ? 'text-danger' : 'text-warning'} font-weight-bold">${item.delta > 0 ? '+' : ''}₱${item.delta.toFixed(2)}</td>
-              <td><button type="button" class="btn btn-sm btn-primary recon-select-btn" data-ref="${item.gcashRef}" data-gap="${item.delta}">Select</button></td>
-            </tr>
-          `).join("");
-
-          body.querySelectorAll(".recon-select-btn").forEach(btn => {
-            btn.addEventListener("click", function() {
-              openRefAssocModalForReconcile(this.dataset.ref, parseFloat(this.dataset.gap));
-            });
-          });
+          renderReconCustomerList("");
 
         } catch (err) {
           statusMsg.style.color = "#d9534f";
           statusMsg.innerText = "📡 Server error – could not load.";
           console.error(err);
         }
+      }
+
+      function renderReconCustomerList(filterText) {
+        const container = document.getElementById("reconCustomerListContainer");
+        const lowerFilter = filterText.trim().toLowerCase();
+
+        // Unique customer names, each flagged if they have at least one mismatched ref
+        const byCustomer = {};
+        reconAllData.forEach(item => {
+          if (!byCustomer[item.customerName]) byCustomer[item.customerName] = false;
+          if (item.mismatched) byCustomer[item.customerName] = true;
+        });
+
+        const names = Object.keys(byCustomer)
+          .filter(name => !lowerFilter || name.toLowerCase().indexOf(lowerFilter) !== -1)
+          .sort((a, b) => a.localeCompare(b));
+
+        if (names.length === 0) {
+          container.innerHTML = `<div class="text-muted p-2" style="font-size: 13px;">No matching customers.</div>`;
+          return;
+        }
+
+        container.innerHTML = names.map(name => `
+          <div class="recon-customer-row" data-name="${name}" style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px; ${reconSelectedCustomer === name ? 'background:#e9f5ff;' : ''}">
+            ${byCustomer[name] ? '⚠️ ' : ''}${name}
+          </div>
+        `).join("");
+
+        container.querySelectorAll(".recon-customer-row").forEach(row => {
+          row.addEventListener("click", function() {
+            selectReconCustomer(this.dataset.name);
+          });
+        });
+      }
+
+      document.getElementById("reconCustomerSearchInput").addEventListener("input", function() {
+        renderReconCustomerList(this.value);
+      });
+
+      function selectReconCustomer(name) {
+        reconSelectedCustomer = name;
+        renderReconCustomerList(document.getElementById("reconCustomerSearchInput").value); // re-render to highlight selection
+
+        document.getElementById("reconDetailsSection").style.display = "block";
+        document.getElementById("reconSelectedCustomerName").innerText = name;
+
+        const rows = reconAllData.filter(item => item.customerName === name);
+        const body = document.getElementById("reconDetailsTableBody");
+
+        body.innerHTML = rows.map(item => `
+          <tr>
+            <td>${item.mismatched
+              ? `<a href="#" class="recon-select-ref" data-ref="${item.gcashRef}" data-gap="${item.delta}" title="Click to search for JOs to attach to this reference"><strong>${item.gcashRef}</strong></a>`
+              : `<strong>${item.gcashRef}</strong>`}</td>
+            <td style="max-width: 200px; overflow-wrap: break-word;">${item.joList} <span class="text-muted">(${item.joCount})</span></td>
+            <td>₱${item.sumPOSAmount.toFixed(2)}</td>
+            <td>₱${item.gcashTransAmount.toFixed(2)}</td>
+            <td class="${item.delta > 0 ? 'text-danger' : (item.delta < 0 ? 'text-warning' : 'text-success')} font-weight-bold">${item.delta > 0 ? '+' : ''}₱${item.delta.toFixed(2)}</td>
+            <td>${item.mismatched ? `<button type="button" class="btn btn-sm btn-primary recon-select-btn" data-ref="${item.gcashRef}" data-gap="${item.delta}" title="Attach more JOs to close the gap">🔗</button>` : ''}</td>
+          </tr>
+        `).join("");
+
+        body.querySelectorAll(".recon-select-btn, .recon-select-ref").forEach(el => {
+          el.addEventListener("click", function(e) {
+            e.preventDefault();
+            openRefAssocModalForReconcile(this.dataset.ref, parseFloat(this.dataset.gap));
+          });
+        });
       }
 
       document.getElementById("openReconModalBtn").addEventListener("click", openReconModal);
