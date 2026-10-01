@@ -330,7 +330,7 @@
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
-              <p class="text-muted" style="font-size: 12px;">Search for Job Orders with no recorded reference (blank or placeholder <code>000000</code>) to also attach to this GCash reference.</p>
+              <p class="text-muted" id="refAssocModalDescription" style="font-size: 12px;">Search for Job Orders with no recorded reference (blank or placeholder <code>000000</code>) to also attach to this GCash reference.</p>
 
               <div class="form-group">
                 <div class="btn-group btn-group-toggle" role="group">
@@ -687,6 +687,7 @@
       let reconcileMode = false;
       let reconcileTargetRef = "";
       let reconcileGap = 0;
+      let reconcileCustomerName = ""; // the customer this reconcile session started from — restored when switching back to "This Customer"
 
       function parseAmt(v) {
         const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ""));
@@ -696,6 +697,7 @@
       function openRefAssocModal() {
         reconcileMode = false;
         document.querySelector("#refAssocModal .modal-title").innerText = "Attach This Payment To Other JOs";
+        document.getElementById("refAssocModalDescription").innerHTML = "Search for Job Orders with no recorded reference (blank or placeholder <code>000000</code>) to also attach to this GCash reference.";
         const customerName = document.getElementById("CustomerName").value.trim();
         setRefModalMode("customer");
         document.getElementById("refModalSearchInput").value = customerName;
@@ -708,20 +710,27 @@
         if (customerName) searchRefModal();
       }
 
-      // Entry point from the "Pending References" reconciliation table.
-      function openRefAssocModalForReconcile(ref, gap) {
+      // Entry point from the "Pending References" reconciliation table. We
+      // already know which customer this reference belongs to (from the
+      // reconciliation row itself), so pre-fill and auto-search for their
+      // blank/000000-ref JOs instead of opening blank and making the user
+      // retype the name.
+      function openRefAssocModalForReconcile(ref, gap, customerName) {
         reconcileMode = true;
         reconcileTargetRef = ref;
         reconcileGap = gap;
+        reconcileCustomerName = customerName || "";
         refModalSelections = {};
-        setRefModalMode("other");
-        document.getElementById("refModalSearchInput").value = "";
+        setRefModalMode("customer");
+        document.getElementById("refModalSearchInput").value = customerName || "";
         document.getElementById("refModalResultsBody").innerHTML = "";
         document.getElementById("refModalStatusMsg").innerText = "";
         document.querySelector("#refAssocModal .modal-title").innerText = "Attach More JOs to Ref# " + ref;
+        document.getElementById("refAssocModalDescription").innerHTML = "Showing <strong>" + (customerName || "this customer") + "</strong>'s JOs with no recorded reference. This payment may cover more than one customer — switch to <strong>Other Customer</strong> above to search and tick JOs from someone else too; everything ticked gets attached to Ref# " + ref + ".";
         recomputeModalTotals();
         $('#refReconModal').modal('hide');
         $('#refAssocModal').modal('show');
+        if (customerName) searchRefModal();
       }
 
       function setRefModalMode(mode) {
@@ -735,7 +744,13 @@
 
       document.getElementById("refModeCustomerBtn").addEventListener("click", () => {
         setRefModalMode("customer");
-        document.getElementById("refModalSearchInput").value = document.getElementById("CustomerName").value.trim();
+        // In a reconcile session, "This Customer" means the customer the
+        // reference was originally opened for — NOT the main form's
+        // currently-loaded JO customer, which may be unrelated or blank
+        // during a pure reconciliation session.
+        document.getElementById("refModalSearchInput").value = reconcileMode
+          ? reconcileCustomerName
+          : document.getElementById("CustomerName").value.trim();
       });
       document.getElementById("refModeOtherBtn").addEventListener("click", () => setRefModalMode("other"));
 
@@ -1073,20 +1088,20 @@
         body.innerHTML = rows.map(item => `
           <tr>
             <td>${item.mismatched
-              ? `<a href="#" class="recon-select-ref" data-ref="${item.gcashRef}" data-gap="${item.delta}" title="Click to search for JOs to attach to this reference"><strong>${item.gcashRef}</strong></a>`
+              ? `<a href="#" class="recon-select-ref" data-ref="${item.gcashRef}" data-gap="${item.delta}" data-customer="${item.customerName}" title="Click to search for JOs to attach to this reference"><strong>${item.gcashRef}</strong></a>`
               : `<strong>${item.gcashRef}</strong>`}</td>
             <td style="max-width: 200px; overflow-wrap: break-word;">${renderJoListCell(item.joList, item.joCount)}</td>
             <td>₱${item.sumPOSAmount.toFixed(2)}</td>
             <td>₱${item.gcashTransAmount.toFixed(2)}</td>
             <td class="${item.delta > 0 ? 'text-danger' : (item.delta < 0 ? 'text-warning' : 'text-success')} font-weight-bold">${item.delta > 0 ? '+' : ''}₱${item.delta.toFixed(2)}</td>
-            <td>${item.mismatched ? `<button type="button" class="btn btn-sm btn-primary recon-select-btn" data-ref="${item.gcashRef}" data-gap="${item.delta}" title="Attach more JOs to close the gap">🔗</button>` : ''}</td>
+            <td>${item.mismatched ? `<button type="button" class="btn btn-sm btn-primary recon-select-btn" data-ref="${item.gcashRef}" data-gap="${item.delta}" data-customer="${item.customerName}" title="Attach more JOs to close the gap">🔗</button>` : ''}</td>
           </tr>
         `).join("");
 
         body.querySelectorAll(".recon-select-btn, .recon-select-ref").forEach(el => {
           el.addEventListener("click", function(e) {
             e.preventDefault();
-            openRefAssocModalForReconcile(this.dataset.ref, parseFloat(this.dataset.gap));
+            openRefAssocModalForReconcile(this.dataset.ref, parseFloat(this.dataset.gap), this.dataset.customer);
           });
         });
       }
