@@ -124,11 +124,15 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
               </div>
               <div class="modal-body">
-                <p class="text-muted" style="font-size: 12px;">Search or pick a customer to see their GCash references. Rows off by more than ₱<span id="reconThresholdLabel">50</span> get an attach icon to search for more JOs to close the gap.</p>
+                <p class="text-muted" style="font-size: 12px;">Search or pick a customer to see their GCash references. A <strong class="text-danger">+Δ</strong> over ₱<span id="reconThresholdLabel">50</span> (GCash amount bigger than attached JOs) gets an attach icon to search for more JOs to close the gap. A <strong class="text-warning">−Δ</strong> means JOs already attached total more than the GCash amount — that needs a manual look, not more JOs.</p>
                 <div id="reconStatusMsg" class="mb-2"></div>
 
-                <div class="form-group">
+                <div class="form-group mb-2">
                   <input type="text" class="form-control" id="reconCustomerSearchInput" placeholder="Search customer name...">
+                </div>
+                <div class="form-check mb-2">
+                  <input type="checkbox" class="form-check-input" id="reconNeedsActionOnlyCheckbox">
+                  <label class="form-check-label" for="reconNeedsActionOnlyCheckbox" style="font-size: 13px;">Only show customers with a pending attach (₱ GCash amount &gt; attached JOs)</label>
                 </div>
                 <div id="reconCustomerListContainer" class="mb-3" style="max-height: 160px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;"></div>
 
@@ -1014,9 +1018,9 @@
             return;
           }
 
-          const mismatchCount = reconAllData.filter(item => item.mismatched).length;
+          const actionableCount = reconAllData.filter(item => item.delta > RECON_MISMATCH_THRESHOLD).length;
           statusMsg.style.color = "#28a745";
-          statusMsg.innerText = `${new Set(reconAllData.map(i => i.customerName)).size} customer(s), ${mismatchCount} reference(s) off by more than ₱${RECON_MISMATCH_THRESHOLD}.`;
+          statusMsg.innerText = `${new Set(reconAllData.map(i => i.customerName)).size} customer(s), ${actionableCount} reference(s) with a pending attach (GCash amount over attached JOs by more than ₱${RECON_MISMATCH_THRESHOLD}).`;
 
           renderReconCustomerList("");
 
@@ -1030,28 +1034,44 @@
       function renderReconCustomerList(filterText) {
         const container = document.getElementById("reconCustomerListContainer");
         const lowerFilter = filterText.trim().toLowerCase();
+        const needsActionOnly = document.getElementById("reconNeedsActionOnlyCheckbox").checked;
 
-        // Unique customer names, each flagged if they have at least one mismatched ref
-        const byCustomer = {};
+        // Count ACTIONABLE refs per customer — positive delta beyond the
+        // threshold only (GCash amount > attached JOs). A customer whose
+        // only mismatches are negative-delta (over-attached) gets no badge
+        // and is excluded when the "needs action only" filter is checked,
+        // since there's nothing this window can actually do for them.
+        const actionableCountByCustomer = {};
         reconAllData.forEach(item => {
-          if (!byCustomer[item.customerName]) byCustomer[item.customerName] = false;
-          if (item.mismatched) byCustomer[item.customerName] = true;
+          if (!actionableCountByCustomer[item.customerName]) actionableCountByCustomer[item.customerName] = 0;
+          if (item.delta > RECON_MISMATCH_THRESHOLD) actionableCountByCustomer[item.customerName]++;
         });
 
-        const names = Object.keys(byCustomer)
-          .filter(name => !lowerFilter || name.toLowerCase().indexOf(lowerFilter) !== -1)
-          .sort((a, b) => a.localeCompare(b));
+        let names = Object.keys(actionableCountByCustomer)
+          .filter(name => !lowerFilter || name.toLowerCase().indexOf(lowerFilter) !== -1);
+
+        if (needsActionOnly) {
+          names = names.filter(name => actionableCountByCustomer[name] > 0);
+        }
+
+        names.sort((a, b) => a.localeCompare(b));
 
         if (names.length === 0) {
           container.innerHTML = `<div class="text-muted p-2" style="font-size: 13px;">No matching customers.</div>`;
           return;
         }
 
-        container.innerHTML = names.map(name => `
+        container.innerHTML = names.map(name => {
+          const count = actionableCountByCustomer[name];
+          const callout = count > 0
+            ? `<span class="badge badge-warning" style="margin-left: 6px;">⚠️ ${count} pending</span>`
+            : '';
+          return `
           <div class="recon-customer-row" data-name="${name}" style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px; ${reconSelectedCustomer === name ? 'background:#e9f5ff;' : ''}">
-            ${byCustomer[name] ? '⚠️ ' : ''}${name}
+            ${name}${callout}
           </div>
-        `).join("");
+        `;
+        }).join("");
 
         container.querySelectorAll(".recon-customer-row").forEach(row => {
           row.addEventListener("click", function() {
@@ -1062,6 +1082,9 @@
 
       document.getElementById("reconCustomerSearchInput").addEventListener("input", function() {
         renderReconCustomerList(this.value);
+      });
+      document.getElementById("reconNeedsActionOnlyCheckbox").addEventListener("change", function() {
+        renderReconCustomerList(document.getElementById("reconCustomerSearchInput").value);
       });
 
       function selectReconCustomer(name) {
@@ -1085,18 +1108,28 @@
             + `<div class="text-muted" style="font-size: 11px;">(${joCount} JO${joCount !== 1 ? 's' : ''})</div>`;
         }
 
-        body.innerHTML = rows.map(item => `
+        body.innerHTML = rows.map(item => {
+          // "Attach more JOs" only ever fixes an UNDER-attachment — GCash
+          // amount bigger than what's currently attached (delta > 0), i.e.
+          // there's leftover payment that more JOs can account for. A
+          // negative delta means the opposite: attached JOs already total
+          // MORE than the recorded GCash amount — attaching even more would
+          // only make that worse, so no action is offered for that case,
+          // even though it's still flagged/colored for a human to look at.
+          const canAttachMore = item.delta > RECON_MISMATCH_THRESHOLD;
+          return `
           <tr>
-            <td>${item.mismatched
+            <td>${canAttachMore
               ? `<a href="#" class="recon-select-ref" data-ref="${item.gcashRef}" data-gap="${item.delta}" data-customer="${item.customerName}" title="Click to search for JOs to attach to this reference"><strong>${item.gcashRef}</strong></a>`
               : `<strong>${item.gcashRef}</strong>`}</td>
             <td style="max-width: 200px; overflow-wrap: break-word;">${renderJoListCell(item.joList, item.joCount)}</td>
             <td>₱${item.sumPOSAmount.toFixed(2)}</td>
             <td>₱${item.gcashTransAmount.toFixed(2)}</td>
             <td class="${item.delta > 0 ? 'text-danger' : (item.delta < 0 ? 'text-warning' : 'text-success')} font-weight-bold">${item.delta > 0 ? '+' : ''}₱${item.delta.toFixed(2)}</td>
-            <td>${item.mismatched ? `<button type="button" class="btn btn-sm btn-primary recon-select-btn" data-ref="${item.gcashRef}" data-gap="${item.delta}" data-customer="${item.customerName}" title="Attach more JOs to close the gap">🔗</button>` : ''}</td>
+            <td>${canAttachMore ? `<button type="button" class="btn btn-sm btn-primary recon-select-btn" data-ref="${item.gcashRef}" data-gap="${item.delta}" data-customer="${item.customerName}" title="Attach more JOs to close the gap">🔗</button>` : (item.mismatched ? `<span class="text-muted" title="Attached JOs already total more than the recorded GCash amount — attaching more won't fix this">⚠️</span>` : '')}</td>
           </tr>
-        `).join("");
+        `;
+        }).join("");
 
         body.querySelectorAll(".recon-select-btn, .recon-select-ref").forEach(el => {
           el.addEventListener("click", function(e) {
