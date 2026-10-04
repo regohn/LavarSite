@@ -915,10 +915,16 @@
             if (!proceed) return;
           }
 
-          $('#refAssocModal').modal('hide');
-          await applyAttachedJORefs(selections, reconcileTargetRef);
+          // Clear reconcileMode BEFORE hiding, not after — the modal's
+          // hidden.bs.modal handler fires as soon as the close animation
+          // finishes (~300ms), which is almost always before the awaited
+          // attach calls below actually resolve. If reconcileMode were still
+          // true at that point, it would pop the Reconcile modal back open
+          // while the attach is still running in the background.
           reconcileMode = false;
           refModalSelections = {};
+          $('#refAssocModal').modal('hide');
+          await applyAttachedJORefs(selections, reconcileTargetRef);
           return;
         }
 
@@ -942,6 +948,21 @@
       }
 
       document.getElementById("refModalConfirmBtn").addEventListener("click", confirmRefModalSelection);
+
+      // Catches every way this modal can close (Cancel button, the ✕, Esc,
+      // clicking outside) in one place, rather than hooking each separately.
+      // confirmRefModalSelection() already sets reconcileMode = false BEFORE
+      // calling modal('hide') on a successful confirm, so by the time this
+      // fires, reconcileMode being still true means the user backed out —
+      // Cancel/X/Esc/outside-click — and we send them back to the Reconcile
+      // list rather than dumping them on the main delivery form.
+      $('#refAssocModal').on('hidden.bs.modal', function() {
+        if (reconcileMode) {
+          reconcileMode = false;
+          refModalSelections = {};
+          $('#refReconModal').modal('show');
+        }
+      });
 
       function renderAttachedJOsSummary() {
         const summaryBox = document.getElementById("attachedJOsSummary");
