@@ -256,7 +256,7 @@
                     <input class="form-check-input" type="radio" name="PaymentType" id="G-Cash" value="G-Cash">
                     <label class="form-check-label" for="G-Cash">G-Cash / Other Online Banking</label>
 
-                    <input type="text" id="gcashInfo" name="gcashInfo" readonly style="display:none; width:140px; margin-left:10px; background-color: #e9ecef; border: 1px solid #ced4da; color: #495057;" />
+                    <input type="text" id="gcashInfo" name="gcashInfo" maxlength="50" readonly style="display:none; width:140px; margin-left:10px; background-color: #e9ecef; border: 1px solid #ced4da; color: #495057;" />
 
                     <input type="hidden" id="GcashTransAmount" name="GcashTransAmount" value="" />
                     <input type="hidden" id="TransactionDate" name="TransactionDate" value="" />
@@ -393,6 +393,9 @@
       const scriptURL = "https://script.google.com/macros/s/AKfycbyvt6V7CiOvjDjqcKrRpVNXgCj9AS912tgj21unL8ysnQVyiW0YELCiKE5A88Fle9K-/exec";
       const requestScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
       const gcashLookupScriptURL = "https://script.google.com/macros/s/AKfycbzYOoeDKxGOTHq9Vd4XB-8a5y46EWrclxOcou7zpt_AfQ7xzJKk9MEtowneh4EXwLk5/exec";
+
+      // Shared pattern for bank/online-banking reference numbers: 4-50 chars, letters, numbers, - and _
+      const BANK_REF_PATTERN = /^[A-Za-z0-9][A-Za-z0-9\-_]{3,49}$/;
 
       let currentJOAmount = null;
       let currentJOCreatedDate = null;
@@ -1167,7 +1170,7 @@
       // record has already been queued/submitted — a failure here does not
       // block or roll back the main submission, but is surfaced via swal.
       async function applyAttachedJORefs(selections, targetRef) {
-        if (!targetRef || !/^[A-Za-z0-9]{4,20}$/.test(targetRef)) {
+        if (!targetRef || !BANK_REF_PATTERN.test(targetRef)) {
           swal("Reference not attached", "The scanned reference number wasn't valid, so it could not be attached to the other selected JOs. You can attach them manually later.", "warning");
           return;
         }
@@ -1581,8 +1584,8 @@
           },
           "Other Online Banking": {
             field: document.getElementById("gcashInfo"),
-            pattern: /^[A-Za-z0-9]{4,}$/,
-            msg: "Reference # must be 4–20 letters/numbers."
+            pattern: BANK_REF_PATTERN,
+            msg: "Reference # must be 4–50 characters (letters, numbers, - or _)."
           }
         };
         const validator = paymentRefValidators[paymentType];
@@ -1686,7 +1689,7 @@
       const paymentRefLookupTimers = {};
 
       function setupPaymentRefValidation(inputId, msgElementId, mode) {
-        const pattern = mode === 'alphanumeric' ? /^[A-Za-z0-9]{4,}$/ : /^\d{6,20}$/;  
+        const pattern = mode === 'alphanumeric' ? BANK_REF_PATTERN : /^\d{6,20}$/;  
         document.getElementById(inputId).addEventListener('input', function() {
           const userInput = this.value.trim();
           const msgElement = document.getElementById(msgElementId);
